@@ -527,7 +527,6 @@ export default function App() {
                                 }}
                                 type="file"
                                 accept="image/*"
-                                capture="environment"
                                 className="hidden-input"
                                 onChange={(e) => {
                                   const file = e.target.files?.[0];
