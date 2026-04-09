@@ -722,16 +722,16 @@ export default function App() {
                                   } else {
                                     const useCamera = window.confirm("Use Camera?\nPress Cancel for Gallery");
 
-const input = photoInputRefs.current[absoluteIndex];
+                                    const input = photoInputRefs.current[absoluteIndex];
 
-if (input) {
-  if (useCamera) {
-    input.setAttribute("capture", "environment");
-  } else {
-    input.removeAttribute("capture");
-  }
-  input.click();
-}
+                                    if (input) {
+                                      if (useCamera) {
+                                        input.setAttribute("capture", "environment");
+                                      } else {
+                                        input.removeAttribute("capture");
+                                      }
+                                      input.click();
+                                    }
                                   }
                                 }}
                                 disabled={rowLocked}
