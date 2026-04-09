@@ -4,8 +4,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   Camera, Dumbbell, Utensils, TreeDeciduous, BookOpen, Droplets,
   Flame, Scale, Target, ImagePlus, Lock, LockOpen, X, Images,
-  RefreshCw, ArrowLeft, TrendingUp, Trophy, ChevronLeft,
-  ChevronRight, User, Bell, BellOff, SplitSquareHorizontal,
+  RefreshCw, ArrowLeft, Trophy, ChevronLeft,
+  ChevronRight, User, Bell, Layers,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -463,7 +463,7 @@ function BeforeAfterModal({ rows, onClose }: { rows: TrackerRow[]; onClose: () =
 
       {photos.length < 2 ? (
         <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, padding: 32 }}>
-          <SplitSquareHorizontal style={{ width: 48, height: 48, color: "rgba(127,29,29,0.5)" }} />
+          <Layers style={{ width: 48, height: 48, color: "rgba(127,29,29,0.5)" }} />
           <p style={{ color: "rgba(252,165,165,0.6)", fontSize: 14, textAlign: "center", letterSpacing: "0.06em" }}>
             {photos.length === 0 ? "No progress photos yet" : "Need at least 2 photos to compare"}
           </p>
@@ -813,6 +813,8 @@ export default function App() {
     habitColumns.forEach((item) => { if (item.key !== "photo") (patch as any)[item.key] = false; });
     updateRow(absoluteIndex, patch);
   }, [rows, triggerFeedback, updateRow]);
+
+  const handlePhotoSourceSelect = useCallback((source: "camera" | "gallery") => {
     const idx = photoSourceTarget; setPhotoSourceTarget(null);
     if (idx === null) return;
     setTimeout(() => { source === "camera" ? photoInputRefs.current[idx]?.click() : galleryInputRefs.current[idx]?.click(); }, 200);
@@ -928,7 +930,7 @@ export default function App() {
               </motion.button>
               <motion.button whileTap={{ scale: 0.97 }} onClick={() => setShowBeforeAfter(true)}
                 style={{ flex: 1, background: "rgba(127,29,29,0.18)", border: "1px solid rgba(127,29,29,0.55)", borderRadius: 14, padding: "13px 10px", display: "flex", flexDirection: "column", alignItems: "center", gap: 6, cursor: "pointer" }}>
-                <SplitSquareHorizontal style={{ width: 18, height: 18, color: "#fca5a5" }} />
+                <Layers style={{ width: 18, height: 18, color: "#fca5a5" }} />
                 <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(252,165,165,0.75)" }}>Before/After</span>
               </motion.button>
               <motion.button whileTap={{ scale: 0.97 }} onClick={() => setShowNotifications(true)}
