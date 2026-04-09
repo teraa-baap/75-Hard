@@ -104,11 +104,11 @@ button { cursor: pointer; }
 }
 .timeline-card {
   margin-bottom: 16px;
-  border-radius: 24px;
+  border-radius: 16px;
   border: 1px solid var(--border);
   background: linear-gradient(90deg, #000 0%, rgba(127,29,29,0.5) 50%, #000 100%);
   padding: 16px;
-  box-shadow: 0 16px 38px rgba(127,29,29,0.18);
+  box-shadow: 0 8px 24px rgba(127,29,29,0.14);
   backdrop-filter: blur(12px);
 }
 .timeline-row {
@@ -152,17 +152,17 @@ button { cursor: pointer; }
   gap: 12px;
 }
 .summary-card {
-  border-radius: 28px;
-  border: 1px solid var(--border);
+  border-radius: 16px;
+  border: 1px solid rgba(127,29,29,0.45);
   background: linear-gradient(135deg, #000 0%, rgba(9,9,11,0.95) 55%, rgba(69,10,10,0.8) 100%);
   color: var(--text);
-  box-shadow: 0 20px 40px rgba(127,29,29,0.18);
+  box-shadow: 0 8px 24px rgba(127,29,29,0.14);
   backdrop-filter: blur(14px);
 }
 .summary-card-content {
   position: relative;
   overflow: hidden;
-  padding: 20px;
+  padding: 16px;
 }
 .summary-card-content::before {
   content: "";
