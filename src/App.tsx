@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   Camera, Dumbbell, Utensils, TreeDeciduous, BookOpen, Droplets,
   Flame, Scale, Target, ImagePlus, Lock, LockOpen, X, Images,
-  RefreshCw, ArrowLeft, TrendingUp, Zap, Trophy, ChevronLeft,
+  RefreshCw, ArrowLeft, TrendingUp, Trophy, ChevronLeft,
   ChevronRight, User,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -45,8 +45,10 @@ function createRows(startDateString = START_DATE): TrackerRow[] {
   return Array.from({ length: TOTAL_DAYS }, (_, i) => {
     const current = new Date(start);
     current.setDate(start.getDate() + i);
+    // Use local date to avoid UTC offset issues
+    const localDate = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, "0")}-${String(current.getDate()).padStart(2, "0")}`;
     return {
-      id: i + 1, date: current.toISOString().slice(0, 10),
+      id: i + 1, date: localDate,
       dateLabel: formatDateLabel(current), day: weekdayNames[current.getDay()],
       countdown: `Day ${i + 1}`, photo: false, photoUrl: "", workout1: false,
       diet: false, workout2: false, read: false, water: false,
@@ -498,16 +500,16 @@ export default function App() {
     setTimeout(() => { source === "camera" ? photoInputRefs.current[idx]?.click() : galleryInputRefs.current[idx]?.click(); }, 200);
   }, [photoSourceTarget]);
 
-  const todayIndex = useMemo(() => { const today = new Date().toISOString().slice(0, 10); return rows.findIndex((r) => r.date === today); }, [rows]);
+  const todayIndex = useMemo(() => {
+    // Use local date to avoid UTC timezone shift issues
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    return rows.findIndex((r) => r.date === today);
+  }, [rows]);
+
   const totalChecks = useMemo(() => rows.reduce((sum, r) => sum + habitColumns.reduce((s, item) => s + (r[item.key] ? 1 : 0), 0), 0), [rows]);
   const completedDays = useMemo(() => rows.filter(isRowComplete).length, [rows]);
   const progressPercent = Math.round((totalChecks / (TOTAL_DAYS * habitColumns.length)) * 100);
-
-  const currentStreak = useMemo(() => {
-    let streak = 0;
-    for (let i = todayIndex; i >= 0; i--) { if (isRowComplete(rows[i])) streak++; else break; }
-    return streak;
-  }, [rows, todayIndex]);
 
   const latestWeight = useMemo(() => { const m = [...rows].reverse().find((r) => r.weight.trim()); return m ? m.weight : "—"; }, [rows]);
   const averageCalories = useMemo(() => { const v = rows.map((r) => Number(String(r.calories).replace(/,/g, ""))).filter((n) => isFinite(n) && n > 0); return v.length ? Math.round(v.reduce((a, b) => a + b) / v.length).toLocaleString() : "—"; }, [rows]);
@@ -573,13 +575,6 @@ export default function App() {
                     <div className="mini-label">Challenge Timeline</div>
                     <div className="timeline-day">Day {Math.min(Math.max(completedDays + 1, 1), TOTAL_DAYS)} / {TOTAL_DAYS}</div>
                   </div>
-                  {currentStreak > 0 && (
-                    <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-                      style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(220,38,38,0.2)", border: "1px solid rgba(220,38,38,0.5)", borderRadius: 20, padding: "6px 14px", marginBottom: 4 }}>
-                      <Flame style={{ width: 14, height: 14, color: "#f87171" }} />
-                      <span style={{ fontSize: 13, fontWeight: 800, color: "#fca5a5", letterSpacing: "0.06em" }}>{currentStreak} DAY STREAK</span>
-                    </motion.div>
-                  )}
                 </div>
                 <div className="timeline-bars">
                   {timelineBars.map((filled, i) => (
@@ -594,7 +589,7 @@ export default function App() {
               <SummaryCard title="Completed Days" value={completedDays} subtext="All habit boxes finished" icon={Target} />
               <SummaryCard title="Overall Progress" value={`${progressPercent}%`} subtext="Based on all 450 habit ticks" icon={Flame} />
               <SummaryCard title="Latest Weight" value={latestWeight} subtext="Most recent value entered" icon={Scale} extra={<WeightSparkline rows={rows} />} />
-              <SummaryCard title="Current Streak" value={currentStreak} subtext="Consecutive days complete" icon={Zap} />
+              <SummaryCard title="Avg Calories / Steps" value={`${averageCalories} / ${averageSteps}`} subtext="Daily averages" icon={Target} />
             </div>
 
             <motion.button whileTap={{ scale: 0.97 }} onClick={() => setShowGallery(true)}
