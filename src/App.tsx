@@ -694,7 +694,6 @@ export default function App() {
 
             <div className="sheet-grid header">
               <div className="sheet-cell head date-col">Date</div>
-              <div className="sheet-cell head day-col">Day</div>
               <div className="sheet-cell head week-col">Week</div>
               <div className="sheet-cell head count-col">Countdown</div>
               {habitColumns.map((item) => {
@@ -724,10 +723,11 @@ export default function App() {
                   return (
                     <React.Fragment key={row.id}>
                       <div className={`sheet-cell body date-col ${rowTone}`}>
-                        <div ref={absoluteIndex === todayIndex ? todayRowRef : undefined}>{row.dateLabel}</div>
+                        <div ref={absoluteIndex === todayIndex ? todayRowRef : undefined} style={{ textAlign: "center", lineHeight: 1.35 }}>
+                          <div>{row.dateLabel}</div>
+                          <div style={{ fontSize: 11, color: "rgba(252,165,165,0.6)", letterSpacing: "0.06em", marginTop: 2 }}>{row.day}</div>
+                        </div>
                       </div>
-
-                      <div className={`sheet-cell body day-col ${rowTone}`}>{row.day}</div>
 
                       {rowIndex === 0 ? (
                         <div className="merged-week" style={{ gridRow: `span ${group.rows.length} / span ${group.rows.length}` }}>
