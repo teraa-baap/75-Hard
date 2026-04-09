@@ -656,11 +656,15 @@ export default function App() {
       <div className="page">
         <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} className="hero-card">
           <div className="hero-header">
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <div className="pill"><Flame className="mini-icon" /> Discipline • Consistency • Power</div>
-              {userName && <div style={{ fontSize: 12, color: "rgba(252,165,165,0.7)", letterSpacing: "0.08em" }}>Hey, <span style={{ color: "#fca5a5", fontWeight: 700 }}>{userName}</span></div>}
-            </div>
-            <h1 className="hero-title">75 HARD TRACKER</h1>
+            <div className="pill"><Flame className="mini-icon" /> Discipline • Consistency • Power</div>
+            {userName ? (
+              <>
+                <h1 className="hero-title" style={{ marginBottom: 0 }}>{userName.toUpperCase()}'S</h1>
+                <h1 className="hero-title" style={{ marginTop: 4, color: "#b91c1c" }}>75 HARD</h1>
+              </>
+            ) : (
+              <h1 className="hero-title">75 HARD TRACKER</h1>
+            )}
           </div>
 
           <div className="hero-body">
