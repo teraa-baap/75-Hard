@@ -1,3 +1,4 @@
+
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -13,14 +14,232 @@ import {
   ImagePlus,
   Lock,
   LockOpen,
-  Trash2,
-  Upload,
   X,
-  Image as ImageIcon,
+  Images,
+  RefreshCw,
+  ArrowLeft,
 } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+
+// ── Photo Source Picker ───────────────────────────────────────────────────────
+function PhotoSourceModal({
+  onSelect,
+  onClose,
+}: {
+  onSelect: (source: "camera" | "gallery") => void;
+  onClose: () => void;
+}) {
+  return (
+    <AnimatePresence>
+      <motion.div
+        className="modal-overlay"
+        style={{ alignItems: "flex-end", padding: 0 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+      >
+        <motion.div
+          onClick={(e) => e.stopPropagation()}
+          initial={{ y: "100%" }}
+          animate={{ y: 0 }}
+          exit={{ y: "100%" }}
+          transition={{ type: "spring", stiffness: 320, damping: 32 }}
+          style={{
+            width: "100%",
+            maxWidth: 520,
+            margin: "0 auto",
+            background: "linear-gradient(160deg, #0a0000 0%, #140303 60%, #1c0505 100%)",
+            borderRadius: "28px 28px 0 0",
+            border: "1px solid rgba(127,29,29,0.72)",
+            borderBottom: "none",
+            padding: "14px 0 48px",
+            boxShadow: "0 -20px 60px rgba(127,29,29,0.28)",
+          }}
+        >
+          {/* Handle */}
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 24 }}>
+            <div style={{ width: 40, height: 4, borderRadius: 2, background: "rgba(252,165,165,0.25)" }} />
+          </div>
+
+          <p style={{
+            textAlign: "center", margin: "0 0 28px",
+            fontSize: 10, letterSpacing: "0.34em", textTransform: "uppercase",
+            color: "rgba(252,165,165,0.55)",
+          }}>Add Proof Photo</p>
+
+          <div style={{ padding: "0 20px", display: "flex", flexDirection: "column", gap: 12 }}>
+            {/* Camera */}
+            <motion.button
+              whileTap={{ scale: 0.97 }}
+              onClick={() => onSelect("camera")}
+              style={{
+                background: "linear-gradient(135deg, #7f1d1d 0%, #b91c1c 100%)",
+                border: "1px solid rgba(248,113,113,0.35)",
+                borderRadius: 20,
+                padding: "20px 22px",
+                display: "flex", alignItems: "center", gap: 18,
+                cursor: "pointer", width: "100%",
+                boxShadow: "0 8px 32px rgba(185,28,28,0.3)",
+              }}
+            >
+              <div style={{
+                width: 54, height: 54, borderRadius: 16, flexShrink: 0,
+                background: "rgba(255,255,255,0.14)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>
+                <Camera style={{ width: 26, height: 26, color: "#fff" }} />
+              </div>
+              <div style={{ textAlign: "left" }}>
+                <p style={{ margin: 0, fontSize: 17, fontWeight: 700, color: "#fff", letterSpacing: "0.02em" }}>Take Photo</p>
+                <p style={{ margin: "4px 0 0", fontSize: 13, color: "rgba(255,255,255,0.6)" }}>Open camera directly</p>
+              </div>
+            </motion.button>
+
+            {/* Gallery */}
+            <motion.button
+              whileTap={{ scale: 0.97 }}
+              onClick={() => onSelect("gallery")}
+              style={{
+                background: "rgba(20,5,5,0.9)",
+                border: "1px solid rgba(127,29,29,0.72)",
+                borderRadius: 20,
+                padding: "20px 22px",
+                display: "flex", alignItems: "center", gap: 18,
+                cursor: "pointer", width: "100%",
+              }}
+            >
+              <div style={{
+                width: 54, height: 54, borderRadius: 16, flexShrink: 0,
+                background: "rgba(127,29,29,0.25)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>
+                <Images style={{ width: 26, height: 26, color: "#fca5a5" }} />
+              </div>
+              <div style={{ textAlign: "left" }}>
+                <p style={{ margin: 0, fontSize: 17, fontWeight: 700, color: "#ffe8e8", letterSpacing: "0.02em" }}>Choose from Gallery</p>
+                <p style={{ margin: "4px 0 0", fontSize: 13, color: "rgba(252,165,165,0.6)" }}>Upload an existing photo</p>
+              </div>
+            </motion.button>
+
+            {/* Cancel */}
+            <button
+              onClick={onClose}
+              style={{
+                marginTop: 6, width: "100%",
+                background: "transparent",
+                border: "1px solid rgba(127,29,29,0.5)",
+                borderRadius: 16, padding: "15px",
+                color: "rgba(252,165,165,0.5)", fontSize: 15,
+                cursor: "pointer", letterSpacing: "0.04em",
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+// ── Photo Viewer Modal ────────────────────────────────────────────────────────
+function PhotoViewerModal({
+  photo,
+  rowLabel,
+  onClose,
+  onReplace,
+}: {
+  photo: string;
+  rowLabel: string;
+  onClose: () => void;
+  onReplace: () => void;
+}) {
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        style={{
+          position: "fixed", inset: 0, zIndex: 60,
+          background: "rgba(0,0,0,0.97)",
+          display: "flex", flexDirection: "column",
+        }}
+      >
+        {/* Header */}
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "16px 18px",
+          borderBottom: "1px solid rgba(127,29,29,0.72)",
+          background: "linear-gradient(180deg, rgba(69,10,10,0.5) 0%, transparent 100%)",
+        }}>
+          <button
+            onClick={onClose}
+            style={{
+              width: 38, height: 38, borderRadius: 12,
+              background: "rgba(127,29,29,0.25)",
+              border: "1px solid rgba(127,29,29,0.72)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              cursor: "pointer", color: "#fca5a5",
+            }}
+          >
+            <ArrowLeft style={{ width: 18, height: 18 }} />
+          </button>
+
+          <p style={{
+            margin: 0, fontSize: 13, fontWeight: 700,
+            letterSpacing: "0.18em", textTransform: "uppercase",
+            color: "#ffe8e8",
+          }}>{rowLabel}</p>
+
+          <button
+            onClick={onReplace}
+            style={{
+              display: "flex", alignItems: "center", gap: 7,
+              background: "rgba(127,29,29,0.25)",
+              border: "1px solid rgba(220,38,38,0.55)",
+              borderRadius: 12, padding: "8px 14px",
+              color: "#f87171", fontSize: 13, fontWeight: 600,
+              cursor: "pointer", letterSpacing: "0.04em",
+            }}
+          >
+            <RefreshCw style={{ width: 14, height: 14 }} />
+            Replace
+          </button>
+        </div>
+
+        {/* Image */}
+        <motion.div
+          initial={{ scale: 0.96, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: "spring", stiffness: 260, damping: 22 }}
+          style={{
+            flex: 1, display: "flex",
+            alignItems: "center", justifyContent: "center",
+            padding: 24,
+          }}
+        >
+          <img
+            src={photo}
+            alt="Progress photo"
+            style={{
+              maxWidth: "100%", maxHeight: "100%",
+              objectFit: "contain", borderRadius: 20,
+              border: "1px solid rgba(127,29,29,0.5)",
+              boxShadow: "0 0 80px rgba(185,28,28,0.22)",
+            }}
+          />
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
 
 const TOTAL_DAYS = 75;
-const STORAGE_KEY = "abhishek_75_hard_tracker_restored_v3";
+const STORAGE_KEY = "premium_75_hard_tracker_pwa_v1";
 const START_DATE = "2026-04-06";
 
 const habitColumns = [
@@ -30,28 +249,36 @@ const habitColumns = [
   { key: "workout2", icon: TreeDeciduous, label: "Outdoor Workout" },
   { key: "read", icon: BookOpen, label: "Read" },
   { key: "water", icon: Droplets, label: "Water" },
-];
+] as const;
 
-const weekdayNames = [
-  "Sunday",
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-];
+const weekdayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
-function formatDateLabel(date) {
-  return new Intl.DateTimeFormat("en-GB", {
-    day: "2-digit",
-    month: "short",
-  })
-    .format(date)
-    .replace(" ", "-");
+type HabitKey = (typeof habitColumns)[number]["key"];
+
+type TrackerRow = {
+  id: number;
+  date: string;
+  dateLabel: string;
+  day: string;
+  countdown: string;
+  photo: boolean;
+  photoUrl: string;
+  workout1: boolean;
+  diet: boolean;
+  workout2: boolean;
+  read: boolean;
+  water: boolean;
+  weight: string;
+  calories: string;
+  steps: string;
+  locked: boolean;
+};
+
+function formatDateLabel(date: Date) {
+  return new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short" }).format(date).replace(" ", "-");
 }
 
-function createRows(startDateString = START_DATE) {
+function createRows(startDateString = START_DATE): TrackerRow[] {
   const start = new Date(`${startDateString}T00:00:00`);
   return Array.from({ length: TOTAL_DAYS }, (_, index) => {
     const current = new Date(start);
@@ -77,339 +304,158 @@ function createRows(startDateString = START_DATE) {
   });
 }
 
-function rowHasData(row) {
+function rowHasData(row: TrackerRow) {
   return (
     habitColumns.some((item) => row[item.key]) ||
     Boolean(row.photoUrl) ||
-    String(row.weight).trim() !== "" ||
-    String(row.calories).trim() !== "" ||
-    String(row.steps).trim() !== ""
+    row.weight.trim() !== "" ||
+    row.calories.trim() !== "" ||
+    row.steps.trim() !== ""
   );
 }
 
-function isRowComplete(row) {
+function isRowComplete(row: TrackerRow) {
   return habitColumns.every((item) => row[item.key]);
 }
 
-function compressImage(file, maxSize = 1200, quality = 0.82) {
+function compressImage(file: File, maxSize = 1200, quality = 0.82): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-
     reader.onload = () => {
-      const img = new window.Image();
-
+      const img = new Image();
       img.onload = () => {
         const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
         const width = Math.round(img.width * scale);
         const height = Math.round(img.height * scale);
-
         const canvas = document.createElement("canvas");
         canvas.width = width;
         canvas.height = height;
-
         const ctx = canvas.getContext("2d");
         if (!ctx) {
           reject(new Error("Canvas not supported"));
           return;
         }
-
         ctx.drawImage(img, 0, 0, width, height);
         resolve(canvas.toDataURL("image/jpeg", quality));
       };
-
       img.onerror = () => reject(new Error("Image load failed"));
       img.src = String(reader.result);
     };
-
     reader.onerror = () => reject(new Error("File read failed"));
     reader.readAsDataURL(file);
   });
 }
 
-function ButtonBase({ children, className = "", type = "button", ...props }) {
+function SummaryCard({
+  title,
+  value,
+  subtext,
+  icon: Icon,
+}: {
+  title: string;
+  value: string | number;
+  subtext: string;
+  icon: React.ComponentType<{ className?: string }>;
+}) {
   return (
-    <button
-      type={type}
-      {...props}
-      className={`inline-flex items-center justify-center rounded-2xl px-4 py-2 text-sm font-semibold transition ${className}`}
-    >
-      {children}
-    </button>
-  );
-}
-
-function TextInput({ className = "", ...props }) {
-  return (
-    <input
-      {...props}
-      className={`h-9 w-full rounded-md border border-red-900/70 bg-black px-2 text-center text-red-50 placeholder:text-red-300/35 shadow-inner shadow-red-950/20 outline-none focus:ring-2 focus:ring-red-600 ${className}`}
-    />
-  );
-}
-
-function SummaryCard({ title, value, subtext, icon: Icon }) {
-  return (
-    <div className="rounded-[28px] border border-red-900/70 bg-gradient-to-br from-black via-zinc-950/95 to-red-950/80 text-red-50 shadow-2xl shadow-red-950/30 backdrop-blur-xl">
-      <div className="relative overflow-hidden p-5">
-        <div className='pointer-events-none absolute inset-0 opacity-[0.08] [background-image:radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.35)_1px,transparent_0)] [background-size:18px_18px]' />
-        <div className='pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(127,29,29,0.15),transparent_40%,rgba(127,29,29,0.08))]' />
-        <div className="relative flex items-start justify-between gap-3">
+    <Card className="summary-card">
+      <CardContent className="summary-card-content">
+        <div className="summary-grid">
           <div>
-            <div className="text-[10px] uppercase tracking-[0.32em] text-red-300/70">
-              {title}
-            </div>
-            <div className="mt-2 text-3xl font-black tracking-tight text-white">
-              {value}
-            </div>
-            <div className="mt-1 text-sm text-red-100/65">{subtext}</div>
+            <div className="summary-title">{title}</div>
+            <div className="summary-value">{value}</div>
+            <div className="summary-subtext">{subtext}</div>
           </div>
-          <div className="rounded-2xl border border-red-800/70 bg-red-950/40 p-2.5 shadow-lg shadow-red-950/30 backdrop-blur-md">
-            <Icon className="h-5 w-5 text-red-300" />
+          <div className="summary-icon-wrap">
+            <Icon className="summary-icon" />
           </div>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
 
-function WeeklySummaryModal({ open, onClose, summary }) {
+function WeeklySummaryModal({
+  open,
+  onClose,
+  summary,
+}: {
+  open: boolean;
+  onClose: () => void;
+  summary: null | { weekNumber: number; averageCalories: string; averageSteps: string; completionRate: number };
+}) {
   if (!summary) return null;
 
   return (
     <AnimatePresence>
       {open ? (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
-        >
+        <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
           <motion.div
+            className="modal-card"
             initial={{ opacity: 0, scale: 0.96, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.98, y: 10 }}
             transition={{ type: "spring", stiffness: 240, damping: 22 }}
-            className="relative w-full max-w-md overflow-hidden rounded-[28px] border border-red-800/70 bg-gradient-to-br from-black via-zinc-950 to-red-950 text-red-50 shadow-2xl shadow-red-950/40"
           >
-            <div className='pointer-events-none absolute inset-0 opacity-[0.08] [background-image:radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.4)_1px,transparent_0)] [background-size:18px_18px]' />
-            <div className="relative border-b border-red-900/70 px-5 py-4">
-              <button
-                type="button"
-                onClick={onClose}
-                className="absolute right-4 top-4 rounded-full border border-red-800/70 bg-red-950/40 p-2 text-red-200 transition hover:bg-red-900/50 hover:text-white"
-                aria-label="Close weekly summary"
-              >
-                <X className="h-4 w-4" />
+            <div className="modal-header">
+              <button type="button" className="icon-close-btn" onClick={onClose} aria-label="Close weekly summary">
+                <X className="mini-icon" />
               </button>
-              <div className="text-[10px] uppercase tracking-[0.35em] text-red-300/70">
-                Weekly Summary
-              </div>
-              <h2 className="mt-2 text-2xl font-black tracking-[0.14em] text-white">
-                WEEK {summary.weekNumber} COMPLETE
-              </h2>
-              <p className="mt-2 text-sm text-red-100/70">
-                Strong finish. Here is your weekly discipline snapshot.
-              </p>
+              <div className="mini-label">Weekly Summary</div>
+              <h2 className="modal-title">WEEK {summary.weekNumber} COMPLETE</h2>
+              <p className="modal-copy">Strong finish. Here is your weekly discipline snapshot.</p>
             </div>
-
-            <div className="relative grid gap-3 p-5 sm:grid-cols-3">
-              <div className="rounded-2xl border border-red-900/70 bg-black/50 p-4 text-center backdrop-blur-md">
-                <div className="text-[10px] uppercase tracking-[0.24em] text-red-300/70">
-                  Average Calories
-                </div>
-                <div className="mt-2 text-2xl font-black text-white">
-                  {summary.averageCalories}
-                </div>
+            <div className="modal-stats">
+              <div className="modal-stat">
+                <div className="mini-label">Average Calories</div>
+                <div className="modal-stat-value">{summary.averageCalories}</div>
               </div>
-              <div className="rounded-2xl border border-red-900/70 bg-black/50 p-4 text-center backdrop-blur-md">
-                <div className="text-[10px] uppercase tracking-[0.24em] text-red-300/70">
-                  Average Steps
-                </div>
-                <div className="mt-2 text-2xl font-black text-white">
-                  {summary.averageSteps}
-                </div>
+              <div className="modal-stat">
+                <div className="mini-label">Average Steps</div>
+                <div className="modal-stat-value">{summary.averageSteps}</div>
               </div>
-              <div className="rounded-2xl border border-red-900/70 bg-black/50 p-4 text-center backdrop-blur-md">
-                <div className="text-[10px] uppercase tracking-[0.24em] text-red-300/70">
-                  Completion
-                </div>
-                <div className="mt-2 text-2xl font-black text-white">
-                  {summary.completionRate}%
-                </div>
+              <div className="modal-stat">
+                <div className="mini-label">Completion</div>
+                <div className="modal-stat-value">{summary.completionRate}%</div>
               </div>
             </div>
-
-            <div className="relative px-5 pb-5">
-              <ButtonBase
-                className="w-full border border-red-700 bg-red-700 text-white hover:bg-red-600"
-                onClick={onClose}
-              >
-                Keep Going
-              </ButtonBase>
+            <div className="modal-footer">
+              <Button className="w-full" onClick={onClose}>Keep Going</Button>
             </div>
           </motion.div>
         </motion.div>
       ) : null}
     </AnimatePresence>
-  );
-}
-
-function PhotoViewerModal({ open, row, onClose, onReplace, onRemove }) {
-  if (!row?.photoUrl) return null;
-
-  return (
-    <AnimatePresence>
-      {open ? (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm"
-        >
-          <motion.div
-            initial={{ opacity: 0, scale: 0.96, y: 24 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.98, y: 12 }}
-            transition={{ type: "spring", stiffness: 240, damping: 22 }}
-            className="relative w-full max-w-3xl overflow-hidden rounded-[28px] border border-red-800/70 bg-gradient-to-br from-black via-zinc-950 to-red-950 text-red-50 shadow-2xl shadow-red-950/40"
-          >
-            <div className='pointer-events-none absolute inset-0 opacity-[0.08] [background-image:radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.4)_1px,transparent_0)] [background-size:18px_18px]' />
-            <div className="relative flex items-center justify-between border-b border-red-900/70 px-5 py-4">
-              <div>
-                <div className="text-[10px] uppercase tracking-[0.35em] text-red-300/70">
-                  Progress Photo
-                </div>
-                <div className="mt-1 text-lg font-black tracking-[0.14em] text-white">
-                  {row.countdown}
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={onClose}
-                className="rounded-full border border-red-800/70 bg-red-950/40 p-2 text-red-200 transition hover:bg-red-900/50 hover:text-white"
-                aria-label="Close photo viewer"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            <div className="relative p-4 sm:p-5">
-              <div className="overflow-hidden rounded-[24px] border border-red-900/70 bg-black/70">
-                <img
-                  src={row.photoUrl}
-                  alt={`${row.countdown} progress`}
-                  className="max-h-[70vh] w-full object-contain"
-                />
-              </div>
-
-              <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-                <ButtonBase
-                  className="flex-1 border border-red-700 bg-red-700 text-white hover:bg-red-600"
-                  onClick={onReplace}
-                >
-                  <Upload className="mr-2 h-4 w-4" /> Replace Photo
-                </ButtonBase>
-                <ButtonBase
-                  className="flex-1 border border-red-800 bg-transparent text-red-50 hover:bg-red-950/40"
-                  onClick={onRemove}
-                >
-                  <Trash2 className="mr-2 h-4 w-4" /> Remove Photo
-                </ButtonBase>
-              </div>
-            </div>
-          </motion.div>
-        </motion.div>
-      ) : null}
-    </AnimatePresence>
-  );
-}
-
-function PhotoSourceModal({ open, onClose, onCamera, onGallery }) {
-  return (
-    <AnimatePresence>
-      {open ? (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[70] flex items-end justify-center bg-black/60"
-          onClick={onClose}
-        >
-          <motion.div
-            initial={{ y: 220 }}
-            animate={{ y: 0 }}
-            exit={{ y: 220 }}
-            transition={{ type: "spring", stiffness: 260, damping: 24 }}
-            className="w-full max-w-md rounded-t-3xl border border-red-900/80 bg-gradient-to-b from-zinc-950 to-black p-4 shadow-2xl shadow-red-950/30"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="mb-4 text-center text-xs font-bold uppercase tracking-[0.3em] text-red-300">
-              Add Photo
-            </div>
-
-            <ButtonBase
-              className="mb-2 w-full border border-red-700 bg-red-700 py-3 text-white hover:bg-red-600"
-              onClick={onCamera}
-            >
-              <Camera className="mr-2 h-4 w-4" /> Take Photo
-            </ButtonBase>
-
-            <ButtonBase
-              className="mb-2 w-full border border-red-800 bg-black py-3 text-red-100 hover:bg-red-950/40"
-              onClick={onGallery}
-            >
-              <ImageIcon className="mr-2 h-4 w-4" /> Choose from Gallery
-            </ButtonBase>
-
-            <ButtonBase
-              className="w-full border border-red-950 bg-transparent py-3 text-red-400 hover:bg-red-950/30"
-              onClick={onClose}
-            >
-              Cancel
-            </ButtonBase>
-          </motion.div>
-        </motion.div>
-      ) : null}
-    </AnimatePresence>
-  );
-}
-
-function SheetCell({ children, className = "", tone = "body" }) {
-  const toneClasses = {
-    header: "bg-gradient-to-b from-red-950 via-black to-black text-red-50",
-    body: "bg-black text-red-50",
-    footer: "bg-gradient-to-r from-black via-red-950 to-black text-red-100",
-  };
-
-  return (
-    <div className={`border-r border-b border-red-950/80 px-2 ${toneClasses[tone]} ${className}`}>
-      {children}
-    </div>
   );
 }
 
 export default function App() {
-  const [rows, setRows] = useState(() => createRows());
+  const [rows, setRows] = useState<TrackerRow[]>(() => createRows());
   const [loaded, setLoaded] = useState(false);
-  const [activeRow, setActiveRow] = useState(null);
-  const [weeklySummary, setWeeklySummary] = useState(null);
+  const [activeRow, setActiveRow] = useState<number | null>(null);
+  const [weeklySummary, setWeeklySummary] = useState<null | {
+    weekNumber: number;
+    averageCalories: string;
+    averageSteps: string;
+    completionRate: number;
+  }>(null);
   const [isWeeklySummaryOpen, setIsWeeklySummaryOpen] = useState(false);
-  const [photoViewerRowIndex, setPhotoViewerRowIndex] = useState(null);
-  const [photoActionRow, setPhotoActionRow] = useState(null);
 
-  const photoInputRefs = useRef({});
-  const todayRowRef = useRef(null);
-  const openedWeekSummariesRef = useRef(new Set());
-  const audioContextRef = useRef(null);
+  const [photoSourceTarget, setPhotoSourceTarget] = useState<number | null>(null);
+  const [viewingPhotoIndex, setViewingPhotoIndex] = useState<number | null>(null);
+
+  const photoInputRefs = useRef<Record<number, HTMLInputElement | null>>({});
+  const galleryInputRefs = useRef<Record<number, HTMLInputElement | null>>({});
+  const todayRowRef = useRef<HTMLDivElement | null>(null);
+  const openedWeekSummariesRef = useRef<Set<number>>(new Set());
+  const audioContextRef = useRef<AudioContext | null>(null);
 
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length === TOTAL_DAYS) {
-          setRows(parsed);
-        }
+        if (Array.isArray(parsed) && parsed.length === TOTAL_DAYS) setRows(parsed);
       }
     } catch (error) {
       console.error("Could not load tracker data", error);
@@ -424,51 +470,34 @@ export default function App() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(rows));
     } catch (error) {
       console.error("Could not save tracker data", error);
-      window.alert(
-        "Storage is full. Large photos may not save properly. Try replacing some photos with smaller ones."
-      );
+      window.alert("Storage is full. Large photos may not save properly. Try replacing some photos with smaller ones.");
     }
   }, [rows, loaded]);
-
-  const todayIndex = useMemo(() => {
-    const today = new Date().toISOString().slice(0, 10);
-    return rows.findIndex((row) => row.date === today);
-  }, [rows]);
 
   useEffect(() => {
     if (!loaded || !todayRowRef.current) return;
     const timer = window.setTimeout(() => {
-      todayRowRef.current?.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-        inline: "center",
-      });
+      todayRowRef.current?.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
     }, 450);
     return () => window.clearTimeout(timer);
   }, [loaded]);
 
   const triggerFeedback = () => {
     try {
-      if (navigator?.vibrate) navigator.vibrate(18);
-      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (navigator.vibrate) navigator.vibrate(18);
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
       if (!AudioContextClass) return;
-      if (!audioContextRef.current) {
-        audioContextRef.current = new AudioContextClass();
-      }
+      if (!audioContextRef.current) audioContextRef.current = new AudioContextClass();
       const ctx = audioContextRef.current;
       if (ctx.state === "suspended") ctx.resume();
-
       const oscillator = ctx.createOscillator();
       const gain = ctx.createGain();
-
       oscillator.type = "triangle";
       oscillator.frequency.setValueAtTime(900, ctx.currentTime);
       oscillator.frequency.exponentialRampToValueAtTime(1250, ctx.currentTime + 0.04);
-
       gain.gain.setValueAtTime(0.0001, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.03, ctx.currentTime + 0.01);
       gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.085);
-
       oscillator.connect(gain);
       gain.connect(ctx.destination);
       oscillator.start();
@@ -478,7 +507,7 @@ export default function App() {
     }
   };
 
-  const updateRow = (index, patch) => {
+  const updateRow = (index: number, patch: Partial<TrackerRow>) => {
     setRows((prev) => {
       const next = [...prev];
       next[index] = { ...next[index], ...patch };
@@ -486,14 +515,14 @@ export default function App() {
     });
   };
 
-  const handleHabitToggle = (absoluteIndex, key) => {
+  const handleHabitToggle = (absoluteIndex: number, key: HabitKey) => {
     if (rows[absoluteIndex].locked) return;
     setActiveRow(absoluteIndex);
     triggerFeedback();
-    updateRow(absoluteIndex, { [key]: !rows[absoluteIndex][key] });
+    updateRow(absoluteIndex, { [key]: !rows[absoluteIndex][key] } as Partial<TrackerRow>);
   };
 
-  const handlePhotoUpload = async (absoluteIndex, file) => {
+  const handlePhotoUpload = async (absoluteIndex: number, file?: File | null) => {
     if (rows[absoluteIndex].locked || !file) return;
     try {
       const compressedImage = await compressImage(file);
@@ -506,79 +535,27 @@ export default function App() {
     }
   };
 
-  const toggleRowLock = (absoluteIndex) => {
+  const toggleRowLock = (absoluteIndex: number) => {
     if (!rowHasData(rows[absoluteIndex])) return;
     triggerFeedback();
     updateRow(absoluteIndex, { locked: !rows[absoluteIndex].locked });
   };
 
-  const openPhotoViewer = (absoluteIndex) => {
-    if (!rows[absoluteIndex]?.photoUrl) return;
-    setPhotoViewerRowIndex(absoluteIndex);
-  };
-
-  const closePhotoViewer = () => {
-    setPhotoViewerRowIndex(null);
-  };
-
-  const replacePhoto = () => {
-    if (photoViewerRowIndex == null) return;
-    closePhotoViewer();
-    setPhotoActionRow(photoViewerRowIndex);
-  };
-
-  const removePhoto = () => {
-    if (photoViewerRowIndex == null) return;
-    const idx = photoViewerRowIndex;
-    const row = rows[idx];
-    const nextRow = { ...row, photoUrl: "", photo: false };
-
-    setRows((prev) => {
-      const next = [...prev];
-      next[idx] = nextRow;
-      if (!rowHasData(nextRow)) next[idx].locked = false;
-      return next;
-    });
-
-    closePhotoViewer();
-  };
-
-  const openCameraPicker = () => {
-    if (photoActionRow == null) return;
-    const input = photoInputRefs.current[photoActionRow];
-    if (input) {
-      input.setAttribute("capture", "environment");
-      input.click();
-    }
-    setPhotoActionRow(null);
-  };
-
-  const openGalleryPicker = () => {
-    if (photoActionRow == null) return;
-    const input = photoInputRefs.current[photoActionRow];
-    if (input) {
-      input.removeAttribute("capture");
-      input.click();
-    }
-    setPhotoActionRow(null);
-  };
+  const todayIndex = useMemo(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    return rows.findIndex((row) => row.date === today);
+  }, [rows]);
 
   const totalChecks = useMemo(
-    () =>
-      rows.reduce(
-        (sum, row) =>
-          sum + habitColumns.reduce((inner, item) => inner + (row[item.key] ? 1 : 0), 0),
-        0
-      ),
+    () => rows.reduce((sum, row) => sum + habitColumns.reduce((inner, item) => inner + (row[item.key] ? 1 : 0), 0), 0),
     [rows]
   );
 
   const completedDays = useMemo(() => rows.filter((row) => isRowComplete(row)).length, [rows]);
-
   const progressPercent = Math.round((totalChecks / (TOTAL_DAYS * habitColumns.length)) * 100);
 
   const latestWeight = useMemo(() => {
-    const match = [...rows].reverse().find((row) => String(row.weight).trim());
+    const match = [...rows].reverse().find((row) => row.weight.trim());
     return match ? match.weight : "—";
   }, [rows]);
 
@@ -586,18 +563,14 @@ export default function App() {
     const values = rows
       .map((row) => Number(String(row.calories).replace(/,/g, "")))
       .filter((value) => Number.isFinite(value) && value > 0);
-    return values.length
-      ? Math.round(values.reduce((a, b) => a + b, 0) / values.length).toLocaleString()
-      : "—";
+    return values.length ? Math.round(values.reduce((a, b) => a + b, 0) / values.length).toLocaleString() : "—";
   }, [rows]);
 
   const averageSteps = useMemo(() => {
     const values = rows
       .map((row) => Number(String(row.steps).replace(/,/g, "")))
       .filter((value) => Number.isFinite(value) && value > 0);
-    return values.length
-      ? Math.round(values.reduce((a, b) => a + b, 0) / values.length).toLocaleString()
-      : "—";
+    return values.length ? Math.round(values.reduce((a, b) => a + b, 0) / values.length).toLocaleString() : "—";
   }, [rows]);
 
   const timelineBars = Array.from({ length: TOTAL_DAYS }, (_, index) => index < completedDays);
@@ -610,266 +583,171 @@ export default function App() {
 
   useEffect(() => {
     weekGroups.forEach((group) => {
-      const complete = group.rows.every((row) => isRowComplete(row));
-      if (!complete || openedWeekSummariesRef.current.has(group.weekNumber)) return;
+      const allComplete = group.rows.every((row) => isRowComplete(row));
+      if (!allComplete || openedWeekSummariesRef.current.has(group.weekNumber)) return;
 
-      const calories = group.rows
-        .map((row) => Number(String(row.calories).replace(/,/g, "")))
-        .filter((value) => Number.isFinite(value) && value > 0);
-
-      const steps = group.rows
-        .map((row) => Number(String(row.steps).replace(/,/g, "")))
-        .filter((value) => Number.isFinite(value) && value > 0);
-
+      const calories = group.rows.map((row) => Number(row.calories.replace(/,/g, ""))).filter((n) => Number.isFinite(n) && n > 0);
+      const steps = group.rows.map((row) => Number(row.steps.replace(/,/g, ""))).filter((n) => Number.isFinite(n) && n > 0);
       const checksDone = group.rows.reduce(
-        (sum, row) =>
-          sum + habitColumns.reduce((inner, item) => inner + (row[item.key] ? 1 : 0), 0),
+        (sum, row) => sum + habitColumns.reduce((inner, item) => inner + (row[item.key] ? 1 : 0), 0),
         0
       );
-
-      const completionRate = Math.round(
-        (checksDone / (group.rows.length * habitColumns.length)) * 100
-      );
+      const completionRate = Math.round((checksDone / (group.rows.length * habitColumns.length)) * 100);
 
       openedWeekSummariesRef.current.add(group.weekNumber);
       setWeeklySummary({
         weekNumber: group.weekNumber,
-        averageCalories: calories.length
-          ? Math.round(calories.reduce((a, b) => a + b, 0) / calories.length).toLocaleString()
-          : "—",
-        averageSteps: steps.length
-          ? Math.round(steps.reduce((a, b) => a + b, 0) / steps.length).toLocaleString()
-          : "—",
+        averageCalories: calories.length ? Math.round(calories.reduce((a, b) => a + b, 0) / calories.length).toLocaleString() : "—",
+        averageSteps: steps.length ? Math.round(steps.reduce((a, b) => a + b, 0) / steps.length).toLocaleString() : "—",
         completionRate,
       });
       setIsWeeklySummaryOpen(true);
     });
-  }, [rows]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [rows]);
+
+  const handlePhotoSourceSelect = (source: "camera" | "gallery") => {
+    const idx = photoSourceTarget;
+    setPhotoSourceTarget(null);
+    if (idx === null) return;
+    setTimeout(() => {
+      if (source === "camera") {
+        photoInputRefs.current[idx]?.click();
+      } else {
+        galleryInputRefs.current[idx]?.click();
+      }
+    }, 200);
+  };
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-black text-red-50">
-      <div className='pointer-events-none absolute inset-0 opacity-[0.055] [background-image:radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.55)_1px,transparent_0)] [background-size:18px_18px]' />
-      <div className='pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(127,29,29,0.24),transparent_38%),radial-gradient(circle_at_bottom,rgba(69,10,10,0.28),transparent_42%)]' />
+    <div className="app-shell">
+      <div className="background-noise" />
+      <div className="background-glow" />
 
-      <WeeklySummaryModal
-        open={isWeeklySummaryOpen}
-        onClose={() => setIsWeeklySummaryOpen(false)}
-        summary={weeklySummary}
-      />
+      <WeeklySummaryModal open={isWeeklySummaryOpen} onClose={() => setIsWeeklySummaryOpen(false)} summary={weeklySummary} />
 
-      <PhotoViewerModal
-        open={photoViewerRowIndex != null}
-        row={photoViewerRowIndex != null ? rows[photoViewerRowIndex] : null}
-        onClose={closePhotoViewer}
-        onReplace={replacePhoto}
-        onRemove={removePhoto}
-      />
+      {/* Photo source picker */}
+      {photoSourceTarget !== null && (
+        <PhotoSourceModal
+          onSelect={handlePhotoSourceSelect}
+          onClose={() => setPhotoSourceTarget(null)}
+        />
+      )}
 
-      <PhotoSourceModal
-        open={photoActionRow != null}
-        onClose={() => setPhotoActionRow(null)}
-        onCamera={openCameraPicker}
-        onGallery={openGalleryPicker}
-      />
+      {/* Photo viewer */}
+      {viewingPhotoIndex !== null && rows[viewingPhotoIndex]?.photoUrl && (
+        <PhotoViewerModal
+          photo={rows[viewingPhotoIndex].photoUrl}
+          rowLabel={rows[viewingPhotoIndex].countdown}
+          onClose={() => setViewingPhotoIndex(null)}
+          onReplace={() => {
+            const idx = viewingPhotoIndex;
+            setViewingPhotoIndex(null);
+            setTimeout(() => setPhotoSourceTarget(idx), 150);
+          }}
+        />
+      )}
 
-      <div className="relative mx-auto max-w-[1900px] px-3 py-4 sm:px-4 lg:px-6">
-        <motion.div
-          initial={{ opacity: 0, y: 18 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="overflow-hidden rounded-[30px] border border-red-900/70 bg-gradient-to-br from-black via-zinc-950 to-red-950 shadow-2xl shadow-red-950/30"
-        >
-          <div className="border-b border-red-900/70 px-4 py-5 sm:px-6">
-            <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
-              <div>
-                <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-red-800/70 bg-red-950/40 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.35em] text-red-300">
-                  <Flame className="h-4 w-4" /> Discipline • Consistency • Power
-                </div>
-                <h1 className="text-2xl font-black tracking-[0.18em] text-white sm:text-4xl">
-                  75 HARD TRACKER
-                </h1>
-              </div>
+      <div className="page">
+        <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} className="hero-card">
+          <div className="hero-header">
+            <div className="pill">
+              <Flame className="mini-icon" /> Discipline • Consistency • Power
             </div>
+            <h1 className="hero-title">75 HARD TRACKER</h1>
           </div>
 
-          <div className="border-y border-red-900/60 bg-black/20 px-4 py-4 backdrop-blur-[2px] sm:px-6">
-            <div className="mb-4 rounded-[24px] border border-red-900/70 bg-gradient-to-r from-black via-red-950/50 to-black p-4 shadow-xl shadow-red-950/20 backdrop-blur-md">
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="hero-body">
+            <div className="timeline-card">
+              <div className="timeline-row">
                 <div>
-                  <div className="text-[10px] uppercase tracking-[0.34em] text-red-300/70">
-                    Challenge Timeline
-                  </div>
-                  <div className="mt-2 text-xl font-black tracking-[0.16em] text-white">
-                    Day {Math.min(Math.max(completedDays + 1, 1), TOTAL_DAYS)} / {TOTAL_DAYS}
-                  </div>
+                  <div className="mini-label">Challenge Timeline</div>
+                  <div className="timeline-day">Day {Math.min(Math.max(completedDays + 1, 1), TOTAL_DAYS)} / {TOTAL_DAYS}</div>
                 </div>
-
-                <div className="grid flex-1 grid-cols-15 gap-1.5 lg:ml-6">
+                <div className="timeline-bars">
                   {timelineBars.map((filled, index) => (
                     <motion.div
                       key={index}
                       initial={{ opacity: 0.5, scaleY: 0.85 }}
                       animate={{ opacity: 1, scaleY: 1 }}
                       transition={{ delay: index * 0.005 }}
-                      className={`h-3 rounded-full border ${
-                        filled
-                          ? "border-red-400/80 bg-gradient-to-r from-red-700 to-red-500 shadow-[0_0_10px_rgba(220,38,38,0.35)]"
-                          : "border-red-950/70 bg-black"
-                      }`}
+                      className={filled ? "timeline-bar filled" : "timeline-bar"}
                     />
                   ))}
                 </div>
               </div>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              <SummaryCard
-                title="Completed Days"
-                value={completedDays}
-                subtext="All habit boxes finished"
-                icon={Target}
-              />
-              <SummaryCard
-                title="Overall Progress"
-                value={`${progressPercent}%`}
-                subtext="Based on all 450 habit ticks"
-                icon={Flame}
-              />
-              <SummaryCard
-                title="Latest Weight"
-                value={latestWeight}
-                subtext="Most recent value entered"
-                icon={Scale}
-              />
-              <SummaryCard
-                title="Average Metrics"
-                value={`${averageCalories} / ${averageSteps}`}
-                subtext="Calories / Steps"
-                icon={Target}
-              />
+            <div className="summary-cards">
+              <SummaryCard title="Completed Days" value={completedDays} subtext="All habit boxes finished" icon={Target} />
+              <SummaryCard title="Overall Progress" value={`${progressPercent}%`} subtext="Based on all 450 habit ticks" icon={Flame} />
+              <SummaryCard title="Latest Weight" value={latestWeight} subtext="Most recent value entered" icon={Scale} />
+              <SummaryCard title="Average Metrics" value={`${averageCalories} / ${averageSteps}`} subtext="Calories / Steps" icon={Target} />
             </div>
           </div>
         </motion.div>
 
-        <div className="mt-4 mb-3 text-xs uppercase tracking-[0.22em] text-red-300/60 sm:hidden">
-          Swipe sideways to use the full sheet
-        </div>
+        <div className="mobile-tip">Swipe sideways to use the full sheet</div>
 
-        <div className="overflow-auto rounded-[30px] border border-red-900/70 bg-black/90 shadow-2xl shadow-red-950/25 backdrop-blur-md">
-          <div className="w-fit min-w-fit">
-            <div className="border-b border-red-900/70 bg-gradient-to-r from-black via-red-950 to-black px-4 py-3 text-center text-[15px] font-black uppercase tracking-[0.42em] text-red-50">
-              Discipline • Consistency • Power
-            </div>
+        <div className="sheet-wrap">
+          <div className="sheet-inner">
+            <div className="sheet-banner">Discipline • Consistency • Power</div>
 
-            <div className="grid grid-cols-[86px_110px_92px_108px_repeat(6,50px)_110px_150px_110px] border-b border-red-900/70 text-[13px] font-black">
-              <SheetCell tone="header" className="flex h-11 items-center justify-center">
-                Date
-              </SheetCell>
-              <SheetCell tone="header" className="flex h-11 items-center justify-center">
-                Day
-              </SheetCell>
-              <SheetCell tone="header" className="flex h-11 items-center justify-center">
-                Week
-              </SheetCell>
-              <SheetCell tone="header" className="flex h-11 items-center justify-center">
-                Countdown
-              </SheetCell>
-
+            <div className="sheet-grid header">
+              <div className="sheet-cell head date-col">Date</div>
+              <div className="sheet-cell head day-col">Day</div>
+              <div className="sheet-cell head week-col">Week</div>
+              <div className="sheet-cell head count-col">Countdown</div>
               {habitColumns.map((item) => {
                 const Icon = item.icon;
                 return (
-                  <SheetCell
-                    key={item.key}
-                    tone="header"
-                    className="group flex h-11 items-center justify-center transition-all duration-300 hover:bg-red-950/50 hover:shadow-[inset_0_0_18px_rgba(127,29,29,0.55)]"
-                  >
-                    <span className="sr-only">{item.label}</span>
-                    <Icon className="h-4 w-4 text-red-300 transition-all duration-300 group-hover:scale-110 group-hover:text-red-100 group-hover:drop-shadow-[0_0_12px_rgba(252,165,165,0.95)]" />
-                  </SheetCell>
+                  <div key={item.key} className="sheet-cell head icon-col head-icon-cell" title={item.label}>
+                    <Icon className="head-icon" />
+                  </div>
                 );
               })}
-
-              <SheetCell tone="header" className="flex h-11 items-center justify-center">
-                Weight
-              </SheetCell>
-              <SheetCell tone="header" className="flex h-11 items-center justify-center">
-                Calories Burned
-              </SheetCell>
-              <SheetCell tone="header" className="flex h-11 items-center justify-center">
-                Steps
-              </SheetCell>
+              <div className="sheet-cell head metric-col">Weight</div>
+              <div className="sheet-cell head calories-col">Calories Burned</div>
+              <div className="sheet-cell head metric-col">Steps</div>
             </div>
 
             {weekGroups.map((group, groupIndex) => (
-              <div
-                key={group.weekNumber}
-                className="grid grid-cols-[86px_110px_92px_108px_repeat(6,50px)_110px_150px_110px]"
-              >
+              <div key={group.weekNumber} className="sheet-grid">
                 {group.rows.map((row, rowIndex) => {
                   const absoluteIndex = group.startIndex + rowIndex;
-                  const zebra = groupIndex % 2 === 0 ? "bg-black" : "bg-red-950/20";
-                  const rowIsActive = activeRow === absoluteIndex;
+                  const zebra = groupIndex % 2 === 0 ? "zebra-a" : "zebra-b";
                   const rowDone = isRowComplete(row);
-                  const rowTone = rowIsActive
-                    ? "bg-red-950/40 shadow-[inset_0_0_0_1px_rgba(248,113,113,0.5),inset_0_0_22px_rgba(127,29,29,0.28)]"
-                    : rowDone
-                      ? "bg-red-950/30 shadow-[inset_0_0_0_1px_rgba(248,113,113,0.22),inset_0_0_28px_rgba(185,28,28,0.22)]"
-                      : zebra;
-
-                  const rowRef = absoluteIndex === todayIndex ? todayRowRef : null;
                   const rowLocked = row.locked;
+                  const rowIsActive = activeRow === absoluteIndex;
+                  const rowTone = rowIsActive ? "active-row" : rowDone ? "complete-row" : zebra;
                   const showLockButton = rowHasData(row);
 
                   return (
                     <React.Fragment key={row.id}>
-                      <SheetCell
-                        className={`flex h-14 items-center justify-center text-[13px] font-semibold transition-all duration-200 ${rowTone}`}
-                      >
-                        <div ref={rowRef}>{row.dateLabel}</div>
-                      </SheetCell>
+                      <div className={`sheet-cell body date-col ${rowTone}`}>
+                        <div ref={absoluteIndex === todayIndex ? todayRowRef : undefined}>{row.dateLabel}</div>
+                      </div>
 
-                      <SheetCell
-                        className={`flex h-14 items-center justify-center text-[13px] font-semibold transition-all duration-200 ${rowTone}`}
-                      >
-                        {row.day}
-                      </SheetCell>
+                      <div className={`sheet-cell body day-col ${rowTone}`}>{row.day}</div>
 
                       {rowIndex === 0 ? (
-                        <div
-                          className="row-span-7 flex min-h-[392px] items-center justify-center border-r border-b border-red-900/70 bg-gradient-to-b from-red-950 via-black to-black"
-                          style={{ gridRow: `span ${group.rows.length} / span ${group.rows.length}` }}
-                        >
-                          <div
-                            className="text-center text-[13px] font-black uppercase tracking-[0.2em] text-red-50"
-                            style={{ writingMode: "vertical-rl", transform: "rotate(180deg)" }}
-                          >
-                            {`Week ${group.weekNumber}`}
-                          </div>
+                        <div className="merged-week" style={{ gridRow: `span ${group.rows.length} / span ${group.rows.length}` }}>
+                          <div className="vertical-week">{`Week ${group.weekNumber}`}</div>
                         </div>
                       ) : null}
 
-                      <SheetCell
-                        className={`relative flex h-14 flex-col items-center justify-center pt-2 text-[13px] font-semibold transition-all duration-200 ${rowTone}`}
-                      >
+                      <div className={`sheet-cell body count-col count-cell ${rowTone}`}>
                         {showLockButton ? (
                           <button
                             type="button"
                             onClick={() => toggleRowLock(absoluteIndex)}
-                            className={`absolute right-2 top-1 z-10 flex h-5 w-5 items-center justify-center rounded-full border transition-all duration-200 ${
-                              rowLocked
-                                ? "border-red-300 bg-red-600/25 text-red-50 shadow-[0_0_10px_rgba(220,38,38,0.25)]"
-                                : "border-red-800 bg-black/70 text-red-200 hover:border-red-500 hover:bg-red-950/40"
-                            }`}
+                            className={rowLocked ? "lock-btn locked" : "lock-btn"}
                             aria-label={rowLocked ? `Unlock ${row.countdown}` : `Lock ${row.countdown}`}
                           >
-                            {rowLocked ? (
-                              <Lock className="h-3.5 w-3.5" />
-                            ) : (
-                              <LockOpen className="h-3.5 w-3.5" />
-                            )}
+                            {rowLocked ? <Lock className="lock-icon" /> : <LockOpen className="lock-icon" />}
                           </button>
                         ) : null}
 
-                        <div className="leading-tight">{row.countdown}</div>
+                        <div className="count-text">{row.countdown}</div>
 
                         <AnimatePresence>
                           {rowLocked ? (
@@ -878,7 +756,7 @@ export default function App() {
                               animate={{ opacity: 1, scale: 1 }}
                               exit={{ opacity: 0, scale: 0.96 }}
                               transition={{ type: "spring", stiffness: 260, damping: 18 }}
-                              className="mt-1 rounded-full border border-red-400/35 bg-black/70 px-2 py-[2px] text-center text-[9px] font-black uppercase tracking-[0.18em] text-red-100 shadow-[0_0_10px_rgba(220,38,38,0.2)]"
+                              className="badge-row muted"
                             >
                               LOCKED
                             </motion.div>
@@ -888,66 +766,65 @@ export default function App() {
                               animate={{ opacity: 1, scale: 1 }}
                               exit={{ opacity: 0, scale: 0.96 }}
                               transition={{ type: "spring", stiffness: 260, damping: 18 }}
-                              className="mt-1 rounded-full border border-red-500/40 bg-red-600/20 px-2 py-[2px] text-center text-[9px] font-black uppercase tracking-[0.18em] text-red-100 shadow-[0_0_12px_rgba(220,38,38,0.25)]"
+                              className="badge-row"
                             >
                               DAY COMPLETE
                             </motion.div>
                           ) : null}
                         </AnimatePresence>
-                      </SheetCell>
+                      </div>
 
                       {habitColumns.map((item) => (
-                        <SheetCell
-                          key={item.key}
-                          className={`relative flex h-14 items-center justify-center transition-all duration-200 ${rowTone}`}
-                        >
+                        <div key={item.key} className={`sheet-cell body icon-col ${rowTone}`}>
                           {item.key === "photo" ? (
                             <>
+                              {/* Camera input */}
                               <input
                                 ref={(el) => {
-                                  if (el) photoInputRefs.current[absoluteIndex] = el;
+                                  photoInputRefs.current[absoluteIndex] = el;
                                 }}
                                 type="file"
                                 accept="image/*"
-                                className="hidden"
+                                capture="environment"
+                                className="hidden-input"
                                 onChange={(e) => {
                                   const file = e.target.files?.[0];
                                   handlePhotoUpload(absoluteIndex, file);
                                   e.target.value = "";
                                 }}
                               />
-
+                              {/* Gallery input */}
+                              <input
+                                ref={(el) => {
+                                  galleryInputRefs.current[absoluteIndex] = el;
+                                }}
+                                type="file"
+                                accept="image/*"
+                                className="hidden-input"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  handlePhotoUpload(absoluteIndex, file);
+                                  e.target.value = "";
+                                }}
+                              />
                               <button
                                 type="button"
                                 onClick={() => {
+                                  if (rowLocked) return;
                                   if (row.photoUrl) {
-                                    openPhotoViewer(absoluteIndex);
+                                    setViewingPhotoIndex(absoluteIndex);
                                   } else {
-                                    setPhotoActionRow(absoluteIndex);
+                                    setPhotoSourceTarget(absoluteIndex);
                                   }
                                 }}
                                 disabled={rowLocked}
-                                className={`group relative flex h-8 w-8 items-center justify-center rounded-xl border transition-all duration-300 ${
-                                  rowLocked ? "cursor-not-allowed opacity-55" : ""
-                                } ${
-                                  row.photo
-                                    ? "border-red-300 bg-red-600/20 text-white shadow-[0_0_18px_rgba(220,38,38,0.28)]"
-                                    : "border-red-800 bg-transparent text-red-200 hover:border-red-500 hover:bg-red-950/30"
-                                }`}
-                                aria-label={
-                                  row.photoUrl
-                                    ? `View photo for ${row.countdown}`
-                                    : `Upload photo for ${row.countdown}`
-                                }
+                                className={`photo-btn ${row.photo ? "has-photo" : ""} ${rowLocked ? "disabled" : ""}`}
+                                aria-label={`Upload photo for ${row.countdown}`}
                               >
                                 {row.photoUrl ? (
-                                  <img
-                                    src={row.photoUrl}
-                                    alt={`Progress ${row.countdown}`}
-                                    className="h-full w-full rounded-[10px] object-cover"
-                                  />
+                                  <img src={row.photoUrl} alt={`Progress ${row.countdown}`} className="photo-thumb" />
                                 ) : (
-                                  <ImagePlus className="h-4 w-4 transition-all duration-300 group-hover:scale-110 group-hover:drop-shadow-[0_0_10px_rgba(248,113,113,0.85)]" />
+                                  <ImagePlus className="photo-placeholder-icon" />
                                 )}
                               </button>
                             </>
@@ -956,91 +833,67 @@ export default function App() {
                               type="button"
                               onClick={() => handleHabitToggle(absoluteIndex, item.key)}
                               disabled={rowLocked}
-                              className={`flex h-5 w-5 items-center justify-center border text-[12px] font-black transition-all duration-200 ${
-                                rowLocked ? "cursor-not-allowed opacity-55" : ""
-                              } ${
-                                row[item.key]
-                                  ? "border-red-200 bg-red-600 text-white shadow-[0_0_14px_rgba(220,38,38,0.35)]"
-                                  : "border-red-800 bg-transparent text-red-200 hover:border-red-500 hover:bg-red-950/30"
-                              }`}
+                              className={`habit-btn ${row[item.key] ? "checked" : ""} ${rowLocked ? "disabled" : ""}`}
                               aria-label={`${item.label} ${row.countdown}`}
                             >
                               {row[item.key] ? (
-                                <motion.span
-                                  initial={{ scale: 0.5, opacity: 0 }}
-                                  animate={{ scale: [0.5, 1.18, 1], opacity: 1 }}
-                                  transition={{ duration: 0.28, ease: "easeOut" }}
-                                >
+                                <motion.span initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: [0.5, 1.18, 1], opacity: 1 }} transition={{ duration: 0.28, ease: "easeOut" }}>
                                   ✓
                                 </motion.span>
                               ) : null}
                             </button>
                           )}
-                        </SheetCell>
+                        </div>
                       ))}
 
-                      <SheetCell
-                        className={`flex h-14 items-center justify-center p-2 transition-all duration-200 ${rowTone}`}
-                      >
-                        <TextInput
+                      <div className={`sheet-cell body metric-col metric-pad ${rowTone}`}>
+                        <Input
                           disabled={rowLocked}
                           readOnly={rowLocked}
                           onFocus={() => setActiveRow(absoluteIndex)}
-                          onBlur={() =>
-                            setActiveRow((current) => (current === absoluteIndex ? null : current))
-                          }
+                          onBlur={() => setActiveRow((current) => (current === absoluteIndex ? null : current))}
                           value={row.weight}
                           onChange={(e) => updateRow(absoluteIndex, { weight: e.target.value })}
                           placeholder="______"
                           inputMode="decimal"
-                          className={rowLocked ? "cursor-not-allowed opacity-55" : ""}
+                          className={rowLocked ? "disabled" : ""}
                         />
-                      </SheetCell>
+                      </div>
 
-                      <SheetCell
-                        className={`flex h-14 items-center justify-center p-2 transition-all duration-200 ${rowTone}`}
-                      >
-                        <TextInput
+                      <div className={`sheet-cell body calories-col metric-pad ${rowTone}`}>
+                        <Input
                           disabled={rowLocked}
                           readOnly={rowLocked}
                           onFocus={() => setActiveRow(absoluteIndex)}
-                          onBlur={() =>
-                            setActiveRow((current) => (current === absoluteIndex ? null : current))
-                          }
+                          onBlur={() => setActiveRow((current) => (current === absoluteIndex ? null : current))}
                           value={row.calories}
                           onChange={(e) => updateRow(absoluteIndex, { calories: e.target.value })}
                           placeholder="______"
                           inputMode="numeric"
-                          className={rowLocked ? "cursor-not-allowed opacity-55" : ""}
+                          className={rowLocked ? "disabled" : ""}
                         />
-                      </SheetCell>
+                      </div>
 
-                      <SheetCell
-                        className={`flex h-14 items-center justify-center p-2 transition-all duration-200 ${rowTone}`}
-                      >
-                        <TextInput
+                      <div className={`sheet-cell body metric-col metric-pad ${rowTone}`}>
+                        <Input
                           disabled={rowLocked}
                           readOnly={rowLocked}
                           onFocus={() => setActiveRow(absoluteIndex)}
-                          onBlur={() =>
-                            setActiveRow((current) => (current === absoluteIndex ? null : current))
-                          }
+                          onBlur={() => setActiveRow((current) => (current === absoluteIndex ? null : current))}
                           value={row.steps}
                           onChange={(e) => updateRow(absoluteIndex, { steps: e.target.value })}
                           placeholder="______"
                           inputMode="numeric"
-                          className={rowLocked ? "cursor-not-allowed opacity-55" : ""}
+                          className={rowLocked ? "disabled" : ""}
                         />
-                      </SheetCell>
+                      </div>
                     </React.Fragment>
                   );
                 })}
               </div>
             ))}
 
-            <div className="border-t border-red-900/70 bg-gradient-to-r from-black via-red-950 to-black px-4 py-3 text-center text-[12px] font-black uppercase tracking-[0.55em] text-red-200">
-              Stay Relentless
-            </div>
+            <div className="sheet-footer">Stay Relentless</div>
           </div>
         </div>
       </div>
