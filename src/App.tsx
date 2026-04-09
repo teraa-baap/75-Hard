@@ -5,7 +5,7 @@ import {
   Camera, Dumbbell, Utensils, TreeDeciduous, BookOpen, Droplets,
   Flame, Scale, Target, ImagePlus, Lock, LockOpen, X, Images,
   RefreshCw, ArrowLeft, TrendingUp, Trophy, ChevronLeft,
-  ChevronRight, User,
+  ChevronRight, User, Bell, BellOff, SplitSquareHorizontal,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -444,6 +444,210 @@ function PhotoViewerModal({ photo, rowLabel, onClose, onReplace }: { photo: stri
   );
 }
 
+// ─── Before / After Modal ─────────────────────────────────────────────────────
+function BeforeAfterModal({ rows, onClose }: { rows: TrackerRow[]; onClose: () => void }) {
+  const photos = rows.filter((r) => r.photoUrl);
+  const first = photos[0];
+  const latest = photos[photos.length - 1];
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      style={{ position: "fixed", inset: 0, zIndex: 85, background: "#000", display: "flex", flexDirection: "column" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 18px", borderBottom: "1px solid rgba(127,29,29,0.72)", background: "linear-gradient(180deg, rgba(69,10,10,0.5) 0%, transparent 100%)" }}>
+        <button onClick={onClose} style={{ width: 38, height: 38, borderRadius: 12, background: "rgba(127,29,29,0.25)", border: "1px solid rgba(127,29,29,0.72)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fca5a5" }}>
+          <ArrowLeft style={{ width: 18, height: 18 }} />
+        </button>
+        <p style={{ margin: 0, fontSize: 12, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "#ffe8e8" }}>Before vs After</p>
+        <div style={{ width: 38 }} />
+      </div>
+
+      {photos.length < 2 ? (
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, padding: 32 }}>
+          <SplitSquareHorizontal style={{ width: 48, height: 48, color: "rgba(127,29,29,0.5)" }} />
+          <p style={{ color: "rgba(252,165,165,0.6)", fontSize: 14, textAlign: "center", letterSpacing: "0.06em" }}>
+            {photos.length === 0 ? "No progress photos yet" : "Need at least 2 photos to compare"}
+          </p>
+        </div>
+      ) : (
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: 16, gap: 12, overflow: "hidden" }}>
+          {/* Labels */}
+          <div style={{ display: "flex", gap: 12 }}>
+            <div style={{ flex: 1, textAlign: "center" }}>
+              <span style={{ fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(252,165,165,0.5)" }}>BEFORE</span>
+              <p style={{ margin: "3px 0 0", fontSize: 12, color: "#fca5a5", fontWeight: 700 }}>{first.countdown} · {first.dateLabel}</p>
+            </div>
+            <div style={{ width: 1, background: "rgba(127,29,29,0.6)" }} />
+            <div style={{ flex: 1, textAlign: "center" }}>
+              <span style={{ fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(252,165,165,0.5)" }}>AFTER</span>
+              <p style={{ margin: "3px 0 0", fontSize: 12, color: "#fca5a5", fontWeight: 700 }}>{latest.countdown} · {latest.dateLabel}</p>
+            </div>
+          </div>
+
+          {/* Split images */}
+          <div style={{ flex: 1, display: "flex", gap: 12, overflow: "hidden" }}>
+            <div style={{ flex: 1, borderRadius: 16, overflow: "hidden", border: "1px solid rgba(127,29,29,0.5)" }}>
+              <img src={first.photoUrl} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt="Before" />
+            </div>
+            <div style={{ width: 2, background: "linear-gradient(180deg, transparent, rgba(220,38,38,0.8), transparent)", borderRadius: 1 }} />
+            <div style={{ flex: 1, borderRadius: 16, overflow: "hidden", border: "1px solid rgba(127,29,29,0.5)" }}>
+              <img src={latest.photoUrl} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt="After" />
+            </div>
+          </div>
+
+          {/* Days elapsed */}
+          <div style={{ textAlign: "center", padding: "8px 0" }}>
+            <span style={{ fontSize: 11, color: "rgba(252,165,165,0.4)", letterSpacing: "0.1em" }}>
+              {latest.id - first.id} DAYS OF PROGRESS
+            </span>
+          </div>
+        </div>
+      )}
+    </motion.div>
+  );
+}
+
+// ─── Notification Settings Modal ──────────────────────────────────────────────
+const NOTIF_KEY = "75_hard_notif_v1";
+
+function NotificationModal({ onClose }: { onClose: () => void }) {
+  const [permission, setPermission] = useState<NotificationPermission>(
+    typeof Notification !== "undefined" ? Notification.permission : "default"
+  );
+  const [hour, setHour] = useState(() => {
+    const saved = localStorage.getItem(NOTIF_KEY);
+    return saved ? JSON.parse(saved).hour : 20;
+  });
+  const [minute, setMinute] = useState(() => {
+    const saved = localStorage.getItem(NOTIF_KEY);
+    return saved ? JSON.parse(saved).minute : 0;
+  });
+  const [enabled, setEnabled] = useState(() => {
+    const saved = localStorage.getItem(NOTIF_KEY);
+    return saved ? JSON.parse(saved).enabled : false;
+  });
+  const [saved, setSaved] = useState(false);
+
+  const requestAndEnable = async () => {
+    if (typeof Notification === "undefined") { alert("Notifications not supported on this browser."); return; }
+    const result = await Notification.requestPermission();
+    setPermission(result);
+    if (result === "granted") {
+      setEnabled(true);
+      saveSettings(true);
+    }
+  };
+
+  const saveSettings = (forceEnabled?: boolean) => {
+    const isEnabled = forceEnabled ?? enabled;
+    localStorage.setItem(NOTIF_KEY, JSON.stringify({ hour, minute, enabled: isEnabled }));
+    scheduleNotification(hour, minute, isEnabled);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
+  const scheduleNotification = (h: number, m: number, isEnabled: boolean) => {
+    // Clear any existing scheduled notification
+    const existingId = localStorage.getItem("75_hard_notif_timeout");
+    if (existingId) clearTimeout(Number(existingId));
+    if (!isEnabled || permission !== "granted") return;
+
+    const schedule = () => {
+      const now = new Date();
+      const target = new Date();
+      target.setHours(h, m, 0, 0);
+      if (target <= now) target.setDate(target.getDate() + 1);
+      const delay = target.getTime() - now.getTime();
+      const id = window.setTimeout(() => {
+        new Notification("75 Hard Tracker 🔥", {
+          body: "Time to log your habits! Stay relentless.",
+          icon: "/icon-192.png",
+          badge: "/icon-192.png",
+        });
+        schedule(); // reschedule for next day
+      }, delay);
+      localStorage.setItem("75_hard_notif_timeout", String(id));
+    };
+    schedule();
+  };
+
+  const displayHour = hour % 12 === 0 ? 12 : hour % 12;
+  const ampm = hour < 12 ? "AM" : "PM";
+
+  return (
+    <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      onClick={onClose}>
+      <motion.div onClick={(e) => e.stopPropagation()}
+        initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
+        transition={{ type: "spring", stiffness: 320, damping: 32 }}
+        style={{ width: "100%", maxWidth: 520, margin: "0 auto", background: "linear-gradient(160deg, #0a0000 0%, #140303 60%, #1c0505 100%)", borderRadius: "28px 28px 0 0", border: "1px solid rgba(127,29,29,0.72)", borderBottom: "none", padding: "14px 24px 52px", boxShadow: "0 -20px 60px rgba(127,29,29,0.28)" }}>
+
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
+          <div style={{ width: 40, height: 4, borderRadius: 2, background: "rgba(252,165,165,0.25)" }} />
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 24 }}>
+          <Bell style={{ width: 20, height: 20, color: "#fca5a5" }} />
+          <p style={{ margin: 0, fontSize: 10, letterSpacing: "0.3em", textTransform: "uppercase", color: "rgba(252,165,165,0.6)" }}>Daily Reminder</p>
+        </div>
+
+        {permission === "denied" ? (
+          <div style={{ background: "rgba(220,38,38,0.1)", border: "1px solid rgba(220,38,38,0.3)", borderRadius: 14, padding: 16, marginBottom: 20 }}>
+            <p style={{ margin: 0, fontSize: 13, color: "#f87171", lineHeight: 1.5 }}>
+              Notifications are blocked. Please enable them in your browser/phone settings, then return here.
+            </p>
+          </div>
+        ) : permission !== "granted" ? (
+          <motion.button whileTap={{ scale: 0.97 }} onClick={requestAndEnable}
+            style={{ width: "100%", padding: "18px", background: "linear-gradient(135deg, #7f1d1d 0%, #b91c1c 100%)", border: "1px solid rgba(248,113,113,0.35)", borderRadius: 16, color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer", marginBottom: 20, display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
+            <Bell style={{ width: 18, height: 18 }} /> Enable Notifications
+          </motion.button>
+        ) : (
+          <>
+            {/* Toggle */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24, background: "rgba(255,255,255,0.04)", borderRadius: 14, padding: "14px 16px", border: "1px solid rgba(127,29,29,0.4)" }}>
+              <div>
+                <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: "#ffe8e8" }}>Daily reminder</p>
+                <p style={{ margin: "3px 0 0", fontSize: 12, color: "rgba(252,165,165,0.5)" }}>{enabled ? `Set for ${displayHour}:${String(minute).padStart(2,"0")} ${ampm}` : "Disabled"}</p>
+              </div>
+              <button onClick={() => { setEnabled(!enabled); }} style={{ width: 48, height: 26, borderRadius: 13, background: enabled ? "#dc2626" : "rgba(255,255,255,0.1)", border: "none", cursor: "pointer", position: "relative", transition: "background 0.2s" }}>
+                <div style={{ position: "absolute", top: 3, left: enabled ? 25 : 3, width: 20, height: 20, borderRadius: "50%", background: "#fff", transition: "left 0.2s" }} />
+              </button>
+            </div>
+
+            {/* Time picker */}
+            {enabled && (
+              <div style={{ marginBottom: 24 }}>
+                <p style={{ margin: "0 0 12px", fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(252,165,165,0.5)" }}>Reminder time</p>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ margin: "0 0 6px", fontSize: 11, color: "rgba(252,165,165,0.4)" }}>Hour</p>
+                    <input type="range" min={0} max={23} value={hour} onChange={(e) => setHour(Number(e.target.value))}
+                      style={{ width: "100%", accentColor: "#dc2626" }} />
+                    <p style={{ margin: "4px 0 0", fontSize: 16, fontWeight: 700, color: "#fff", textAlign: "center" }}>{displayHour} {ampm}</p>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ margin: "0 0 6px", fontSize: 11, color: "rgba(252,165,165,0.4)" }}>Minute</p>
+                    <input type="range" min={0} max={59} step={5} value={minute} onChange={(e) => setMinute(Number(e.target.value))}
+                      style={{ width: "100%", accentColor: "#dc2626" }} />
+                    <p style={{ margin: "4px 0 0", fontSize: 16, fontWeight: 700, color: "#fff", textAlign: "center" }}>{String(minute).padStart(2, "0")}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <motion.button whileTap={{ scale: 0.97 }} onClick={() => saveSettings()}
+              style={{ width: "100%", padding: "16px", background: saved ? "rgba(34,197,94,0.2)" : "linear-gradient(135deg, #7f1d1d 0%, #b91c1c 100%)", border: saved ? "1px solid rgba(34,197,94,0.5)" : "1px solid rgba(248,113,113,0.35)", borderRadius: 16, color: saved ? "#4ade80" : "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer", transition: "all 0.3s" }}>
+              {saved ? "✓ Saved!" : "Save Reminder"}
+            </motion.button>
+          </>
+        )}
+
+        <button onClick={onClose} style={{ marginTop: 12, width: "100%", background: "transparent", border: "1px solid rgba(127,29,29,0.4)", borderRadius: 14, padding: "13px", color: "rgba(252,165,165,0.4)", fontSize: 14, cursor: "pointer" }}>Close</button>
+      </motion.div>
+    </motion.div>
+  );
+}
+
 // ─── Main App ─────────────────────────────────────────────────────────────────
 export default function App() {
   const [rows, setRows] = useState<TrackerRow[]>(() => createRows());
@@ -453,6 +657,8 @@ export default function App() {
   const [activeRow, setActiveRow] = useState<number | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
   const [showGallery, setShowGallery] = useState(false);
+  const [showBeforeAfter, setShowBeforeAfter] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
   const [photoSourceTarget, setPhotoSourceTarget] = useState<number | null>(null);
   const [viewingPhotoIndex, setViewingPhotoIndex] = useState<number | null>(null);
   const [weeklySummary, setWeeklySummary] = useState<null | { weekNumber: number; averageCalories: string; averageSteps: string; completionRate: number }>(null);
@@ -472,6 +678,26 @@ export default function App() {
       const savedUser = localStorage.getItem(USER_KEY);
       if (savedUser) setUserName(savedUser);
       else setShowOnboarding(true);
+      // Reschedule notification if previously set
+      const notifSettings = localStorage.getItem(NOTIF_KEY);
+      if (notifSettings && typeof Notification !== "undefined" && Notification.permission === "granted") {
+        const { hour, minute, enabled } = JSON.parse(notifSettings);
+        if (enabled) {
+          const schedule = () => {
+            const now = new Date();
+            const target = new Date();
+            target.setHours(hour, minute, 0, 0);
+            if (target <= now) target.setDate(target.getDate() + 1);
+            const delay = target.getTime() - now.getTime();
+            const id = window.setTimeout(() => {
+              new Notification("75 Hard Tracker 🔥", { body: "Time to log your habits! Stay relentless.", icon: "/icon-192.png" });
+              schedule();
+            }, delay);
+            localStorage.setItem("75_hard_notif_timeout", String(id));
+          };
+          schedule();
+        }
+      }
     } catch { setShowOnboarding(true); }
     finally { setLoaded(true); }
   }, []);
@@ -652,6 +878,8 @@ export default function App() {
         />
       )}
       <AnimatePresence>{showGallery && <PhotoGalleryModal rows={rows} onClose={() => setShowGallery(false)} />}</AnimatePresence>
+      <AnimatePresence>{showBeforeAfter && <BeforeAfterModal rows={rows} onClose={() => setShowBeforeAfter(false)} />}</AnimatePresence>
+      <AnimatePresence>{showNotifications && <NotificationModal onClose={() => setShowNotifications(false)} />}</AnimatePresence>
 
       <div className="page">
         <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} className="hero-card">
@@ -692,12 +920,23 @@ export default function App() {
               <SummaryCard title="Avg Calories / Steps" value={`${averageCalories} / ${averageSteps}`} subtext="Daily averages" icon={Target} />
             </div>
 
-            <motion.button whileTap={{ scale: 0.97 }} onClick={() => setShowGallery(true)}
-              style={{ marginTop: 12, width: "100%", background: "rgba(127,29,29,0.18)", border: "1px solid rgba(127,29,29,0.55)", borderRadius: 14, padding: "13px 20px", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, cursor: "pointer" }}>
-              <Images style={{ width: 18, height: 18, color: "#fca5a5" }} />
-              <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(252,165,165,0.85)" }}>View Progress Gallery</span>
-              <TrendingUp style={{ width: 16, height: 16, color: "rgba(252,165,165,0.5)" }} />
-            </motion.button>
+            <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
+              <motion.button whileTap={{ scale: 0.97 }} onClick={() => setShowGallery(true)}
+                style={{ flex: 1, background: "rgba(127,29,29,0.18)", border: "1px solid rgba(127,29,29,0.55)", borderRadius: 14, padding: "13px 10px", display: "flex", flexDirection: "column", alignItems: "center", gap: 6, cursor: "pointer" }}>
+                <Images style={{ width: 18, height: 18, color: "#fca5a5" }} />
+                <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(252,165,165,0.75)" }}>Gallery</span>
+              </motion.button>
+              <motion.button whileTap={{ scale: 0.97 }} onClick={() => setShowBeforeAfter(true)}
+                style={{ flex: 1, background: "rgba(127,29,29,0.18)", border: "1px solid rgba(127,29,29,0.55)", borderRadius: 14, padding: "13px 10px", display: "flex", flexDirection: "column", alignItems: "center", gap: 6, cursor: "pointer" }}>
+                <SplitSquareHorizontal style={{ width: 18, height: 18, color: "#fca5a5" }} />
+                <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(252,165,165,0.75)" }}>Before/After</span>
+              </motion.button>
+              <motion.button whileTap={{ scale: 0.97 }} onClick={() => setShowNotifications(true)}
+                style={{ flex: 1, background: "rgba(127,29,29,0.18)", border: "1px solid rgba(127,29,29,0.55)", borderRadius: 14, padding: "13px 10px", display: "flex", flexDirection: "column", alignItems: "center", gap: 6, cursor: "pointer" }}>
+                <Bell style={{ width: 18, height: 18, color: "#fca5a5" }} />
+                <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(252,165,165,0.75)" }}>Reminder</span>
+              </motion.button>
+            </div>
           </div>
         </motion.div>
 
