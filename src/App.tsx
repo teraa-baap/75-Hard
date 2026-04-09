@@ -5,7 +5,7 @@ import {
   Camera, Dumbbell, Utensils, TreeDeciduous, BookOpen, Droplets,
   Flame, Scale, Target, ImagePlus, Lock, LockOpen, X, Images,
   RefreshCw, ArrowLeft, Trophy, ChevronLeft,
-  ChevronRight, User, Bell, Layers,
+  ChevronRight, User, Bell, Layers, Share2, Calendar,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,19 @@ import { Input } from "@/components/ui/input";
 const TOTAL_DAYS = 75;
 const STORAGE_KEY = "premium_75_hard_tracker_pwa_v1";
 const USER_KEY = "75_hard_user_v1";
-const START_DATE = "2026-04-06";
+const START_DATE_KEY = "75_hard_start_date_v1";
+const NOTIF_KEY = "75_hard_notif_v1";
+
+const MILESTONE_MESSAGES: Record<number, { title: string; subtitle: string }> = {
+  1:  { title: "WEEK 1 DONE", subtitle: "The hardest week is behind you. Most quit here. You didn't." },
+  2:  { title: "2 WEEKS IN", subtitle: "Your body is adapting. This is where habits start forming." },
+  3:  { title: "3 WEEKS STRONG", subtitle: "21 days. Science says that's a habit. You're wired differently now." },
+  4:  { title: "HALFWAY THERE", subtitle: "30 days of relentless discipline. The other half is yours to take." },
+  5:  { title: "WEEK 5 BEAST", subtitle: "Most people dream about this. You're living it." },
+  6:  { title: "6 WEEKS LOCKED IN", subtitle: "Your mind is iron. Your body is following." },
+  7:  { title: "FINAL WEEK", subtitle: "One week left. This is what legends are made of. Finish it." },
+  8:  { title: "75 HARD COMPLETE", subtitle: "You did what most people only talk about. Elite." },
+};
 
 const habitColumns = [
   { key: "photo",    icon: Camera,        label: "Progress Photo" },
@@ -40,8 +52,12 @@ type TrackerRow = {
 function formatDateLabel(date: Date) {
   return new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short" }).format(date).replace(" ", "-");
 }
-function createRows(startDateString = START_DATE): TrackerRow[] {
-  const start = new Date(`${startDateString}T00:00:00`);
+function getStartDate(): string {
+  return localStorage.getItem(START_DATE_KEY) || "2026-04-06";
+}
+function createRows(startDateString?: string): TrackerRow[] {
+  const s = startDateString || getStartDate();
+  const start = new Date(`${s}T00:00:00`);
   return Array.from({ length: TOTAL_DAYS }, (_, i) => {
     const current = new Date(start);
     current.setDate(start.getDate() + i);
@@ -195,54 +211,49 @@ function Confetti({ onDone }: { onDone: () => void }) {
 }
 
 // ─── Onboarding ───────────────────────────────────────────────────────────────
-function OnboardingScreen({ onComplete }: { onComplete: (name: string) => void }) {
+function OnboardingScreen({ onComplete }: { onComplete: (name: string, startDate: string) => void }) {
   const [name, setName] = useState("");
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-${String(today.getDate()).padStart(2,"0")}`;
+  const [startDate, setStartDate] = useState(todayStr);
+  const canProceed = name.trim() && startDate;
+
   return (
-    <motion.div
-      initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-      style={{
-        position: "fixed", inset: 0, zIndex: 300, background: "#000",
-        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 32,
-      }}
-    >
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+      style={{ position: "fixed", inset: 0, zIndex: 300, background: "#000", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 32 }}>
       <div className="background-noise" /><div className="background-glow" />
-      <motion.div
-        initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
+      <motion.div initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.2, type: "spring", stiffness: 200, damping: 20 }}
-        style={{ position: "relative", zIndex: 1, textAlign: "center", width: "100%", maxWidth: 380 }}
-      >
+        style={{ position: "relative", zIndex: 1, textAlign: "center", width: "100%", maxWidth: 380 }}>
         <div className="pill" style={{ display: "inline-flex", marginBottom: 24 }}>
           <Flame style={{ width: 16, height: 16 }} /> Discipline • Consistency • Power
         </div>
         <h1 style={{ fontSize: 42, fontWeight: 900, letterSpacing: "0.14em", color: "#fff", margin: "0 0 8px" }}>75 HARD</h1>
-        <p style={{ fontSize: 14, color: "rgba(252,165,165,0.7)", letterSpacing: "0.1em", marginBottom: 48 }}>YOUR TRANSFORMATION BEGINS NOW</p>
+        <p style={{ fontSize: 14, color: "rgba(252,165,165,0.7)", letterSpacing: "0.1em", marginBottom: 32 }}>YOUR TRANSFORMATION BEGINS NOW</p>
         <div style={{ background: "linear-gradient(135deg, #0c0000 0%, #1a0404 100%)", border: "1px solid rgba(127,29,29,0.72)", borderRadius: 24, padding: 28 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 64, height: 64, borderRadius: "50%", background: "rgba(127,29,29,0.3)", border: "1px solid rgba(127,29,29,0.7)", margin: "0 auto 20px" }}>
             <User style={{ width: 28, height: 28, color: "#fca5a5" }} />
           </div>
-          <p style={{ fontSize: 11, letterSpacing: "0.3em", textTransform: "uppercase", color: "rgba(252,165,165,0.6)", marginBottom: 12 }}>What should we call you?</p>
-          <input
-            value={name} onChange={(e) => setName(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && name.trim() && onComplete(name.trim())}
+
+          <p style={{ fontSize: 11, letterSpacing: "0.3em", textTransform: "uppercase", color: "rgba(252,165,165,0.6)", marginBottom: 10 }}>What should we call you?</p>
+          <input value={name} onChange={(e) => setName(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && canProceed && onComplete(name.trim(), startDate)}
             placeholder="Enter your name" autoFocus
-            style={{
-              width: "100%", padding: "14px 16px", background: "rgba(0,0,0,0.6)",
-              border: "1px solid rgba(127,29,29,0.6)", borderRadius: 12, color: "#ffe8e8",
-              fontSize: 16, outline: "none", textAlign: "center", letterSpacing: "0.04em", marginBottom: 16,
-            }}
+            style={{ width: "100%", padding: "14px 16px", background: "rgba(0,0,0,0.6)", border: "1px solid rgba(127,29,29,0.6)", borderRadius: 12, color: "#ffe8e8", fontSize: 16, outline: "none", textAlign: "center", letterSpacing: "0.04em", marginBottom: 20 }}
           />
-          <motion.button
-            whileTap={{ scale: 0.97 }}
-            onClick={() => name.trim() && onComplete(name.trim())}
-            style={{
-              width: "100%", padding: "16px",
-              background: name.trim() ? "linear-gradient(135deg, #7f1d1d 0%, #dc2626 100%)" : "rgba(127,29,29,0.2)",
-              border: "1px solid rgba(220,38,38,0.5)", borderRadius: 14,
-              color: name.trim() ? "#fff" : "rgba(252,165,165,0.4)",
-              fontSize: 15, fontWeight: 700, letterSpacing: "0.1em",
-              cursor: name.trim() ? "pointer" : "default", transition: "all 0.2s",
-            }}
-          >START THE CHALLENGE →</motion.button>
+
+          <p style={{ fontSize: 11, letterSpacing: "0.3em", textTransform: "uppercase", color: "rgba(252,165,165,0.6)", marginBottom: 10 }}>Challenge start date</p>
+          <div style={{ position: "relative", marginBottom: 20 }}>
+            <Calendar style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", width: 16, height: 16, color: "#fca5a5", pointerEvents: "none" }} />
+            <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)}
+              style={{ width: "100%", padding: "14px 16px 14px 40px", background: "rgba(0,0,0,0.6)", border: "1px solid rgba(127,29,29,0.6)", borderRadius: 12, color: "#ffe8e8", fontSize: 15, outline: "none", colorScheme: "dark" }}
+            />
+          </div>
+
+          <motion.button whileTap={{ scale: 0.97 }} onClick={() => canProceed && onComplete(name.trim(), startDate)}
+            style={{ width: "100%", padding: "16px", background: canProceed ? "linear-gradient(135deg, #7f1d1d 0%, #dc2626 100%)" : "rgba(127,29,29,0.2)", border: "1px solid rgba(220,38,38,0.5)", borderRadius: 14, color: canProceed ? "#fff" : "rgba(252,165,165,0.4)", fontSize: 15, fontWeight: 700, letterSpacing: "0.1em", cursor: canProceed ? "pointer" : "default", transition: "all 0.2s" }}>
+            START THE CHALLENGE →
+          </motion.button>
         </div>
       </motion.div>
     </motion.div>
@@ -364,6 +375,186 @@ function SummaryCard({ title, value, subtext, icon: Icon, extra }: {
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+// ─── Milestone Screen ─────────────────────────────────────────────────────────
+function MilestoneScreen({ weekNumber, onClose }: { weekNumber: number; onClose: () => void }) {
+  const msg = MILESTONE_MESSAGES[weekNumber] || { title: `WEEK ${weekNumber} DONE`, subtitle: "Keep going. Never stop." };
+  return (
+    <AnimatePresence>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        style={{ position: "fixed", inset: 0, zIndex: 250, background: "#000", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 32 }}>
+        <div className="background-noise" /><div className="background-glow" />
+        <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+          transition={{ delay: 0.1, type: "spring", stiffness: 200, damping: 18 }}
+          style={{ position: "relative", zIndex: 1, textAlign: "center", maxWidth: 380, width: "100%" }}>
+          <motion.div animate={{ rotate: [0, -10, 10, -6, 6, 0] }} transition={{ delay: 0.4, duration: 0.6 }}
+            style={{ fontSize: 72, marginBottom: 16 }}>🏆</motion.div>
+          <div style={{ fontSize: 11, letterSpacing: "0.3em", textTransform: "uppercase", color: "rgba(252,165,165,0.6)", marginBottom: 12 }}>
+            Week {weekNumber} of 75 Hard
+          </div>
+          <h1 style={{ fontSize: 36, fontWeight: 900, letterSpacing: "0.1em", color: "#fff", margin: "0 0 16px", lineHeight: 1.1 }}>{msg.title}</h1>
+          <p style={{ fontSize: 16, color: "rgba(252,165,165,0.8)", lineHeight: 1.6, marginBottom: 40 }}>{msg.subtitle}</p>
+          <motion.button whileTap={{ scale: 0.97 }} onClick={onClose}
+            style={{ width: "100%", padding: "18px", background: "linear-gradient(135deg, #7f1d1d 0%, #dc2626 100%)", border: "1px solid rgba(248,113,113,0.35)", borderRadius: 16, color: "#fff", fontSize: 16, fontWeight: 700, letterSpacing: "0.1em", cursor: "pointer" }}>
+            KEEP GOING →
+          </motion.button>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+// ─── Missed Day Banner ────────────────────────────────────────────────────────
+function MissedDayBanner({ missedDay, onDismiss, onMarkComplete }: {
+  missedDay: string; onDismiss: () => void; onMarkComplete: () => void;
+}) {
+  return (
+    <motion.div initial={{ y: -60, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -60, opacity: 0 }}
+      transition={{ type: "spring", stiffness: 260, damping: 22 }}
+      style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 150, padding: "12px 16px", background: "linear-gradient(135deg, #1a0404, #2d0808)", borderBottom: "1px solid rgba(220,38,38,0.4)", display: "flex", alignItems: "center", gap: 12 }}>
+      <div style={{ fontSize: 20 }}>⚠️</div>
+      <div style={{ flex: 1 }}>
+        <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#fff" }}>Yesterday ({missedDay}) wasn't logged</p>
+        <p style={{ margin: "2px 0 0", fontSize: 11, color: "rgba(252,165,165,0.6)" }}>Want to mark it complete?</p>
+      </div>
+      <button onClick={onMarkComplete} style={{ background: "#dc2626", border: "none", borderRadius: 10, padding: "8px 14px", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>Mark Done</button>
+      <button onClick={onDismiss} style={{ background: "transparent", border: "none", color: "rgba(252,165,165,0.5)", cursor: "pointer", padding: 4 }}><X style={{ width: 16, height: 16 }} /></button>
+    </motion.div>
+  );
+}
+
+// ─── Weekly Export Modal ──────────────────────────────────────────────────────
+function WeeklyExportModal({ group, userName, onClose }: {
+  group: { weekNumber: number; rows: TrackerRow[]; startIndex: number };
+  userName: string | null;
+  onClose: () => void;
+}) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [generated, setGenerated] = useState(false);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const W = 1080, H = 1080;
+    canvas.width = W; canvas.height = H;
+
+    // Background
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0, 0, W, H);
+    const grad = ctx.createRadialGradient(W/2, 0, 0, W/2, 0, H);
+    grad.addColorStop(0, "rgba(127,29,29,0.5)");
+    grad.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+
+    // Title
+    ctx.fillStyle = "#fff";
+    ctx.font = "900 72px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(userName ? `${userName.toUpperCase()}'S 75 HARD` : "75 HARD CHALLENGE", W/2, 110);
+
+    ctx.fillStyle = "rgba(252,165,165,0.7)";
+    ctx.font = "500 36px sans-serif";
+    ctx.fillText(`WEEK ${group.weekNumber} REPORT`, W/2, 165);
+
+    // Grid
+    const cols = habitColumns.length;
+    const cellW = 120, cellH = 80, gridX = (W - (cols + 1) * cellW) / 2, gridY = 220;
+    const labels = ["Date", ...habitColumns.map(h => h.label.split(" ")[0])];
+
+    // Header row
+    ctx.fillStyle = "rgba(127,29,29,0.8)";
+    ctx.roundRect(gridX - 10, gridY - 10, (cols + 1) * cellW + 20, cellH + 20, 12);
+    ctx.fill();
+    labels.forEach((label, i) => {
+      ctx.fillStyle = "#fca5a5";
+      ctx.font = "700 24px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(label.substring(0, 8), gridX + i * cellW + cellW/2, gridY + 48);
+    });
+
+    // Data rows
+    group.rows.forEach((row, ri) => {
+      const y = gridY + (ri + 1) * (cellH + 8);
+      ctx.fillStyle = isRowComplete(row) ? "rgba(185,28,28,0.3)" : "rgba(255,255,255,0.04)";
+      ctx.roundRect(gridX - 10, y - 10, (cols + 1) * cellW + 20, cellH + 12, 8);
+      ctx.fill();
+      ctx.fillStyle = "#fff";
+      ctx.font = "600 26px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(row.dateLabel, gridX + cellW/2, y + 44);
+      habitColumns.forEach((item, ci) => {
+        const checked = row[item.key];
+        ctx.fillStyle = checked ? "#ef4444" : "rgba(127,29,29,0.4)";
+        ctx.beginPath();
+        ctx.roundRect(gridX + (ci+1)*cellW + 20, y + 12, cellW - 40, cellH - 20, 8);
+        ctx.fill();
+        ctx.fillStyle = "#fff";
+        ctx.font = "700 28px sans-serif";
+        ctx.fillText(checked ? "✓" : "–", gridX + (ci+1)*cellW + cellW/2, y + 44);
+      });
+    });
+
+    // Stats
+    const done = group.rows.reduce((s, r) => s + habitColumns.reduce((ss, item) => ss + (r[item.key] ? 1 : 0), 0), 0);
+    const pct = Math.round((done / (group.rows.length * habitColumns.length)) * 100);
+    const statY = gridY + (group.rows.length + 1) * (cellH + 8) + 20;
+    ctx.fillStyle = "rgba(127,29,29,0.5)";
+    ctx.roundRect(gridX - 10, statY, (cols + 1) * cellW + 20, 100, 16);
+    ctx.fill();
+    ctx.fillStyle = "#fca5a5";
+    ctx.font = "700 28px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(`COMPLETION ${pct}% • ${done}/${group.rows.length * habitColumns.length} HABITS`, W/2, statY + 58);
+
+    // Footer
+    ctx.fillStyle = "rgba(252,165,165,0.4)";
+    ctx.font = "500 28px sans-serif";
+    ctx.fillText("STAY RELENTLESS • 75 HARD", W/2, H - 50);
+
+    setGenerated(true);
+  }, [group, userName]);
+
+  const handleShare = async () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    try {
+      canvas.toBlob(async (blob) => {
+        if (!blob) return;
+        const file = new File([blob], `75hard-week${group.weekNumber}.png`, { type: "image/png" });
+        if (navigator.share && navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file], title: `75 Hard Week ${group.weekNumber}` });
+        } else {
+          const a = document.createElement("a");
+          a.href = URL.createObjectURL(blob);
+          a.download = `75hard-week${group.weekNumber}.png`;
+          a.click();
+        }
+      }, "image/png");
+    } catch (e) { console.error(e); }
+  };
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      style={{ position: "fixed", inset: 0, zIndex: 90, background: "rgba(0,0,0,0.95)", display: "flex", flexDirection: "column" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 18px", borderBottom: "1px solid rgba(127,29,29,0.72)" }}>
+        <button onClick={onClose} style={{ width: 38, height: 38, borderRadius: 12, background: "rgba(127,29,29,0.25)", border: "1px solid rgba(127,29,29,0.72)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fca5a5" }}>
+          <ArrowLeft style={{ width: 18, height: 18 }} />
+        </button>
+        <p style={{ margin: 0, fontSize: 13, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#ffe8e8" }}>Week {group.weekNumber} Report</p>
+        <motion.button whileTap={{ scale: 0.95 }} onClick={handleShare}
+          style={{ display: "flex", alignItems: "center", gap: 6, background: "linear-gradient(135deg, #7f1d1d, #dc2626)", border: "none", borderRadius: 12, padding: "9px 16px", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+          <Share2 style={{ width: 15, height: 15 }} /> Share
+        </motion.button>
+      </div>
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, overflow: "hidden" }}>
+        <canvas ref={canvasRef} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", borderRadius: 12, border: "1px solid rgba(127,29,29,0.4)" }} />
+      </div>
+    </motion.div>
   );
 }
 
@@ -507,8 +698,6 @@ function BeforeAfterModal({ rows, onClose }: { rows: TrackerRow[]; onClose: () =
 }
 
 // ─── Notification Settings Modal ──────────────────────────────────────────────
-const NOTIF_KEY = "75_hard_notif_v1";
-
 function NotificationModal({ onClose }: { onClose: () => void }) {
   const [permission, setPermission] = useState<NotificationPermission>(
     typeof Notification !== "undefined" ? Notification.permission : "default"
@@ -659,6 +848,9 @@ export default function App() {
   const [showGallery, setShowGallery] = useState(false);
   const [showBeforeAfter, setShowBeforeAfter] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [milestone, setMilestone] = useState<number | null>(null);
+  const [missedDayIndex, setMissedDayIndex] = useState<number | null>(null);
+  const [exportGroup, setExportGroup] = useState<{ weekNumber: number; rows: TrackerRow[]; startIndex: number } | null>(null);
   const [photoSourceTarget, setPhotoSourceTarget] = useState<number | null>(null);
   const [viewingPhotoIndex, setViewingPhotoIndex] = useState<number | null>(null);
   const [weeklySummary, setWeeklySummary] = useState<null | { weekNumber: number; averageCalories: string; averageSteps: string; completionRate: number }>(null);
@@ -714,9 +906,13 @@ export default function App() {
     return () => window.clearTimeout(t);
   }, [loaded]);
 
-  const triggerFeedback = useCallback(() => {
+  const triggerFeedback = useCallback((type: "check" | "uncheck" | "lock" = "check") => {
     try {
-      if (navigator.vibrate) navigator.vibrate(18);
+      if (navigator.vibrate) {
+        if (type === "check") navigator.vibrate([18, 10, 8]);
+        else if (type === "uncheck") navigator.vibrate([8]);
+        else if (type === "lock") navigator.vibrate([12, 20, 12]);
+      }
       const AC = window.AudioContext || (window as any).webkitAudioContext;
       if (!AC) return;
       if (!audioContextRef.current) audioContextRef.current = new AC();
@@ -724,13 +920,21 @@ export default function App() {
       if (ctx.state === "suspended") ctx.resume();
       const osc = ctx.createOscillator(); const gain = ctx.createGain();
       osc.type = "triangle";
-      osc.frequency.setValueAtTime(900, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(1250, ctx.currentTime + 0.04);
-      gain.gain.setValueAtTime(0.0001, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.03, ctx.currentTime + 0.01);
-      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.085);
+      if (type === "check") {
+        osc.frequency.setValueAtTime(900, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(1250, ctx.currentTime + 0.04);
+        gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.03, ctx.currentTime + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.085);
+      } else {
+        osc.frequency.setValueAtTime(500, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(350, ctx.currentTime + 0.06);
+        gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.02, ctx.currentTime + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.09);
+      }
       osc.connect(gain); gain.connect(ctx.destination);
-      osc.start(); osc.stop(ctx.currentTime + 0.09);
+      osc.start(); osc.stop(ctx.currentTime + 0.1);
     } catch { /* silent */ }
   }, []);
 
@@ -760,8 +964,8 @@ export default function App() {
   const handleHabitToggle = useCallback((absoluteIndex: number, key: HabitKey) => {
     if (rows[absoluteIndex].locked) return;
     setActiveRow(absoluteIndex);
-    triggerFeedback();
     const newVal = !rows[absoluteIndex][key];
+    triggerFeedback(newVal ? "check" : "uncheck");
     const after = { ...rows[absoluteIndex], [key]: newVal };
     if (habitColumns.every((item) => after[item.key])) {
       setTimeout(() => { setShowConfetti(true); triggerDayCompleteSound(); }, 100);
@@ -785,7 +989,7 @@ export default function App() {
 
   const toggleRowLock = useCallback((absoluteIndex: number) => {
     if (!rowHasData(rows[absoluteIndex])) return;
-    triggerFeedback();
+    triggerFeedback("lock");
     updateRow(absoluteIndex, { locked: !rows[absoluteIndex].locked });
   }, [rows, triggerFeedback, updateRow]);
 
@@ -793,12 +997,9 @@ export default function App() {
     if (rows[absoluteIndex].locked) return;
     const row = rows[absoluteIndex];
     const allDone = habitColumns.every((item) => row[item.key]);
-    // Right swipe = check all non-photo habits, Left swipe = uncheck all
-    triggerFeedback();
+    triggerFeedback(allDone ? "uncheck" : "check");
     const patch: Partial<TrackerRow> = {};
-    habitColumns.forEach((item) => {
-      if (item.key !== "photo") (patch as any)[item.key] = !allDone;
-    });
+    habitColumns.forEach((item) => { if (item.key !== "photo") (patch as any)[item.key] = !allDone; });
     const after = { ...row, ...patch };
     if (!allDone && habitColumns.every((item) => after[item.key])) {
       setTimeout(() => { setShowConfetti(true); triggerDayCompleteSound(); }, 100);
@@ -808,7 +1009,7 @@ export default function App() {
 
   const handleSwipeUncomplete = useCallback((absoluteIndex: number) => {
     if (rows[absoluteIndex].locked) return;
-    triggerFeedback();
+    triggerFeedback("uncheck");
     const patch: Partial<TrackerRow> = {};
     habitColumns.forEach((item) => { if (item.key !== "photo") (patch as any)[item.key] = false; });
     updateRow(absoluteIndex, patch);
@@ -822,13 +1023,13 @@ export default function App() {
 
   const todayIndex = useMemo(() => {
     const now = new Date();
-    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-    // Also try matching by day number offset from start date as fallback
-    const start = new Date(`${START_DATE}T00:00:00`);
-    const diffMs = now.setHours(0,0,0,0) - start.setHours(0,0,0,0);
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    const startDate = getStartDate();
+    const start = new Date(`${startDate}T00:00:00`);
+    const todayMid = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startMid = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+    const diffDays = Math.floor((todayMid.getTime() - startMid.getTime()) / (1000 * 60 * 60 * 24));
     if (diffDays >= 0 && diffDays < TOTAL_DAYS) return diffDays;
-    return rows.findIndex((r) => r.date === today);
+    return -1;
   }, [rows]);
 
   const totalChecks = useMemo(() => rows.reduce((sum, r) => sum + habitColumns.reduce((s, item) => s + (r[item.key] ? 1 : 0), 0), 0), [rows]);
@@ -836,8 +1037,27 @@ export default function App() {
   const progressPercent = Math.round((totalChecks / (TOTAL_DAYS * habitColumns.length)) * 100);
 
   const latestWeight = useMemo(() => { const m = [...rows].reverse().find((r) => r.weight.trim()); return m ? m.weight : "—"; }, [rows]);
+  const firstWeight = useMemo(() => { const m = rows.find((r) => r.weight.trim()); return m ? parseFloat(m.weight) : null; }, [rows]);
+  const latestWeightNum = useMemo(() => { const m = [...rows].reverse().find((r) => r.weight.trim()); return m ? parseFloat(m.weight) : null; }, [rows]);
+  const weightDelta = useMemo(() => {
+    if (firstWeight === null || latestWeightNum === null || firstWeight === latestWeightNum) return null;
+    const diff = latestWeightNum - firstWeight;
+    const pct = ((diff / firstWeight) * 100).toFixed(1);
+    return { diff: diff.toFixed(1), pct, lost: diff < 0 };
+  }, [firstWeight, latestWeightNum]);
+
   const averageCalories = useMemo(() => { const v = rows.map((r) => Number(String(r.calories).replace(/,/g, ""))).filter((n) => isFinite(n) && n > 0); return v.length ? Math.round(v.reduce((a, b) => a + b) / v.length).toLocaleString() : "—"; }, [rows]);
   const averageSteps = useMemo(() => { const v = rows.map((r) => Number(String(r.steps).replace(/,/g, ""))).filter((n) => isFinite(n) && n > 0); return v.length ? Math.round(v.reduce((a, b) => a + b) / v.length).toLocaleString() : "—"; }, [rows]);
+
+  // Missed day detection
+  useEffect(() => {
+    if (!loaded || todayIndex <= 0) return;
+    const yesterday = rows[todayIndex - 1];
+    if (yesterday && !isRowComplete(yesterday) && rowHasData(yesterday) === false) {
+      const dismissed = localStorage.getItem(`75_hard_missed_dismissed_${todayIndex - 1}`);
+      if (!dismissed) setMissedDayIndex(todayIndex - 1);
+    }
+  }, [loaded, todayIndex, rows]);
 
   const timelineBars = Array.from({ length: TOTAL_DAYS }, (_, i) => i < completedDays);
   const weekGroups = Array.from({ length: Math.ceil(TOTAL_DAYS / 7) }, (_, i) => ({ weekNumber: i + 1, rows: rows.slice(i * 7, i * 7 + 7), startIndex: i * 7 }));
@@ -850,17 +1070,9 @@ export default function App() {
   useEffect(() => {
     weekGroups.forEach((group) => {
       if (!group.rows.every(isRowComplete) || openedWeekSummariesRef.current.has(group.weekNumber)) return;
-      const cal = group.rows.map((r) => Number(r.calories.replace(/,/g, ""))).filter((n) => isFinite(n) && n > 0);
-      const stp = group.rows.map((r) => Number(r.steps.replace(/,/g, ""))).filter((n) => isFinite(n) && n > 0);
-      const done = group.rows.reduce((sum, r) => sum + habitColumns.reduce((s, item) => s + (r[item.key] ? 1 : 0), 0), 0);
       openedWeekSummariesRef.current.add(group.weekNumber);
-      setWeeklySummary({
-        weekNumber: group.weekNumber,
-        averageCalories: cal.length ? Math.round(cal.reduce((a, b) => a + b) / cal.length).toLocaleString() : "—",
-        averageSteps: stp.length ? Math.round(stp.reduce((a, b) => a + b) / stp.length).toLocaleString() : "—",
-        completionRate: Math.round((done / (group.rows.length * habitColumns.length)) * 100),
-      });
-      setIsWeeklySummaryOpen(true);
+      // Show milestone screen instead of old weekly summary
+      setTimeout(() => setMilestone(group.weekNumber), 400);
     });
   }, [rows]);
 
@@ -869,9 +1081,29 @@ export default function App() {
       <div className="background-noise" />
       <div className="background-glow" />
 
-      <AnimatePresence>{showOnboarding && <OnboardingScreen onComplete={(name) => { setUserName(name); localStorage.setItem(USER_KEY, name); setShowOnboarding(false); }} />}</AnimatePresence>
+      <AnimatePresence>{showOnboarding && <OnboardingScreen onComplete={(name, startDate) => {
+        setUserName(name);
+        localStorage.setItem(USER_KEY, name);
+        localStorage.setItem(START_DATE_KEY, startDate);
+        setRows(createRows(startDate));
+        setShowOnboarding(false);
+      }} />}</AnimatePresence>
       {showConfetti && <Confetti onDone={() => setShowConfetti(false)} />}
       <WeeklySummaryModal open={isWeeklySummaryOpen} onClose={() => setIsWeeklySummaryOpen(false)} summary={weeklySummary} />
+      <AnimatePresence>{milestone !== null && <MilestoneScreen weekNumber={milestone} onClose={() => setMilestone(null)} />}</AnimatePresence>
+      <AnimatePresence>{missedDayIndex !== null && (
+        <MissedDayBanner
+          missedDay={rows[missedDayIndex]?.dateLabel || ""}
+          onDismiss={() => { localStorage.setItem(`75_hard_missed_dismissed_${missedDayIndex}`, "1"); setMissedDayIndex(null); }}
+          onMarkComplete={() => {
+            const patch: Partial<TrackerRow> = {};
+            habitColumns.forEach((item) => { if (item.key !== "photo") (patch as any)[item.key] = true; });
+            updateRow(missedDayIndex!, patch);
+            setMissedDayIndex(null);
+          }}
+        />
+      )}</AnimatePresence>
+      <AnimatePresence>{exportGroup && <WeeklyExportModal group={exportGroup} userName={userName} onClose={() => setExportGroup(null)} />}</AnimatePresence>
       {photoSourceTarget !== null && <PhotoSourceModal onSelect={handlePhotoSourceSelect} onClose={() => setPhotoSourceTarget(null)} />}
       {viewingPhotoIndex !== null && rows[viewingPhotoIndex]?.photoUrl && (
         <PhotoViewerModal photo={rows[viewingPhotoIndex].photoUrl} rowLabel={rows[viewingPhotoIndex].countdown}
@@ -890,10 +1122,10 @@ export default function App() {
             {userName ? (
               <>
                 <h1 className="hero-title" style={{ marginBottom: 0 }}>{userName.toUpperCase()}'S</h1>
-                <h1 className="hero-title" style={{ marginTop: 4, color: "#b91c1c" }}>75 HARD</h1>
+                <h1 className="hero-title" style={{ marginTop: 4, color: "#b91c1c" }}>75 HARD CHALLENGE</h1>
               </>
             ) : (
-              <h1 className="hero-title">75 HARD TRACKER</h1>
+              <h1 className="hero-title">75 HARD CHALLENGE</h1>
             )}
           </div>
 
@@ -918,7 +1150,16 @@ export default function App() {
             <div className="summary-cards">
               <SummaryCard title="Completed Days" value={completedDays} subtext="All habit boxes finished" icon={Target} />
               <SummaryCard title="Overall Progress" value={`${progressPercent}%`} subtext="Based on all 450 habit ticks" icon={Flame} />
-              <SummaryCard title="Latest Weight" value={latestWeight} subtext="Most recent value entered" icon={Scale} extra={<WeightSparkline rows={rows} />} />
+              <SummaryCard title="Latest Weight" value={latestWeight} subtext="Most recent value entered" icon={Scale}
+                extra={<>
+                  <WeightSparkline rows={rows} />
+                  {weightDelta && (
+                    <div style={{ marginTop: 6, fontSize: 12, fontWeight: 700, color: weightDelta.lost ? "#4ade80" : "#f87171" }}>
+                      {weightDelta.lost ? "▼" : "▲"} {Math.abs(Number(weightDelta.diff))} kg ({Math.abs(Number(weightDelta.pct))}% {weightDelta.lost ? "lost" : "gained"})
+                    </div>
+                  )}
+                </>}
+              />
               <SummaryCard title="Avg Calories / Steps" value={`${averageCalories} / ${averageSteps}`} subtext="Daily averages" icon={Target} />
             </div>
 
