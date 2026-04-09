@@ -102,71 +102,18 @@ function compressImage(file: File, maxSize = 1200, quality = 0.82): Promise<stri
   });
 }
 
-// ─── Swipe Hook ───────────────────────────────────────────────────────────────
-function useSwipeRow(onSwipeRight: () => void, onSwipeLeft: () => void, disabled: boolean) {
-  const touchStartX = useRef<number>(0);
-  const touchStartY = useRef<number>(0);
-  const swiping = useRef(false);
-
-  const onTouchStart = useCallback((e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX;
-    touchStartY.current = e.touches[0].clientY;
-    swiping.current = true;
-  }, []);
-
-  const onTouchEnd = useCallback((e: React.TouchEvent) => {
-    if (!swiping.current || disabled) return;
-    const dx = e.changedTouches[0].clientX - touchStartX.current;
-    const dy = e.changedTouches[0].clientY - touchStartY.current;
-    // Only trigger if mostly horizontal swipe (not a scroll)
-    if (Math.abs(dx) < 50 || Math.abs(dy) > Math.abs(dx) * 0.7) return;
-    if (dx > 0) onSwipeRight();
-    else onSwipeLeft();
-    swiping.current = false;
-  }, [disabled, onSwipeRight, onSwipeLeft]);
-
-  return { onTouchStart, onTouchEnd };
-}
-
-// ─── Swipeable Date Cell ──────────────────────────────────────────────────────
-function SwipeDateCell({ row, isToday, rowTone, todayRef, onSwipeRight, onSwipeLeft, locked }: {
+// ─── Date Cell ────────────────────────────────────────────────────────────────
+function DateCell({ row, isToday, rowTone, todayRef, isFuture }: {
   row: TrackerRow; isToday: boolean; rowTone: string;
-  todayRef?: React.RefObject<HTMLDivElement>;
-  onSwipeRight: () => void; onSwipeLeft: () => void; locked: boolean;
+  todayRef?: React.RefObject<HTMLDivElement>; isFuture: boolean;
 }) {
-  const [swipeHint, setSwipeHint] = useState<"right" | "left" | null>(null);
-  const { onTouchStart, onTouchEnd } = useSwipeRow(
-    () => { setSwipeHint("right"); setTimeout(() => setSwipeHint(null), 500); onSwipeRight(); },
-    () => { setSwipeHint("left"); setTimeout(() => setSwipeHint(null), 500); onSwipeLeft(); },
-    locked
-  );
   return (
-    <div
-      className={`sheet-cell body date-col ${rowTone}`}
-      onTouchStart={onTouchStart}
-      onTouchEnd={onTouchEnd}
-      style={{ position: "relative", overflow: "hidden", userSelect: "none" }}
-    >
-      <AnimatePresence>
-        {swipeHint && (
-          <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            style={{
-              position: "absolute", inset: 0, zIndex: 5, pointerEvents: "none",
-              background: swipeHint === "right" ? "rgba(220,38,38,0.35)" : "rgba(0,0,0,0.5)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}
-          >
-            <span style={{ fontSize: 16, color: "#fff", fontWeight: 900 }}>{swipeHint === "right" ? "✓" : "✕"}</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
-      <div ref={todayRef} style={{ textAlign: "center", lineHeight: 1.35, position: "relative", zIndex: 1 }}>
+    <div className={`sheet-cell body date-col ${rowTone}`} style={{ position: "relative" }}>
+      <div ref={todayRef} style={{ textAlign: "center", lineHeight: 1.35 }}>
         {isToday && <div style={{ fontSize: 8, letterSpacing: "0.2em", textTransform: "uppercase", color: "#f87171", fontWeight: 800, marginBottom: 2 }}>TODAY</div>}
+        {isFuture && <div style={{ fontSize: 8, letterSpacing: "0.15em", textTransform: "uppercase", color: "rgba(252,165,165,0.3)", fontWeight: 700, marginBottom: 2 }}>UPCOMING</div>}
         <div>{row.dateLabel}</div>
         <div style={{ fontSize: 11, color: "rgba(252,165,165,0.6)", letterSpacing: "0.06em", marginTop: 2 }}>{row.day}</div>
-        {!locked && <div style={{ fontSize: 8, color: "rgba(252,165,165,0.18)", marginTop: 3 }}>⟵ swipe ⟶</div>}
       </div>
     </div>
   );
@@ -993,28 +940,6 @@ export default function App() {
     updateRow(absoluteIndex, { locked: !rows[absoluteIndex].locked });
   }, [rows, triggerFeedback, updateRow]);
 
-  const handleSwipeComplete = useCallback((absoluteIndex: number) => {
-    if (rows[absoluteIndex].locked) return;
-    const row = rows[absoluteIndex];
-    const allDone = habitColumns.every((item) => row[item.key]);
-    triggerFeedback(allDone ? "uncheck" : "check");
-    const patch: Partial<TrackerRow> = {};
-    habitColumns.forEach((item) => { if (item.key !== "photo") (patch as any)[item.key] = !allDone; });
-    const after = { ...row, ...patch };
-    if (!allDone && habitColumns.every((item) => after[item.key])) {
-      setTimeout(() => { setShowConfetti(true); triggerDayCompleteSound(); }, 100);
-    }
-    updateRow(absoluteIndex, patch);
-  }, [rows, triggerFeedback, triggerDayCompleteSound, updateRow]);
-
-  const handleSwipeUncomplete = useCallback((absoluteIndex: number) => {
-    if (rows[absoluteIndex].locked) return;
-    triggerFeedback("uncheck");
-    const patch: Partial<TrackerRow> = {};
-    habitColumns.forEach((item) => { if (item.key !== "photo") (patch as any)[item.key] = false; });
-    updateRow(absoluteIndex, patch);
-  }, [rows, triggerFeedback, updateRow]);
-
   const handlePhotoSourceSelect = useCallback((source: "camera" | "gallery") => {
     const idx = photoSourceTarget; setPhotoSourceTarget(null);
     if (idx === null) return;
@@ -1203,23 +1128,22 @@ export default function App() {
                 {group.rows.map((row, rowIndex) => {
                   const absoluteIndex = group.startIndex + rowIndex;
                   const isToday = absoluteIndex === todayIndex;
+                  const isFuture = todayIndex >= 0 && absoluteIndex > todayIndex;
                   const zebra = groupIndex % 2 === 0 ? "zebra-a" : "zebra-b";
                   const rowDone = isRowComplete(row);
-                  const rowLocked = row.locked;
+                  const rowLocked = row.locked || isFuture;
                   const rowIsActive = activeRow === absoluteIndex;
-                  const rowTone = rowIsActive ? "active-row" : isToday ? "today-row" : rowDone ? "complete-row" : zebra;
-                  const showLockButton = rowHasData(row);
+                  const rowTone = isFuture ? "future-row" : rowIsActive ? "active-row" : isToday ? "today-row" : rowDone ? "complete-row" : zebra;
+                  const showLockButton = rowHasData(row) && !isFuture;
 
                   return (
                     <React.Fragment key={row.id}>
-                      <SwipeDateCell
+                      <DateCell
                         row={row}
                         isToday={isToday}
+                        isFuture={isFuture}
                         rowTone={rowTone}
                         todayRef={isToday ? todayRowRef : undefined}
-                        onSwipeRight={() => handleSwipeComplete(absoluteIndex)}
-                        onSwipeLeft={() => handleSwipeUncomplete(absoluteIndex)}
-                        locked={rowLocked}
                       />
 
                       {rowIndex === 0 ? (
