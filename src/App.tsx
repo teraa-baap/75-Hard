@@ -501,9 +501,13 @@ export default function App() {
   }, [photoSourceTarget]);
 
   const todayIndex = useMemo(() => {
-    // Use local date to avoid UTC timezone shift issues
     const now = new Date();
     const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    // Also try matching by day number offset from start date as fallback
+    const start = new Date(`${START_DATE}T00:00:00`);
+    const diffMs = now.setHours(0,0,0,0) - start.setHours(0,0,0,0);
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    if (diffDays >= 0 && diffDays < TOTAL_DAYS) return diffDays;
     return rows.findIndex((r) => r.date === today);
   }, [rows]);
 
