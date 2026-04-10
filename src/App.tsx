@@ -2067,6 +2067,7 @@ export default function App() {
             updateRow(idx, patch);
           }}
         />
+      )}</AnimatePresence>
       <AnimatePresence>{sleepPopup && (
         <SleepPopup sleep={sleepPopup.sleep} dateLabel={sleepPopup.dateLabel} onClose={() => setSleepPopup(null)} />
       )}</AnimatePresence>
