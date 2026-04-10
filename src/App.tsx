@@ -988,9 +988,15 @@ export default function App() {
   const weekGroups = Array.from({ length: Math.ceil(TOTAL_DAYS / 7) }, (_, i) => ({ weekNumber: i + 1, rows: rows.slice(i * 7, i * 7 + 7), startIndex: i * 7 }));
 
   useEffect(() => {
-    if (completedDays > prevCompletedDaysRef.current && completedDays > 0) { setShowConfetti(true); triggerDayCompleteSound(); }
+    if (!loaded) return;
+    if (prevCompletedDaysRef.current === 0 && completedDays > 0) {
+      // First load with existing data — set baseline without firing confetti
+      prevCompletedDaysRef.current = completedDays;
+      return;
+    }
+    if (completedDays > prevCompletedDaysRef.current) { setShowConfetti(true); triggerDayCompleteSound(); }
     prevCompletedDaysRef.current = completedDays;
-  }, [completedDays, triggerDayCompleteSound]);
+  }, [completedDays, loaded, triggerDayCompleteSound]);
 
   useEffect(() => {
     weekGroups.forEach((group) => {
@@ -1073,7 +1079,6 @@ export default function App() {
             </div>
 
             <div className="summary-cards">
-              <SummaryCard title="Completed Days" value={completedDays} subtext="All habit boxes finished" icon={Target} />
               <SummaryCard title="Overall Progress" value={`${progressPercent}%`} subtext="Based on all 450 habit ticks" icon={Flame} />
               <SummaryCard title="Latest Weight" value={latestWeight} subtext="Most recent value entered" icon={Scale}
                 extra={<>
@@ -1154,15 +1159,13 @@ export default function App() {
 
                       <div className={`sheet-cell body count-col count-cell ${rowTone}`}>
                         {showLockButton ? (
-                          <button type="button" onClick={() => toggleRowLock(absoluteIndex)} className={rowLocked ? "lock-btn locked" : "lock-btn"}>
-                            {rowLocked ? <Lock className="lock-icon" /> : <LockOpen className="lock-icon" />}
+                          <button type="button" onClick={() => toggleRowLock(absoluteIndex)} className={row.locked ? "lock-btn locked" : "lock-btn"}>
+                            {row.locked ? <Lock className="lock-icon" /> : <LockOpen className="lock-icon" />}
                           </button>
                         ) : null}
                         <div className="count-text">{row.countdown}</div>
                         <AnimatePresence>
-                          {rowLocked ? (
-                            <motion.div initial={{ opacity: 0, scale: 0.92 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.96 }} transition={{ type: "spring", stiffness: 260, damping: 18 }} className="badge-row muted">LOCKED</motion.div>
-                          ) : rowDone ? (
+                          {rowDone ? (
                             <motion.div initial={{ opacity: 0, scale: 0.92 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.96 }} transition={{ type: "spring", stiffness: 260, damping: 18 }} className="badge-row">DAY COMPLETE</motion.div>
                           ) : null}
                         </AnimatePresence>
