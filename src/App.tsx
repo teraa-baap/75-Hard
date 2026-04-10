@@ -111,7 +111,6 @@ function DateCell({ row, isToday, rowTone, todayRef, isFuture }: {
     <div className={`sheet-cell body date-col ${rowTone}`} style={{ position: "relative" }}>
       <div ref={todayRef} style={{ textAlign: "center", lineHeight: 1.35 }}>
         {isToday && <div style={{ fontSize: 8, letterSpacing: "0.2em", textTransform: "uppercase", color: "#f87171", fontWeight: 800, marginBottom: 2 }}>TODAY</div>}
-        {isFuture && <div style={{ fontSize: 8, letterSpacing: "0.15em", textTransform: "uppercase", color: "rgba(252,165,165,0.3)", fontWeight: 700, marginBottom: 2 }}>UPCOMING</div>}
         <div>{row.dateLabel}</div>
         <div style={{ fontSize: 11, color: "rgba(252,165,165,0.6)", letterSpacing: "0.06em", marginTop: 2 }}>{row.day}</div>
       </div>
