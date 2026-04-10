@@ -2067,26 +2067,8 @@ export default function App() {
             updateRow(idx, patch);
           }}
         />
-      )}</AnimatePresence>
       <AnimatePresence>{sleepPopup && (
         <SleepPopup sleep={sleepPopup.sleep} dateLabel={sleepPopup.dateLabel} onClose={() => setSleepPopup(null)} />
-      )}</AnimatePresence>
-        <StravaWorkoutDrawer
-          date={stravaDrawer.date}
-          dateLabel={stravaDrawer.dateLabel}
-          token={stravaToken}
-          onClose={() => setStravaDrawer(null)}
-          onAutoFill={(calories, steps, w1, w2) => {
-            const idx = rows.findIndex(r => r.date === stravaDrawer.date);
-            if (idx < 0) return;
-            const patch: Partial<TrackerRow> = {};
-            if (calories) patch.calories = calories;
-            if (steps) patch.steps = steps;
-            if (w1) patch.workout1 = true;
-            if (w2) patch.workout2 = true;
-            updateRow(idx, patch);
-          }}
-        />
       )}</AnimatePresence>
 
       <div className="page">
