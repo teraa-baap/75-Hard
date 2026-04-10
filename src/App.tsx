@@ -20,6 +20,29 @@ const NOTIF_KEY = "75_hard_notif_v1";
 const STRAVA_TOKEN_KEY = "75_hard_strava_token_v1";
 const STRAVA_CLIENT_ID = "223103";
 
+const MILESTONE_MESSAGES: Record<number, { title: string; subtitle: string }> = {
+  1:  { title: "WEEK 1 DONE", subtitle: "The hardest week is behind you. Most quit here. You didn't." },
+  2:  { title: "2 WEEKS IN", subtitle: "Your body is adapting. This is where habits start forming." },
+  3:  { title: "3 WEEKS STRONG", subtitle: "21 days. Science says that's a habit. You're wired differently now." },
+  4:  { title: "HALFWAY THERE", subtitle: "30 days of relentless discipline. The other half is yours to take." },
+  5:  { title: "WEEK 5 BEAST", subtitle: "Most people dream about this. You're living it." },
+  6:  { title: "6 WEEKS LOCKED IN", subtitle: "Your mind is iron. Your body is following." },
+  7:  { title: "FINAL WEEK", subtitle: "One week left. This is what legends are made of. Finish it." },
+  8:  { title: "75 HARD COMPLETE", subtitle: "You did what most people only talk about. Elite." },
+};
+
+const habitColumns = [
+  { key: "photo",    icon: Camera,        label: "Progress Photo" },
+  { key: "workout1", icon: Dumbbell,      label: "Workout 1" },
+  { key: "diet",     icon: Utensils,      label: "Diet" },
+  { key: "workout2", icon: TreeDeciduous, label: "Outdoor Workout" },
+  { key: "read",     icon: BookOpen,      label: "Read" },
+  { key: "water",    icon: Droplets,      label: "Water" },
+] as const;
+
+const weekdayNames = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+type HabitKey = (typeof habitColumns)[number]["key"];
+
 // ─── Strava Types ─────────────────────────────────────────────────────────────
 type StravaToken = {
   access_token: string;
@@ -263,29 +286,6 @@ function StravaConnectBanner({ onConnect }: { onConnect: () => void }) {
     </motion.button>
   );
 }
-
-const MILESTONE_MESSAGES: Record<number, { title: string; subtitle: string }> = {
-  1:  { title: "WEEK 1 DONE", subtitle: "The hardest week is behind you. Most quit here. You didn't." },
-  2:  { title: "2 WEEKS IN", subtitle: "Your body is adapting. This is where habits start forming." },
-  3:  { title: "3 WEEKS STRONG", subtitle: "21 days. Science says that's a habit. You're wired differently now." },
-  4:  { title: "HALFWAY THERE", subtitle: "30 days of relentless discipline. The other half is yours to take." },
-  5:  { title: "WEEK 5 BEAST", subtitle: "Most people dream about this. You're living it." },
-  6:  { title: "6 WEEKS LOCKED IN", subtitle: "Your mind is iron. Your body is following." },
-  7:  { title: "FINAL WEEK", subtitle: "One week left. This is what legends are made of. Finish it." },
-  8:  { title: "75 HARD COMPLETE", subtitle: "You did what most people only talk about. Elite." },
-};
-
-const habitColumns = [
-  { key: "photo",    icon: Camera,        label: "Progress Photo" },
-  { key: "workout1", icon: Dumbbell,      label: "Workout 1" },
-  { key: "diet",     icon: Utensils,      label: "Diet" },
-  { key: "workout2", icon: TreeDeciduous, label: "Outdoor Workout" },
-  { key: "read",     icon: BookOpen,      label: "Read" },
-  { key: "water",    icon: Droplets,      label: "Water" },
-] as const;
-
-const weekdayNames = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
-type HabitKey = (typeof habitColumns)[number]["key"];
 
 type SleepData = {
   score: number | null;
