@@ -1,674 +1,1684 @@
 
-/* ─── Light Mode ─────────────────────────────────────────────────────────── */
-.light-mode {
-  --bg: #fdf5f5;
-  --panel: rgba(255,245,245,0.98);
-  --panel-2: rgba(255,235,235,0.9);
-  --border: rgba(180,30,30,0.35);
-  --border-soft: rgba(180,30,30,0.2);
-  --text: #2d0808;
-  --muted: rgba(100,20,20,0.65);
-  --muted-2: rgba(150,30,30,0.6);
-  --red: #b91c1c;
-  --red-soft: rgba(185,28,28,0.12);
-  --red-bright: #dc2626;
-  --black-glass: rgba(255,240,240,0.7);
-  --shadow: 0 20px 50px rgba(180,30,30,0.12);
-}
-.light-mode body { background: #fdf5f5; color: #2d0808; }
-.light-mode .app-shell { background: #fdf5f5; }
-.light-mode .background-glow {
-  background:
-    radial-gradient(circle at top, rgba(220,100,100,0.12), transparent 38%),
-    radial-gradient(circle at bottom, rgba(180,50,50,0.08), transparent 42%);
-}
-.light-mode .background-noise { opacity: 0.02; }
-.light-mode .hero-card {
-  background: linear-gradient(135deg, #fff 0%, #fff8f8 45%, #ffe8e8 100%);
-  border-color: rgba(185,28,28,0.25);
-  box-shadow: 0 20px 60px rgba(185,28,28,0.1);
-}
-.light-mode .hero-title { color: #1a0404; }
-.light-mode .pill { background: rgba(185,28,28,0.08); color: #b91c1c; border-color: rgba(185,28,28,0.25); }
-.light-mode .mini-icon { color: #b91c1c; }
-.light-mode .hero-body { background: rgba(255,240,240,0.5); border-color: rgba(185,28,28,0.15); }
-.light-mode .timeline-card {
-  background: linear-gradient(90deg, #fff 0%, rgba(220,100,100,0.1) 50%, #fff 100%);
-  border-color: rgba(185,28,28,0.2);
-}
-.light-mode .timeline-day { color: #1a0404; }
-.light-mode .mini-label { color: rgba(140,30,30,0.6); }
-.light-mode .summary-card {
-  background: linear-gradient(135deg, #fff 0%, #fff8f8 55%, #ffe8e8 100%);
-  border-color: rgba(185,28,28,0.18);
-}
-.light-mode .summary-title { color: rgba(120,20,20,0.6); }
-.light-mode .summary-value { color: #1a0404; }
-.light-mode .summary-subtext { color: rgba(100,20,20,0.55); }
-.light-mode .summary-icon-wrap { background: rgba(185,28,28,0.08); border-color: rgba(185,28,28,0.2); }
-.light-mode .summary-icon { color: #b91c1c; }
-.light-mode .sheet-wrap { background: #fff; border-color: rgba(185,28,28,0.2); }
-.light-mode .sheet-banner, .light-mode .sheet-footer { background: linear-gradient(90deg, #fff 0%, rgba(220,80,80,0.08) 50%, #fff 100%); color: #1a0404; border-color: rgba(185,28,28,0.15); }
-.light-mode .sheet-cell { border-color: rgba(185,28,28,0.12); }
-.light-mode .sheet-cell.head { background: linear-gradient(180deg, rgba(220,80,80,0.08) 0%, #fff 100%); color: #1a0404; }
-.light-mode .sheet-cell.body { background: #fff; color: #1a0404; }
-.light-mode .zebra-b { background: rgba(220,80,80,0.04) !important; }
-.light-mode .complete-row { background: rgba(185,28,28,0.08) !important; }
-.light-mode .today-row { background: rgba(185,28,28,0.12) !important; }
-.light-mode .future-row { background: rgba(0,0,0,0.02) !important; }
-.light-mode .habit-btn { border-color: rgba(185,28,28,0.3); color: #b91c1c; }
-.light-mode .habit-btn.checked { background: #b91c1c; border-color: #b91c1c; }
-.light-mode .photo-btn { border-color: rgba(185,28,28,0.3); }
-.light-mode .badge-row { background: rgba(185,28,28,0.1); color: #b91c1c; border-color: rgba(185,28,28,0.25); }
-.light-mode .lock-btn { background: rgba(255,240,240,0.9); border-color: rgba(185,28,28,0.3); color: #b91c1c; }
-.light-mode .lock-btn.locked { background: rgba(185,28,28,0.15); }
-.light-mode .merged-week { background: linear-gradient(180deg, rgba(220,80,80,0.1) 0%, #fff 100%); border-color: rgba(185,28,28,0.15); }
-.light-mode .vertical-week { color: #1a0404; }
-.light-mode .mobile-tip { color: rgba(140,30,30,0.5); }
-.light-mode .input-base { background: #fff8f8; border-color: rgba(185,28,28,0.2); color: #1a0404; }
-.light-mode .head-icon { color: #b91c1c; }
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+  Camera, Dumbbell, Utensils, TreeDeciduous, BookOpen, Droplets,
+  Flame, Scale, Target, ImagePlus, Lock, LockOpen, X, Images,
+  RefreshCw, ArrowLeft, Trophy, ChevronLeft,
+  ChevronRight, User, Bell, Layers, Share2, Calendar,
+} from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
-:root {
-  --bg: #000000;
-  --panel: rgba(8, 8, 8, 0.96);
-  --panel-2: rgba(20, 5, 5, 0.86);
-  --border: rgba(127, 29, 29, 0.72);
-  --border-soft: rgba(127, 29, 29, 0.45);
-  --text: #ffe8e8;
-  --muted: rgba(255, 214, 214, 0.68);
-  --muted-2: rgba(252, 165, 165, 0.68);
-  --red: #dc2626;
-  --red-soft: rgba(220, 38, 38, 0.22);
-  --red-bright: #f87171;
-  --black-glass: rgba(0, 0, 0, 0.55);
-  --shadow: 0 20px 50px rgba(127, 29, 29, 0.18);
-  --radius: 30px;
-  --font: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-}
+// ─── Constants ────────────────────────────────────────────────────────────────
+const TOTAL_DAYS = 75;
+const STORAGE_KEY = "premium_75_hard_tracker_pwa_v1";
+const USER_KEY = "75_hard_user_v1";
+const START_DATE_KEY = "75_hard_start_date_v1";
+const NOTIF_KEY = "75_hard_notif_v1";
 
-* { box-sizing: border-box; }
-html, body, #root { height: 100%; }
-body {
-  margin: 0;
-  background: var(--bg);
-  color: var(--text);
-  font-family: var(--font);
-  overflow-x: hidden;
-}
-button, input { font: inherit; }
-button { cursor: pointer; }
+const MILESTONE_MESSAGES: Record<number, { title: string; subtitle: string }> = {
+  1:  { title: "WEEK 1 DONE", subtitle: "The hardest week is behind you. Most quit here. You didn't." },
+  2:  { title: "2 WEEKS IN", subtitle: "Your body is adapting. This is where habits start forming." },
+  3:  { title: "3 WEEKS STRONG", subtitle: "21 days. Science says that's a habit. You're wired differently now." },
+  4:  { title: "HALFWAY THERE", subtitle: "30 days of relentless discipline. The other half is yours to take." },
+  5:  { title: "WEEK 5 BEAST", subtitle: "Most people dream about this. You're living it." },
+  6:  { title: "6 WEEKS LOCKED IN", subtitle: "Your mind is iron. Your body is following." },
+  7:  { title: "FINAL WEEK", subtitle: "One week left. This is what legends are made of. Finish it." },
+  8:  { title: "75 HARD COMPLETE", subtitle: "You did what most people only talk about. Elite." },
+};
 
-.app-shell {
-  position: relative;
-  min-height: 100vh;
-  overflow: hidden;
-  background: #000;
-  color: var(--text);
-}
-.background-noise {
-  pointer-events: none;
-  position: absolute;
-  inset: 0;
-  opacity: 0.055;
-  background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.55) 1px, transparent 0);
-  background-size: 18px 18px;
-}
-.background-glow {
-  pointer-events: none;
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(circle at top, rgba(127,29,29,0.24), transparent 38%),
-    radial-gradient(circle at bottom, rgba(69,10,10,0.28), transparent 42%);
-}
-.page {
-  position: relative;
-  max-width: 1900px;
-  margin: 0 auto;
-  padding: 16px 12px 28px;
-}
-.hero-card {
-  overflow: hidden;
-  border-radius: var(--radius);
-  border: 1px solid var(--border);
-  background: linear-gradient(135deg, #000 0%, #0c0a0a 45%, #200606 100%);
-  box-shadow: 0 20px 60px rgba(127,29,29,0.24);
-}
-.hero-header {
-  border-bottom: 1px solid var(--border);
-  padding: 20px 18px;
-}
-.pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  border-radius: 999px;
-  border: 1px solid rgba(153, 27, 27, 0.75);
-  background: rgba(127,29,29,0.22);
-  padding: 6px 12px;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.35em;
-  text-transform: uppercase;
-  color: #fca5a5;
-}
-.mini-icon {
-  width: 16px;
-  height: 16px;
-}
-.hero-title {
-  margin: 12px 0 0;
-  font-size: clamp(28px, 4vw, 42px);
-  line-height: 1.05;
-  font-weight: 900;
-  letter-spacing: 0.18em;
-  color: #fff;
-}
-.hero-body {
-  border-top: 1px solid rgba(127,29,29,0.28);
-  border-bottom: 1px solid rgba(127,29,29,0.28);
-  background: rgba(0,0,0,0.2);
-  padding: 16px 18px 18px;
-  backdrop-filter: blur(2px);
-}
-.timeline-card {
-  margin-bottom: 16px;
-  border-radius: 16px;
-  border: 1px solid var(--border);
-  background: linear-gradient(90deg, #000 0%, rgba(127,29,29,0.5) 50%, #000 100%);
-  padding: 16px;
-  box-shadow: 0 8px 24px rgba(127,29,29,0.14);
-  backdrop-filter: blur(12px);
-}
-.timeline-row {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-.mini-label {
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.34em;
-  color: rgba(252,165,165,0.72);
-}
-.timeline-day {
-  margin-top: 10px;
-  font-size: 24px;
-  line-height: 1;
-  font-weight: 900;
-  letter-spacing: 0.16em;
-  color: #fff;
-}
-.timeline-bars {
-  display: grid;
-  grid-template-columns: repeat(15, minmax(0, 1fr));
-  gap: 6px;
-  flex: 1;
-}
-.timeline-bar {
-  height: 12px;
-  border-radius: 999px;
-  border: 1px solid rgba(69,10,10,0.7);
-  background: #000;
-}
-.timeline-bar.filled {
-  border-color: rgba(248,113,113,0.8);
-  background: linear-gradient(90deg, #b91c1c 0%, #ef4444 100%);
-  box-shadow: 0 0 10px rgba(220,38,38,0.35);
-}
-.summary-cards {
-  display: grid;
-  gap: 12px;
-}
-.summary-card {
-  border-radius: 16px;
-  border: 1px solid rgba(127,29,29,0.45);
-  background: linear-gradient(135deg, #000 0%, rgba(9,9,11,0.95) 55%, rgba(69,10,10,0.8) 100%);
-  color: var(--text);
-  box-shadow: 0 8px 24px rgba(127,29,29,0.14);
-  backdrop-filter: blur(14px);
-}
-.summary-card-content {
-  position: relative;
-  overflow: hidden;
-  padding: 16px;
-}
-.summary-card-content::before {
-  content: "";
-  pointer-events: none;
-  position: absolute;
-  inset: 0;
-  opacity: 0.08;
-  background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.35) 1px, transparent 0);
-  background-size: 18px 18px;
-}
-.summary-card-content::after {
-  content: "";
-  pointer-events: none;
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(127,29,29,0.15), transparent 40%, rgba(127,29,29,0.08));
-}
-.summary-grid {
-  position: relative;
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-}
-.summary-title {
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.32em;
-  color: rgba(252,165,165,0.72);
-}
-.summary-value {
-  margin-top: 8px;
-  font-size: 34px;
-  font-weight: 900;
-  line-height: 1;
-  color: #fff;
-}
-.summary-subtext {
-  margin-top: 6px;
-  font-size: 14px;
-  color: rgba(255, 212, 212, 0.65);
-}
-.summary-icon-wrap {
-  border-radius: 18px;
-  border: 1px solid rgba(153, 27, 27, 0.7);
-  background: rgba(127,29,29,0.22);
-  padding: 10px;
-  box-shadow: 0 10px 18px rgba(127,29,29,0.16);
-  backdrop-filter: blur(8px);
-}
-.summary-icon {
-  width: 20px;
-  height: 20px;
-  color: #fca5a5;
-}
-.mobile-tip {
-  margin: 16px 0 12px;
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.22em;
-  color: rgba(252,165,165,0.6);
-}
-.sheet-wrap {
-  overflow: auto;
-  border-radius: var(--radius);
-  border: 1px solid var(--border);
-  background: rgba(0,0,0,0.9);
-  box-shadow: 0 18px 50px rgba(127,29,29,0.22);
-  backdrop-filter: blur(14px);
-  margin: 0 12px;
-}
-.sheet-inner {
-  width: fit-content;
-  min-width: fit-content;
-}
-.sheet-banner, .sheet-footer {
-  border-bottom: 1px solid var(--border);
-  background: linear-gradient(90deg, #000 0%, #3b0707 50%, #000 100%);
-  padding: 12px 16px;
-  text-align: center;
-  font-size: 15px;
-  font-weight: 900;
-  letter-spacing: 0.42em;
-  text-transform: uppercase;
-  color: var(--text);
-}
-.sheet-footer {
-  border-top: 1px solid var(--border);
-  border-bottom: 0;
-  font-size: 12px;
-  letter-spacing: 0.55em;
-  color: #fecaca;
-}
-.sheet-grid {
-  display: grid;
-  grid-template-columns: 80px 60px 80px repeat(6, 40px) 80px 110px 80px;
-}
-.sheet-grid.header {
-  border-bottom: 1px solid var(--border);
-}
-.sheet-cell {
-  border-right: 1px solid rgba(69,10,10,0.82);
-  border-bottom: 1px solid rgba(69,10,10,0.82);
-  padding: 0 4px;
-}
-.sheet-cell.head {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 40px;
-  background: linear-gradient(180deg, #450a0a 0%, #000 65%, #000 100%);
-  color: var(--text);
-  font-size: 11px;
-  font-weight: 900;
-}
-.sheet-cell.body {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 52px;
-  background: #000;
-  color: var(--text);
-  font-size: 11px;
-  font-weight: 600;
-  transition: all .2s ease;
-}
-.head-icon-cell {
-  pointer-events: none;
-}
-.head-icon {
-  width: 16px;
-  height: 16px;
-  color: #fca5a5;
-}
-.zebra-a { background: #000 !important; }
-.zebra-b { background: rgba(69,10,10,0.18) !important; }
-.future-row {
-  background: rgba(0,0,0,0.6) !important;
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-.today-row {
-  background: rgba(185,28,28,0.28) !important;
-  box-shadow: inset 0 0 0 1.5px rgba(248,113,113,0.6), inset 0 0 32px rgba(185,28,28,0.25) !important;
-  animation: today-pulse 2.5s ease-in-out infinite;
-}
-@keyframes today-pulse {
-  0%, 100% { box-shadow: inset 0 0 0 1.5px rgba(248,113,113,0.6), inset 0 0 32px rgba(185,28,28,0.25); }
-  50% { box-shadow: inset 0 0 0 1.5px rgba(248,113,113,1), inset 0 0 44px rgba(185,28,28,0.45); }
-}
-.active-row {
-  background: rgba(69,10,10,0.42) !important;
-  box-shadow: inset 0 0 0 1px rgba(248,113,113,0.5), inset 0 0 22px rgba(127,29,29,0.28);
-}
-.complete-row {
-  background: rgba(127,29,29,0.30) !important;
-  box-shadow: inset 0 0 0 1px rgba(248,113,113,0.22), inset 0 0 28px rgba(185,28,28,0.22);
-}
-.merged-week {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 392px;
-  border-right: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
-  background: linear-gradient(180deg, #450a0a 0%, #000 45%, #000 100%);
-}
-.vertical-week {
-  writing-mode: vertical-rl;
-  transform: rotate(180deg);
-  text-align: center;
-  font-size: 13px;
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: 0.2em;
-  color: var(--text);
-}
-.count-cell {
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  gap: 5px;
-  padding: 10px 6px;
-  min-height: 64px;
-}
-.count-text {
-  line-height: 1.15;
-  font-size: 12px;
-  text-align: center;
-}
-.lock-btn {
-  display: flex;
-  width: 22px;
-  height: 22px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 999px;
-  border: 1px solid rgba(127,29,29,0.85);
-  background: rgba(0,0,0,0.7);
-  color: #fecaca;
-  transition: all .2s ease;
-  flex-shrink: 0;
-}
-.lock-btn:hover {
-  border-color: #ef4444;
-  background: rgba(69,10,10,0.4);
-}
-.lock-btn.locked {
-  border-color: rgba(252,165,165,0.8);
-  background: rgba(220,38,38,0.25);
-  color: #fff;
-  box-shadow: 0 0 10px rgba(220,38,38,0.25);
-}
-.lock-icon { width: 12px; height: 12px; }
-.badge-row {
-  margin-top: 0;
-  border-radius: 999px;
-  border: 1px solid rgba(248,113,113,0.4);
-  background: rgba(220,38,38,0.20);
-  padding: 2px 7px;
-  font-size: 8px;
-  font-weight: 900;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  text-align: center;
-  color: #ffe4e6;
-  box-shadow: 0 0 12px rgba(220,38,38,0.25);
-}
-.badge-row.muted {
-  border-color: rgba(248,113,113,0.35);
-  background: rgba(0,0,0,0.70);
-  box-shadow: 0 0 10px rgba(220,38,38,0.2);
-}
-.habit-btn {
-  display: flex;
-  width: 20px;
-  height: 20px;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid rgba(127,29,29,0.8);
-  background: transparent;
-  color: #fecaca;
-  font-size: 12px;
-  font-weight: 900;
-  transition: all .2s ease;
-}
-.habit-btn:hover { border-color: #ef4444; background: rgba(69,10,10,0.3); }
-.habit-btn.checked {
-  border-color: #fee2e2;
-  background: #dc2626;
-  color: white;
-  box-shadow: 0 0 14px rgba(220,38,38,0.35);
-}
-.habit-btn.disabled,
-.photo-btn.disabled,
-.input-base.disabled {
-  cursor: not-allowed;
-  opacity: .55;
-}
-.photo-btn {
-  position: relative;
-  display: flex;
-  width: 32px;
-  height: 32px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 12px;
-  border: 1px solid rgba(127,29,29,0.8);
-  background: transparent;
-  color: #fecaca;
-  transition: all .3s ease;
-}
-.photo-btn:hover { border-color: #ef4444; background: rgba(69,10,10,0.3); }
-.photo-btn.has-photo {
-  border-color: #fecaca;
-  background: rgba(220,38,38,0.20);
-  color: white;
-  box-shadow: 0 0 18px rgba(220,38,38,0.28);
-}
-.photo-thumb {
-  width: 100%;
-  height: 100%;
-  border-radius: 10px;
-  object-fit: cover;
-}
-.photo-placeholder-icon {
-  width: 16px;
-  height: 16px;
-  transition: all .3s ease;
-}
-.photo-btn:hover .photo-placeholder-icon {
-  transform: scale(1.1);
-  filter: drop-shadow(0 0 10px rgba(248,113,113,0.85));
-}
-.hidden-input { display: none; }
-.metric-pad { padding: 8px; }
-.input-base {
-  width: 100%;
-  height: 36px;
-  border-radius: 8px;
-  border: 1px solid rgba(127,29,29,0.7);
-  background: #000;
-  color: var(--text);
-  text-align: center;
-  box-shadow: inset 0 3px 10px rgba(127,29,29,0.2);
-  outline: none;
-}
-.input-base::placeholder { color: rgba(252,165,165,0.35); }
-.input-base:focus {
-  border-color: #ef4444;
-  box-shadow: inset 0 3px 10px rgba(127,29,29,0.2), 0 0 0 2px rgba(220,38,38,0.22);
-}
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  border-radius: 16px;
-  border: 1px solid #b91c1c;
-  background: #dc2626;
-  color: #fff;
-  padding: 12px 16px;
-  font-weight: 700;
-}
-.btn:hover { background: #ef4444; }
-.btn-outline {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  border-radius: 16px;
-  border: 1px solid rgba(127,29,29,0.85);
-  background: transparent;
-  color: var(--text);
-  padding: 12px 16px;
-  font-weight: 700;
-}
-.btn-outline:hover { background: rgba(69,10,10,0.35); }
-.w-full { width: 100%; }
+const habitColumns = [
+  { key: "photo",    icon: Camera,        label: "Progress Photo" },
+  { key: "workout1", icon: Dumbbell,      label: "Workout 1" },
+  { key: "diet",     icon: Utensils,      label: "Diet" },
+  { key: "workout2", icon: TreeDeciduous, label: "Outdoor Workout" },
+  { key: "read",     icon: BookOpen,      label: "Read" },
+  { key: "water",    icon: Droplets,      label: "Water" },
+] as const;
 
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 50;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-  background: rgba(0,0,0,0.7);
-  backdrop-filter: blur(6px);
+const weekdayNames = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+type HabitKey = (typeof habitColumns)[number]["key"];
+
+type TrackerRow = {
+  id: number; date: string; dateLabel: string; day: string; countdown: string;
+  photo: boolean; photoUrl: string; workout1: boolean; diet: boolean;
+  workout2: boolean; read: boolean; water: boolean;
+  weight: string; calories: string; steps: string; locked: boolean;
+};
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function formatDateLabel(date: Date) {
+  return new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short" }).format(date).replace(" ", "-");
 }
-.modal-card {
-  position: relative;
-  width: min(100%, 430px);
-  overflow: hidden;
-  border-radius: 28px;
-  border: 1px solid var(--border);
-  background: linear-gradient(135deg, #000 0%, rgba(9,9,11,0.95) 55%, rgba(69,10,10,0.82) 100%);
-  color: var(--text);
-  box-shadow: 0 24px 60px rgba(127,29,29,0.28);
+function getStartDate(): string {
+  return localStorage.getItem(START_DATE_KEY) || "2026-04-06";
 }
-.modal-card::before {
-  content: "";
-  pointer-events: none;
-  position: absolute;
-  inset: 0;
-  opacity: 0.08;
-  background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.4) 1px, transparent 0);
-  background-size: 18px 18px;
+function createRows(startDateString?: string): TrackerRow[] {
+  const s = startDateString || getStartDate();
+  const start = new Date(`${s}T00:00:00`);
+  return Array.from({ length: TOTAL_DAYS }, (_, i) => {
+    const current = new Date(start);
+    current.setDate(start.getDate() + i);
+    // Use local date to avoid UTC offset issues
+    const localDate = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, "0")}-${String(current.getDate()).padStart(2, "0")}`;
+    return {
+      id: i + 1, date: localDate,
+      dateLabel: formatDateLabel(current), day: weekdayNames[current.getDay()],
+      countdown: `Day ${i + 1}`, photo: false, photoUrl: "", workout1: false,
+      diet: false, workout2: false, read: false, water: false,
+      weight: "", calories: "", steps: "", locked: false,
+    };
+  });
 }
-.modal-header {
-  position: relative;
-  border-bottom: 1px solid var(--border);
-  padding: 16px 20px;
+function rowHasData(row: TrackerRow) {
+  return habitColumns.some((item) => row[item.key]) || Boolean(row.photoUrl) ||
+    row.weight.trim() !== "" || row.calories.trim() !== "" || row.steps.trim() !== "";
 }
-.icon-close-btn {
-  position: absolute;
-  right: 16px;
-  top: 16px;
-  display: flex;
-  width: 36px;
-  height: 36px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 999px;
-  border: 1px solid rgba(127,29,29,0.72);
-  background: rgba(127,29,29,0.22);
-  color: #fecaca;
+function isRowComplete(row: TrackerRow) {
+  return habitColumns.every((item) => row[item.key]);
 }
-.icon-close-btn:hover { background: rgba(153,27,27,0.5); color: white; }
-.modal-title {
-  margin: 10px 0 0;
-  font-size: 28px;
-  line-height: 1.1;
-  font-weight: 900;
-  letter-spacing: 0.14em;
-  color: #fff;
-}
-.modal-copy {
-  margin: 10px 0 0;
-  font-size: 14px;
-  color: rgba(255, 212, 212, 0.72);
-}
-.modal-stats {
-  position: relative;
-  display: grid;
-  gap: 12px;
-  padding: 20px;
-}
-.modal-stat {
-  border-radius: 18px;
-  border: 1px solid rgba(127,29,29,0.72);
-  background: rgba(0,0,0,0.5);
-  padding: 16px;
-  text-align: center;
-  backdrop-filter: blur(8px);
-}
-.modal-stat-value {
-  margin-top: 10px;
-  font-size: 30px;
-  line-height: 1;
-  font-weight: 900;
-  color: #fff;
-}
-.modal-footer {
-  position: relative;
-  padding: 0 20px 20px;
+function compressImage(file: File, maxSize = 1200, quality = 0.82): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        const ctx = canvas.getContext("2d");
+        if (!ctx) { reject(new Error("Canvas not supported")); return; }
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL("image/jpeg", quality));
+      };
+      img.onerror = () => reject(new Error("Image load failed"));
+      img.src = String(reader.result);
+    };
+    reader.onerror = () => reject(new Error("File read failed"));
+    reader.readAsDataURL(file);
+  });
 }
 
-@media (min-width: 768px) {
-  .page { padding: 16px 16px 32px; }
-  .hero-header { padding: 22px 24px; }
-  .hero-body { padding: 16px 24px 20px; }
-  .summary-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .modal-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+// ─── Date Cell ────────────────────────────────────────────────────────────────
+function DateCell({ row, isToday, rowTone, todayRef, isFuture }: {
+  row: TrackerRow; isToday: boolean; rowTone: string;
+  todayRef?: React.RefObject<HTMLDivElement>; isFuture: boolean;
+}) {
+  return (
+    <div className={`sheet-cell body date-col ${rowTone}`} style={{ position: "relative" }}>
+      <div ref={todayRef} style={{ textAlign: "center", lineHeight: 1.35 }}>
+        {isToday && <div style={{ fontSize: 8, letterSpacing: "0.2em", textTransform: "uppercase", color: "#f87171", fontWeight: 800, marginBottom: 2 }}>TODAY</div>}
+        {isFuture && <div style={{ fontSize: 8, letterSpacing: "0.15em", textTransform: "uppercase", color: "rgba(252,165,165,0.3)", fontWeight: 700, marginBottom: 2 }}>UPCOMING</div>}
+        <div>{row.dateLabel}</div>
+        <div style={{ fontSize: 11, color: "rgba(252,165,165,0.6)", letterSpacing: "0.06em", marginTop: 2 }}>{row.day}</div>
+      </div>
+    </div>
+  );
 }
-@media (min-width: 1280px) {
-  .summary-cards { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-  .timeline-row { flex-direction: row; align-items: center; justify-content: space-between; }
+
+function Confetti({ onDone }: { onDone: () => void }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const particles = Array.from({ length: 120 }, () => ({
+      x: Math.random() * canvas.width,
+      y: -20 - Math.random() * 100,
+      vx: (Math.random() - 0.5) * 4,
+      vy: 2 + Math.random() * 4,
+      color: ["#dc2626","#f87171","#fca5a5","#fff","#fecaca","#ef4444"][Math.floor(Math.random()*6)],
+      size: 4 + Math.random() * 8,
+      rotation: Math.random() * Math.PI * 2,
+      rotationSpeed: (Math.random() - 0.5) * 0.2,
+    }));
+    let frame = 0;
+    const animate = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles.forEach((p) => {
+        p.x += p.vx; p.y += p.vy; p.vy += 0.1; p.rotation += p.rotationSpeed;
+        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rotation);
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.5);
+        ctx.restore();
+      });
+      frame++;
+      if (frame < 120) requestAnimationFrame(animate);
+      else onDone();
+    };
+    animate();
+  }, [onDone]);
+  return <canvas ref={canvasRef} style={{ position: "fixed", inset: 0, zIndex: 200, pointerEvents: "none" }} />;
+}
+
+// ─── Onboarding ───────────────────────────────────────────────────────────────
+function OnboardingScreen({ onComplete }: { onComplete: (name: string, startDate: string) => void }) {
+  const [name, setName] = useState("");
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-${String(today.getDate()).padStart(2,"0")}`;
+  const [startDate, setStartDate] = useState(todayStr);
+  const canProceed = name.trim() && startDate;
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+      style={{ position: "fixed", inset: 0, zIndex: 300, background: "#000", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 32 }}>
+      <div className="background-noise" /><div className="background-glow" />
+      <motion.div initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.2, type: "spring", stiffness: 200, damping: 20 }}
+        style={{ position: "relative", zIndex: 1, textAlign: "center", width: "100%", maxWidth: 380 }}>
+        <div className="pill" style={{ display: "inline-flex", marginBottom: 24 }}>
+          <Flame style={{ width: 16, height: 16 }} /> Discipline • Consistency • Power
+        </div>
+        <h1 style={{ fontSize: 42, fontWeight: 900, letterSpacing: "0.14em", color: "#fff", margin: "0 0 8px" }}>75 HARD</h1>
+        <p style={{ fontSize: 14, color: "rgba(252,165,165,0.7)", letterSpacing: "0.1em", marginBottom: 32 }}>YOUR TRANSFORMATION BEGINS NOW</p>
+        <div style={{ background: "linear-gradient(135deg, #0c0000 0%, #1a0404 100%)", border: "1px solid rgba(127,29,29,0.72)", borderRadius: 24, padding: 28 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 64, height: 64, borderRadius: "50%", background: "rgba(127,29,29,0.3)", border: "1px solid rgba(127,29,29,0.7)", margin: "0 auto 20px" }}>
+            <User style={{ width: 28, height: 28, color: "#fca5a5" }} />
+          </div>
+
+          <p style={{ fontSize: 11, letterSpacing: "0.3em", textTransform: "uppercase", color: "rgba(252,165,165,0.6)", marginBottom: 10 }}>What should we call you?</p>
+          <input value={name} onChange={(e) => setName(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && canProceed && onComplete(name.trim(), startDate)}
+            placeholder="Enter your name" autoFocus
+            style={{ width: "100%", padding: "14px 16px", background: "rgba(0,0,0,0.6)", border: "1px solid rgba(127,29,29,0.6)", borderRadius: 12, color: "#ffe8e8", fontSize: 16, outline: "none", textAlign: "center", letterSpacing: "0.04em", marginBottom: 20 }}
+          />
+
+          <p style={{ fontSize: 11, letterSpacing: "0.3em", textTransform: "uppercase", color: "rgba(252,165,165,0.6)", marginBottom: 10 }}>Challenge start date</p>
+          <div style={{ position: "relative", marginBottom: 20 }}>
+            <Calendar style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", width: 16, height: 16, color: "#fca5a5", pointerEvents: "none" }} />
+            <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)}
+              style={{ width: "100%", padding: "14px 16px 14px 40px", background: "rgba(0,0,0,0.6)", border: "1px solid rgba(127,29,29,0.6)", borderRadius: 12, color: "#ffe8e8", fontSize: 15, outline: "none", colorScheme: "dark" }}
+            />
+          </div>
+
+          <motion.button whileTap={{ scale: 0.97 }} onClick={() => canProceed && onComplete(name.trim(), startDate)}
+            style={{ width: "100%", padding: "16px", background: canProceed ? "linear-gradient(135deg, #7f1d1d 0%, #dc2626 100%)" : "rgba(127,29,29,0.2)", border: "1px solid rgba(220,38,38,0.5)", borderRadius: 14, color: canProceed ? "#fff" : "rgba(252,165,165,0.4)", fontSize: 15, fontWeight: 700, letterSpacing: "0.1em", cursor: canProceed ? "pointer" : "default", transition: "all 0.2s" }}>
+            START THE CHALLENGE →
+          </motion.button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+// ─── Photo Gallery Modal ──────────────────────────────────────────────────────
+function PhotoGalleryModal({ rows, onClose }: { rows: TrackerRow[]; onClose: () => void }) {
+  const photos = rows.filter((r) => r.photoUrl);
+  const [current, setCurrent] = useState(0);
+  if (photos.length === 0) return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      style={{ position: "fixed", inset: 0, zIndex: 80, background: "#000", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+      <button onClick={onClose} style={{ position: "absolute", top: 20, left: 18, width: 38, height: 38, borderRadius: 12, background: "rgba(127,29,29,0.25)", border: "1px solid rgba(127,29,29,0.72)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fca5a5" }}>
+        <ArrowLeft style={{ width: 18, height: 18 }} />
+      </button>
+      <Images style={{ width: 48, height: 48, color: "rgba(127,29,29,0.6)", marginBottom: 16 }} />
+      <p style={{ color: "rgba(252,165,165,0.6)", fontSize: 14, letterSpacing: "0.08em" }}>No progress photos yet</p>
+    </motion.div>
+  );
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      style={{ position: "fixed", inset: 0, zIndex: 80, background: "#000", display: "flex", flexDirection: "column" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 18px", borderBottom: "1px solid rgba(127,29,29,0.72)", background: "linear-gradient(180deg, rgba(69,10,10,0.5) 0%, transparent 100%)" }}>
+        <button onClick={onClose} style={{ width: 38, height: 38, borderRadius: 12, background: "rgba(127,29,29,0.25)", border: "1px solid rgba(127,29,29,0.72)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fca5a5" }}>
+          <ArrowLeft style={{ width: 18, height: 18 }} />
+        </button>
+        <div style={{ textAlign: "center" }}>
+          <p style={{ margin: 0, fontSize: 12, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(252,165,165,0.7)" }}>Progress Gallery</p>
+          <p style={{ margin: "2px 0 0", fontSize: 13, color: "#fff", fontWeight: 700 }}>{photos[current]?.countdown} — {photos[current]?.dateLabel}</p>
+        </div>
+        <div style={{ width: 38, fontSize: 12, color: "rgba(252,165,165,0.6)", textAlign: "right" }}>{current + 1}/{photos.length}</div>
+      </div>
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", position: "relative", padding: "20px 60px" }}>
+        <AnimatePresence mode="wait">
+          <motion.img key={photos[current]?.id} src={photos[current]?.photoUrl}
+            initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -40 }}
+            transition={{ duration: 0.2 }}
+            style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", borderRadius: 20, border: "1px solid rgba(127,29,29,0.5)", boxShadow: "0 0 80px rgba(185,28,28,0.2)" }}
+          />
+        </AnimatePresence>
+        {current > 0 && (
+          <button onClick={() => setCurrent((c) => c - 1)} style={{ position: "absolute", left: 12, width: 40, height: 40, borderRadius: 12, background: "rgba(127,29,29,0.3)", border: "1px solid rgba(127,29,29,0.6)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fca5a5" }}>
+            <ChevronLeft style={{ width: 20, height: 20 }} />
+          </button>
+        )}
+        {current < photos.length - 1 && (
+          <button onClick={() => setCurrent((c) => c + 1)} style={{ position: "absolute", right: 12, width: 40, height: 40, borderRadius: 12, background: "rgba(127,29,29,0.3)", border: "1px solid rgba(127,29,29,0.6)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fca5a5" }}>
+            <ChevronRight style={{ width: 20, height: 20 }} />
+          </button>
+        )}
+      </div>
+      <div style={{ display: "flex", gap: 8, padding: "12px 16px 32px", overflowX: "auto", borderTop: "1px solid rgba(127,29,29,0.4)" }}>
+        {photos.map((p, i) => (
+          <button key={p.id} onClick={() => setCurrent(i)} style={{ width: 52, height: 52, flexShrink: 0, borderRadius: 10, overflow: "hidden", padding: 0, border: i === current ? "2px solid #ef4444" : "2px solid transparent", cursor: "pointer", transition: "border-color 0.15s" }}>
+            <img src={p.photoUrl} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          </button>
+        ))}
+      </div>
+    </motion.div>
+  );
+}
+
+// ─── Weight Sparkline ─────────────────────────────────────────────────────────
+function WeightSparkline({ rows }: { rows: TrackerRow[] }) {
+  const points = rows.map((r, i) => ({ i, v: parseFloat(r.weight) })).filter((p) => !isNaN(p.v) && p.v > 0);
+  if (points.length < 2) return null;
+  const min = Math.min(...points.map((p) => p.v));
+  const max = Math.max(...points.map((p) => p.v));
+  const range = max - min || 1;
+  const W = 80, H = 28;
+  const toX = (i: number) => (i / (TOTAL_DAYS - 1)) * W;
+  const toY = (v: number) => H - ((v - min) / range) * H;
+  const d = points.map((p, idx) => `${idx === 0 ? "M" : "L"} ${toX(p.i).toFixed(1)} ${toY(p.v).toFixed(1)}`).join(" ");
+  return (
+    <svg width={W} height={H} style={{ display: "block", marginTop: 8 }}>
+      <path d={d} fill="none" stroke="#ef4444" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx={toX(points[points.length - 1].i)} cy={toY(points[points.length - 1].v)} r="2.5" fill="#f87171" />
+    </svg>
+  );
+}
+
+// ─── Animated Counter ─────────────────────────────────────────────────────────
+function AnimatedCounter({ value }: { value: number }) {
+  const [display, setDisplay] = useState(0);
+  useEffect(() => {
+    const start = Date.now();
+    const duration = 800;
+    const tick = () => {
+      const elapsed = Date.now() - start;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setDisplay(Math.round(value * eased));
+      if (progress < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }, [value]);
+  return <>{display.toLocaleString()}</>;
+}
+
+// ─── Summary Card ─────────────────────────────────────────────────────────────
+function SummaryCard({ title, value, subtext, icon: Icon, extra }: {
+  title: string; value: string | number; subtext: string;
+  icon: React.ComponentType<{ className?: string }>; extra?: React.ReactNode;
+}) {
+  return (
+    <Card className="summary-card">
+      <CardContent className="summary-card-content">
+        <div className="summary-grid">
+          <div>
+            <div className="summary-title">{title}</div>
+            <div className="summary-value">
+              {typeof value === "number" ? <AnimatedCounter value={value} /> : value}
+            </div>
+            <div className="summary-subtext">{subtext}</div>
+            {extra}
+          </div>
+          <div className="summary-icon-wrap"><Icon className="summary-icon" /></div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── Milestone Screen ─────────────────────────────────────────────────────────
+function MilestoneScreen({ weekNumber, onClose }: { weekNumber: number; onClose: () => void }) {
+  const msg = MILESTONE_MESSAGES[weekNumber] || { title: `WEEK ${weekNumber} DONE`, subtitle: "Keep going. Never stop." };
+  return (
+    <AnimatePresence>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        style={{ position: "fixed", inset: 0, zIndex: 250, background: "#000", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 32 }}>
+        <div className="background-noise" /><div className="background-glow" />
+        <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+          transition={{ delay: 0.1, type: "spring", stiffness: 200, damping: 18 }}
+          style={{ position: "relative", zIndex: 1, textAlign: "center", maxWidth: 380, width: "100%" }}>
+          <motion.div animate={{ rotate: [0, -10, 10, -6, 6, 0] }} transition={{ delay: 0.4, duration: 0.6 }}
+            style={{ fontSize: 72, marginBottom: 16 }}>🏆</motion.div>
+          <div style={{ fontSize: 11, letterSpacing: "0.3em", textTransform: "uppercase", color: "rgba(252,165,165,0.6)", marginBottom: 12 }}>
+            Week {weekNumber} of 75 Hard
+          </div>
+          <h1 style={{ fontSize: 36, fontWeight: 900, letterSpacing: "0.1em", color: "#fff", margin: "0 0 16px", lineHeight: 1.1 }}>{msg.title}</h1>
+          <p style={{ fontSize: 16, color: "rgba(252,165,165,0.8)", lineHeight: 1.6, marginBottom: 40 }}>{msg.subtitle}</p>
+          <motion.button whileTap={{ scale: 0.97 }} onClick={onClose}
+            style={{ width: "100%", padding: "18px", background: "linear-gradient(135deg, #7f1d1d 0%, #dc2626 100%)", border: "1px solid rgba(248,113,113,0.35)", borderRadius: 16, color: "#fff", fontSize: 16, fontWeight: 700, letterSpacing: "0.1em", cursor: "pointer" }}>
+            KEEP GOING →
+          </motion.button>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+// ─── Missed Day Banner ────────────────────────────────────────────────────────
+function MissedDayBanner({ missedDay, onDismiss, onMarkComplete }: {
+  missedDay: string; onDismiss: () => void; onMarkComplete: () => void;
+}) {
+  return (
+    <motion.div initial={{ y: -60, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -60, opacity: 0 }}
+      transition={{ type: "spring", stiffness: 260, damping: 22 }}
+      style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 150, padding: "12px 16px", background: "linear-gradient(135deg, #1a0404, #2d0808)", borderBottom: "1px solid rgba(220,38,38,0.4)", display: "flex", alignItems: "center", gap: 12 }}>
+      <div style={{ fontSize: 20 }}>⚠️</div>
+      <div style={{ flex: 1 }}>
+        <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#fff" }}>Yesterday ({missedDay}) wasn't logged</p>
+        <p style={{ margin: "2px 0 0", fontSize: 11, color: "rgba(252,165,165,0.6)" }}>Want to mark it complete?</p>
+      </div>
+      <button onClick={onMarkComplete} style={{ background: "#dc2626", border: "none", borderRadius: 10, padding: "8px 14px", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>Mark Done</button>
+      <button onClick={onDismiss} style={{ background: "transparent", border: "none", color: "rgba(252,165,165,0.5)", cursor: "pointer", padding: 4 }}><X style={{ width: 16, height: 16 }} /></button>
+    </motion.div>
+  );
+}
+
+// ─── Weekly Export Modal ──────────────────────────────────────────────────────
+function WeeklyExportModal({ group, userName, onClose }: {
+  group: { weekNumber: number; rows: TrackerRow[]; startIndex: number };
+  userName: string | null;
+  onClose: () => void;
+}) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [generated, setGenerated] = useState(false);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const W = 1080, H = 1080;
+    canvas.width = W; canvas.height = H;
+
+    // Background
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0, 0, W, H);
+    const grad = ctx.createRadialGradient(W/2, 0, 0, W/2, 0, H);
+    grad.addColorStop(0, "rgba(127,29,29,0.5)");
+    grad.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+
+    // Title
+    ctx.fillStyle = "#fff";
+    ctx.font = "900 72px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(userName ? `${userName.toUpperCase()}'S 75 HARD` : "75 HARD CHALLENGE", W/2, 110);
+
+    ctx.fillStyle = "rgba(252,165,165,0.7)";
+    ctx.font = "500 36px sans-serif";
+    ctx.fillText(`WEEK ${group.weekNumber} REPORT`, W/2, 165);
+
+    // Grid
+    const cols = habitColumns.length;
+    const cellW = 120, cellH = 80, gridX = (W - (cols + 1) * cellW) / 2, gridY = 220;
+    const labels = ["Date", ...habitColumns.map(h => h.label.split(" ")[0])];
+
+    // Header row
+    ctx.fillStyle = "rgba(127,29,29,0.8)";
+    ctx.roundRect(gridX - 10, gridY - 10, (cols + 1) * cellW + 20, cellH + 20, 12);
+    ctx.fill();
+    labels.forEach((label, i) => {
+      ctx.fillStyle = "#fca5a5";
+      ctx.font = "700 24px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(label.substring(0, 8), gridX + i * cellW + cellW/2, gridY + 48);
+    });
+
+    // Data rows
+    group.rows.forEach((row, ri) => {
+      const y = gridY + (ri + 1) * (cellH + 8);
+      ctx.fillStyle = isRowComplete(row) ? "rgba(185,28,28,0.3)" : "rgba(255,255,255,0.04)";
+      ctx.roundRect(gridX - 10, y - 10, (cols + 1) * cellW + 20, cellH + 12, 8);
+      ctx.fill();
+      ctx.fillStyle = "#fff";
+      ctx.font = "600 26px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(row.dateLabel, gridX + cellW/2, y + 44);
+      habitColumns.forEach((item, ci) => {
+        const checked = row[item.key];
+        ctx.fillStyle = checked ? "#ef4444" : "rgba(127,29,29,0.4)";
+        ctx.beginPath();
+        ctx.roundRect(gridX + (ci+1)*cellW + 20, y + 12, cellW - 40, cellH - 20, 8);
+        ctx.fill();
+        ctx.fillStyle = "#fff";
+        ctx.font = "700 28px sans-serif";
+        ctx.fillText(checked ? "✓" : "–", gridX + (ci+1)*cellW + cellW/2, y + 44);
+      });
+    });
+
+    // Stats
+    const done = group.rows.reduce((s, r) => s + habitColumns.reduce((ss, item) => ss + (r[item.key] ? 1 : 0), 0), 0);
+    const pct = Math.round((done / (group.rows.length * habitColumns.length)) * 100);
+    const statY = gridY + (group.rows.length + 1) * (cellH + 8) + 20;
+    ctx.fillStyle = "rgba(127,29,29,0.5)";
+    ctx.roundRect(gridX - 10, statY, (cols + 1) * cellW + 20, 100, 16);
+    ctx.fill();
+    ctx.fillStyle = "#fca5a5";
+    ctx.font = "700 28px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(`COMPLETION ${pct}% • ${done}/${group.rows.length * habitColumns.length} HABITS`, W/2, statY + 58);
+
+    // Footer
+    ctx.fillStyle = "rgba(252,165,165,0.4)";
+    ctx.font = "500 28px sans-serif";
+    ctx.fillText("STAY RELENTLESS • 75 HARD", W/2, H - 50);
+
+    setGenerated(true);
+  }, [group, userName]);
+
+  const handleShare = async () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    try {
+      canvas.toBlob(async (blob) => {
+        if (!blob) return;
+        const file = new File([blob], `75hard-week${group.weekNumber}.png`, { type: "image/png" });
+        if (navigator.share && navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file], title: `75 Hard Week ${group.weekNumber}` });
+        } else {
+          const a = document.createElement("a");
+          a.href = URL.createObjectURL(blob);
+          a.download = `75hard-week${group.weekNumber}.png`;
+          a.click();
+        }
+      }, "image/png");
+    } catch (e) { console.error(e); }
+  };
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      style={{ position: "fixed", inset: 0, zIndex: 90, background: "rgba(0,0,0,0.95)", display: "flex", flexDirection: "column" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 18px", borderBottom: "1px solid rgba(127,29,29,0.72)" }}>
+        <button onClick={onClose} style={{ width: 38, height: 38, borderRadius: 12, background: "rgba(127,29,29,0.25)", border: "1px solid rgba(127,29,29,0.72)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fca5a5" }}>
+          <ArrowLeft style={{ width: 18, height: 18 }} />
+        </button>
+        <p style={{ margin: 0, fontSize: 13, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#ffe8e8" }}>Week {group.weekNumber} Report</p>
+        <motion.button whileTap={{ scale: 0.95 }} onClick={handleShare}
+          style={{ display: "flex", alignItems: "center", gap: 6, background: "linear-gradient(135deg, #7f1d1d, #dc2626)", border: "none", borderRadius: 12, padding: "9px 16px", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+          <Share2 style={{ width: 15, height: 15 }} /> Share
+        </motion.button>
+      </div>
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, overflow: "hidden" }}>
+        <canvas ref={canvasRef} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", borderRadius: 12, border: "1px solid rgba(127,29,29,0.4)" }} />
+      </div>
+    </motion.div>
+  );
+}
+
+// ─── Daily Challenge Card ─────────────────────────────────────────────────────
+const DAILY_QUOTES = [
+  "Pain is temporary. Quitting lasts forever.",
+  "Your only competition is who you were yesterday.",
+  "Discipline is choosing between what you want now and what you want most.",
+  "The body achieves what the mind believes.",
+  "Hard days build champions.",
+  "Don't stop when you're tired. Stop when you're done.",
+  "Every rep, every mile, every page. It all counts.",
+  "Be harder to kill.",
+  "You don't find willpower. You build it.",
+  "Suffer now and live the rest of your life as a champion.",
+  "The only easy day was yesterday.",
+  "Mental toughness is a skill. Train it daily.",
+  "Results happen over time, not overnight.",
+  "When you feel like quitting, remember why you started.",
+  "Iron will. Iron body.",
+];
+
+function DailyChallengeCardModal({ todayIndex, userName, rows, onClose }: {
+  todayIndex: number; userName: string | null; rows: TrackerRow[]; onClose: () => void;
+}) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const dayNumber = todayIndex + 1;
+  const quote = DAILY_QUOTES[(todayIndex) % DAILY_QUOTES.length];
+  const todayRow = rows[todayIndex];
+  const completedHabits = todayRow ? habitColumns.filter(h => todayRow[h.key]).length : 0;
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    // Instagram Story dimensions 1080x1920
+    const W = 1080, H = 1920;
+    canvas.width = W; canvas.height = H;
+
+    // Background
+    ctx.fillStyle = "#050000";
+    ctx.fillRect(0, 0, W, H);
+
+    // Top red glow
+    const topGrad = ctx.createRadialGradient(W/2, 0, 0, W/2, 0, 900);
+    topGrad.addColorStop(0, "rgba(127,29,29,0.7)");
+    topGrad.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = topGrad;
+    ctx.fillRect(0, 0, W, H);
+
+    // Bottom glow
+    const botGrad = ctx.createRadialGradient(W/2, H, 0, W/2, H, 700);
+    botGrad.addColorStop(0, "rgba(69,10,10,0.5)");
+    botGrad.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = botGrad;
+    ctx.fillRect(0, 0, W, H);
+
+    // Top label
+    ctx.fillStyle = "rgba(252,165,165,0.5)";
+    ctx.font = "500 36px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("75 HARD CHALLENGE", W/2, 120);
+
+    // Name
+    if (userName) {
+      ctx.fillStyle = "rgba(252,165,165,0.7)";
+      ctx.font = "700 44px sans-serif";
+      ctx.fillText(userName.toUpperCase(), W/2, 185);
+    }
+
+    // Big day number
+    ctx.fillStyle = "#b91c1c";
+    ctx.font = "900 320px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(`${dayNumber}`, W/2, 620);
+
+    // "DAY" label above
+    ctx.fillStyle = "rgba(255,255,255,0.15)";
+    ctx.font = "900 100px sans-serif";
+    ctx.fillText("DAY", W/2, 340);
+
+    // "OF 75" below
+    ctx.fillStyle = "rgba(252,165,165,0.4)";
+    ctx.font = "700 64px sans-serif";
+    ctx.fillText(`OF 75`, W/2, 720);
+
+    // Divider line
+    ctx.strokeStyle = "rgba(127,29,29,0.6)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(W * 0.15, 790);
+    ctx.lineTo(W * 0.85, 790);
+    ctx.stroke();
+
+    // Habit checklist
+    const habitY = 860;
+    const habitLabels = ["Progress Photo", "Workout 1", "Diet", "Outdoor Workout", "Read 10 Pages", "1 Gallon Water"];
+    habitLabels.forEach((label, i) => {
+      const done = todayRow ? todayRow[habitColumns[i].key] : false;
+      const y = habitY + i * 110;
+      // Pill background
+      ctx.fillStyle = done ? "rgba(185,28,28,0.3)" : "rgba(255,255,255,0.04)";
+      ctx.beginPath();
+      ctx.roundRect(W*0.1, y, W*0.8, 86, 20);
+      ctx.fill();
+      // Checkbox
+      ctx.fillStyle = done ? "#dc2626" : "rgba(127,29,29,0.4)";
+      ctx.beginPath();
+      ctx.roundRect(W*0.1 + 18, y + 18, 50, 50, 12);
+      ctx.fill();
+      ctx.fillStyle = "#fff";
+      ctx.font = "700 34px sans-serif";
+      ctx.textAlign = "left";
+      ctx.fillText(done ? "✓" : "–", W*0.1 + 28, y + 54);
+      // Label
+      ctx.fillStyle = done ? "#fff" : "rgba(255,255,255,0.5)";
+      ctx.font = done ? "700 36px sans-serif" : "400 36px sans-serif";
+      ctx.fillText(label, W*0.1 + 90, y + 54);
+    });
+
+    // Progress bar
+    const barY = habitY + 6 * 110 + 30;
+    ctx.fillStyle = "rgba(255,255,255,0.08)";
+    ctx.beginPath(); ctx.roundRect(W*0.1, barY, W*0.8, 20, 10); ctx.fill();
+    ctx.fillStyle = "#dc2626";
+    ctx.beginPath(); ctx.roundRect(W*0.1, barY, W*0.8*(dayNumber/75), 20, 10); ctx.fill();
+    ctx.fillStyle = "rgba(252,165,165,0.5)";
+    ctx.font = "500 32px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(`${Math.round((dayNumber/75)*100)}% COMPLETE`, W/2, barY + 60);
+
+    // Quote
+    const qY = barY + 110;
+    ctx.fillStyle = "rgba(252,165,165,0.35)";
+    ctx.font = "italic 500 38px sans-serif";
+    ctx.textAlign = "center";
+    // Word wrap quote
+    const words = quote.split(" ");
+    let line = ""; const lines: string[] = [];
+    words.forEach(w => {
+      const test = line + w + " ";
+      if (ctx.measureText(test).width > W * 0.75) { lines.push(line.trim()); line = w + " "; }
+      else line = test;
+    });
+    lines.push(line.trim());
+    lines.forEach((l, i) => ctx.fillText(`"${i === 0 ? "" : ""}${l}${i === lines.length-1 ? "" : ""}"`, W/2, qY + i * 52));
+
+    // Footer
+    ctx.fillStyle = "rgba(252,165,165,0.2)";
+    ctx.font = "500 30px sans-serif";
+    ctx.fillText("STAY RELENTLESS", W/2, H - 60);
+  }, [todayIndex, userName, rows]);
+
+  const handleShare = async () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    canvas.toBlob(async (blob) => {
+      if (!blob) return;
+      const file = new File([blob], `75hard-day${dayNumber}.png`, { type: "image/png" });
+      try {
+        if (navigator.share && navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file], title: `75 Hard — Day ${dayNumber}` });
+        } else {
+          const a = document.createElement("a");
+          a.href = URL.createObjectURL(blob);
+          a.download = `75hard-day${dayNumber}.png`;
+          a.click();
+        }
+      } catch (e) { console.error(e); }
+    }, "image/png");
+  };
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      style={{ position: "fixed", inset: 0, zIndex: 90, background: "rgba(0,0,0,0.96)", display: "flex", flexDirection: "column" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 18px", borderBottom: "1px solid rgba(127,29,29,0.72)" }}>
+        <button onClick={onClose} style={{ width: 38, height: 38, borderRadius: 12, background: "rgba(127,29,29,0.25)", border: "1px solid rgba(127,29,29,0.72)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fca5a5" }}>
+          <ArrowLeft style={{ width: 18, height: 18 }} />
+        </button>
+        <p style={{ margin: 0, fontSize: 13, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#ffe8e8" }}>Day {dayNumber} Card</p>
+        <motion.button whileTap={{ scale: 0.95 }} onClick={handleShare}
+          style={{ display: "flex", alignItems: "center", gap: 6, background: "linear-gradient(135deg, #7f1d1d, #dc2626)", border: "none", borderRadius: 12, padding: "9px 16px", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+          <Share2 style={{ width: 15, height: 15 }} /> Share
+        </motion.button>
+      </div>
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, overflow: "hidden" }}>
+        <canvas ref={canvasRef} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", borderRadius: 12, border: "1px solid rgba(127,29,29,0.4)" }} />
+      </div>
+    </motion.div>
+  );
+}
+
+// ─── Certificate Modal ────────────────────────────────────────────────────────
+function CertificateModal({ rows, userName, onClose }: { rows: TrackerRow[]; userName: string | null; onClose: () => void }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const completedDays = rows.filter(isRowComplete).length;
+  const startDate = getStartDate();
+  const endRow = rows[TOTAL_DAYS - 1];
+  const firstW = rows.find(r => r.weight.trim());
+  const lastW = [...rows].reverse().find(r => r.weight.trim());
+  const weightLost = firstW && lastW ? (parseFloat(firstW.weight) - parseFloat(lastW.weight)).toFixed(1) : null;
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const W = 1400, H = 1000;
+    canvas.width = W; canvas.height = H;
+
+    // Background
+    ctx.fillStyle = "#050000";
+    ctx.fillRect(0, 0, W, H);
+    const grad = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, 700);
+    grad.addColorStop(0, "rgba(127,29,29,0.4)");
+    grad.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = grad; ctx.fillRect(0, 0, W, H);
+
+    // Border
+    ctx.strokeStyle = "rgba(127,29,29,0.8)";
+    ctx.lineWidth = 3;
+    ctx.strokeRect(30, 30, W - 60, H - 60);
+    ctx.strokeStyle = "rgba(127,29,29,0.3)";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(44, 44, W - 88, H - 88);
+
+    // Header
+    ctx.fillStyle = "rgba(252,165,165,0.5)";
+    ctx.font = "500 28px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("CERTIFICATE OF COMPLETION", W/2, 110);
+
+    // Trophy
+    ctx.font = "80px sans-serif";
+    ctx.fillText("🏆", W/2, 220);
+
+    // Title
+    ctx.fillStyle = "#fff";
+    ctx.font = "900 72px sans-serif";
+    ctx.fillText("75 HARD", W/2, 320);
+
+    ctx.fillStyle = "#b91c1c";
+    ctx.font = "900 36px sans-serif";
+    ctx.fillText("CHALLENGE COMPLETE", W/2, 375);
+
+    // Divider
+    ctx.strokeStyle = "rgba(127,29,29,0.6)"; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(W*0.2, 410); ctx.lineTo(W*0.8, 410); ctx.stroke();
+
+    // Name
+    ctx.fillStyle = "rgba(252,165,165,0.5)";
+    ctx.font = "400 28px sans-serif";
+    ctx.fillText("This certifies that", W/2, 460);
+    ctx.fillStyle = "#fff";
+    ctx.font = "900 68px sans-serif";
+    ctx.fillText((userName || "CHAMPION").toUpperCase(), W/2, 540);
+
+    ctx.fillStyle = "rgba(252,165,165,0.5)";
+    ctx.font = "400 28px sans-serif";
+    ctx.fillText("has completed 75 days of relentless discipline", W/2, 590);
+
+    // Stats row
+    const stats = [
+      { label: "Days Completed", value: `${completedDays}/75` },
+      { label: "Started", value: new Date(`${startDate}T00:00:00`).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) },
+      { label: "Finished", value: endRow?.dateLabel || "—" },
+      ...(weightLost && Number(weightLost) > 0 ? [{ label: "Weight Lost", value: `${weightLost} kg` }] : []),
+    ];
+    const statW = (W - 120) / stats.length;
+    stats.forEach((s, i) => {
+      const x = 60 + i * statW + statW / 2;
+      ctx.fillStyle = "rgba(127,29,29,0.4)";
+      ctx.beginPath(); ctx.roundRect(60 + i * statW + 10, 630, statW - 20, 110, 16); ctx.fill();
+      ctx.fillStyle = "rgba(252,165,165,0.6)";
+      ctx.font = "500 22px sans-serif"; ctx.textAlign = "center";
+      ctx.fillText(s.label.toUpperCase(), x, 668);
+      ctx.fillStyle = "#fff";
+      ctx.font = "700 36px sans-serif";
+      ctx.fillText(s.value, x, 712);
+    });
+
+    // Footer
+    ctx.fillStyle = "rgba(252,165,165,0.25)";
+    ctx.font = "400 24px sans-serif";
+    ctx.fillText("STAY RELENTLESS • 75 HARD CHALLENGE", W/2, 820);
+
+    // Signature line
+    ctx.strokeStyle = "rgba(127,29,29,0.4)"; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(W*0.35, 890); ctx.lineTo(W*0.65, 890); ctx.stroke();
+    ctx.fillStyle = "rgba(252,165,165,0.3)";
+    ctx.font = "400 20px sans-serif";
+    ctx.fillText("EARNED THROUGH DISCIPLINE", W/2, 920);
+  }, [rows, userName]);
+
+  const handleDownload = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const a = document.createElement("a");
+    a.href = canvas.toDataURL("image/png");
+    a.download = "75hard-certificate.png";
+    a.click();
+  };
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      style={{ position: "fixed", inset: 0, zIndex: 90, background: "rgba(0,0,0,0.96)", display: "flex", flexDirection: "column" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 18px", borderBottom: "1px solid rgba(127,29,29,0.72)" }}>
+        <button onClick={onClose} style={{ width: 38, height: 38, borderRadius: 12, background: "rgba(127,29,29,0.25)", border: "1px solid rgba(127,29,29,0.72)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fca5a5" }}>
+          <ArrowLeft style={{ width: 18, height: 18 }} />
+        </button>
+        <p style={{ margin: 0, fontSize: 13, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#ffe8e8" }}>Your Certificate</p>
+        <motion.button whileTap={{ scale: 0.95 }} onClick={handleDownload}
+          style={{ display: "flex", alignItems: "center", gap: 6, background: "linear-gradient(135deg, #7f1d1d, #dc2626)", border: "none", borderRadius: 12, padding: "9px 16px", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+          <Share2 style={{ width: 15, height: 15 }} /> Download
+        </motion.button>
+      </div>
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, overflow: "hidden" }}>
+        <canvas ref={canvasRef} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", borderRadius: 12, border: "1px solid rgba(127,29,29,0.4)" }} />
+      </div>
+    </motion.div>
+  );
+}
+
+// ─── Scriptable Widget Export ─────────────────────────────────────────────────
+function WidgetExportModal({ rows, todayIndex, userName, onClose }: {
+  rows: TrackerRow[]; todayIndex: number; userName: string | null; onClose: () => void;
+}) {
+  const todayRow = rows[todayIndex];
+  const completedHabits = todayRow ? habitColumns.filter(h => todayRow[h.key]).length : 0;
+  const dayNumber = todayIndex + 1;
+
+  const widgetData = {
+    name: userName || "Athlete",
+    day: dayNumber,
+    total: TOTAL_DAYS,
+    progress: Math.round((dayNumber / TOTAL_DAYS) * 100),
+    habits: habitColumns.map(h => ({
+      label: h.label,
+      done: todayRow ? Boolean(todayRow[h.key]) : false,
+    })),
+    completedToday: completedHabits,
+    totalHabits: habitColumns.length,
+    lastUpdated: new Date().toISOString(),
+  };
+
+  const scriptableCode = `// 75 Hard Widget for iOS Scriptable
+// Install Scriptable from App Store, paste this code
+const data = ${JSON.stringify(widgetData, null, 2)};
+
+const w = new ListWidget();
+w.backgroundColor = new Color("#050000");
+w.setPadding(12, 14, 12, 14);
+
+// Header
+const header = w.addText("75 HARD");
+header.font = Font.boldSystemFont(11);
+header.textColor = new Color("#b91c1c");
+header.textOpacity = 0.9;
+w.addSpacer(2);
+
+// Day
+const dayText = w.addText(\`DAY \${data.day} / \${data.total}\`);
+dayText.font = Font.boldSystemFont(22);
+dayText.textColor = Color.white();
+w.addSpacer(6);
+
+// Habits
+data.habits.forEach(h => {
+  const row = w.addText(\`\${h.done ? "✅" : "⬜"} \${h.label}\`);
+  row.font = Font.systemFont(11);
+  row.textColor = h.done ? Color.white() : new Color("#fca5a5", 0.4);
+  w.addSpacer(2);
+});
+
+w.addSpacer(6);
+const prog = w.addText(\`\${data.completedToday}/\${data.totalHabits} today • \${data.progress}% overall\`);
+prog.font = Font.systemFont(10);
+prog.textColor = new Color("#fca5a5", 0.5);
+
+Script.setWidget(w);
+w.presentSmall();`;
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(scriptableCode).catch(() => {
+      const ta = document.createElement("textarea");
+      ta.value = scriptableCode; document.body.appendChild(ta);
+      ta.select(); document.execCommand("copy"); document.body.removeChild(ta);
+    });
+  };
+
+  const handleDownload = () => {
+    const blob = new Blob([scriptableCode], { type: "text/plain" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "75Hard-Widget.js";
+    a.click();
+  };
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      style={{ position: "fixed", inset: 0, zIndex: 90, background: "#000", display: "flex", flexDirection: "column" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 18px", borderBottom: "1px solid rgba(127,29,29,0.72)" }}>
+        <button onClick={onClose} style={{ width: 38, height: 38, borderRadius: 12, background: "rgba(127,29,29,0.25)", border: "1px solid rgba(127,29,29,0.72)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fca5a5" }}>
+          <ArrowLeft style={{ width: 18, height: 18 }} />
+        </button>
+        <p style={{ margin: 0, fontSize: 13, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#ffe8e8" }}>Home Screen Widget</p>
+        <div style={{ width: 38 }} />
+      </div>
+
+      <div style={{ flex: 1, overflowY: "auto", padding: "20px 18px" }}>
+        {/* Preview */}
+        <div style={{ background: "linear-gradient(135deg, #050000, #1a0404)", border: "1px solid rgba(127,29,29,0.5)", borderRadius: 20, padding: 20, marginBottom: 20 }}>
+          <p style={{ margin: "0 0 4px", fontSize: 11, fontWeight: 700, color: "#b91c1c", letterSpacing: "0.1em" }}>75 HARD</p>
+          <p style={{ margin: "0 0 12px", fontSize: 22, fontWeight: 900, color: "#fff" }}>DAY {dayNumber} / {TOTAL_DAYS}</p>
+          {habitColumns.map(h => (
+            <div key={h.key} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+              <span style={{ fontSize: 14 }}>{todayRow?.[h.key] ? "✅" : "⬜"}</span>
+              <span style={{ fontSize: 12, color: todayRow?.[h.key] ? "#fff" : "rgba(252,165,165,0.35)" }}>{h.label}</span>
+            </div>
+          ))}
+          <p style={{ margin: "10px 0 0", fontSize: 11, color: "rgba(252,165,165,0.4)" }}>{completedHabits}/{habitColumns.length} today • {Math.round((dayNumber/TOTAL_DAYS)*100)}% overall</p>
+        </div>
+
+        <p style={{ fontSize: 12, color: "rgba(252,165,165,0.6)", marginBottom: 16, lineHeight: 1.6 }}>
+          Install <strong style={{ color: "#fca5a5" }}>Scriptable</strong> from the App Store, tap the button below to copy the code, then create a new script and paste it in.
+        </p>
+
+        <div style={{ display: "flex", gap: 10 }}>
+          <motion.button whileTap={{ scale: 0.97 }} onClick={handleCopy}
+            style={{ flex: 1, padding: "14px", background: "linear-gradient(135deg, #7f1d1d, #dc2626)", border: "none", borderRadius: 14, color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>
+            Copy Code
+          </motion.button>
+          <motion.button whileTap={{ scale: 0.97 }} onClick={handleDownload}
+            style={{ flex: 1, padding: "14px", background: "rgba(127,29,29,0.2)", border: "1px solid rgba(127,29,29,0.5)", borderRadius: 14, color: "#fca5a5", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>
+            Download .js
+          </motion.button>
+        </div>
+
+        <div style={{ marginTop: 16, background: "rgba(255,255,255,0.03)", borderRadius: 12, padding: 14, maxHeight: 200, overflowY: "auto", border: "1px solid rgba(127,29,29,0.2)" }}>
+          <pre style={{ margin: 0, fontSize: 10, color: "rgba(252,165,165,0.4)", whiteSpace: "pre-wrap", lineHeight: 1.5, fontFamily: "monospace" }}>{scriptableCode}</pre>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// ─── Weekly Summary Modal ─────────────────────────────────────────────────────
+function WeeklySummaryModal({ open, onClose, summary }: {
+  open: boolean; onClose: () => void;
+  summary: null | { weekNumber: number; averageCalories: string; averageSteps: string; completionRate: number };
+}) {
+  if (!summary) return null;
+  return (
+    <AnimatePresence>
+      {open ? (
+        <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <motion.div className="modal-card" initial={{ opacity: 0, scale: 0.96, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.98, y: 10 }} transition={{ type: "spring", stiffness: 240, damping: 22 }}>
+            <div className="modal-header">
+              <button type="button" className="icon-close-btn" onClick={onClose}><X className="mini-icon" /></button>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <Trophy style={{ width: 18, height: 18, color: "#fca5a5" }} />
+                <div className="mini-label">Weekly Summary</div>
+              </div>
+              <h2 className="modal-title">WEEK {summary.weekNumber} COMPLETE</h2>
+              <p className="modal-copy">Strong finish. Here is your weekly discipline snapshot.</p>
+            </div>
+            <div className="modal-stats">
+              <div className="modal-stat"><div className="mini-label">Avg Calories</div><div className="modal-stat-value">{summary.averageCalories}</div></div>
+              <div className="modal-stat"><div className="mini-label">Avg Steps</div><div className="modal-stat-value">{summary.averageSteps}</div></div>
+              <div className="modal-stat"><div className="mini-label">Completion</div><div className="modal-stat-value">{summary.completionRate}%</div></div>
+            </div>
+            <div className="modal-footer"><Button className="w-full" onClick={onClose}>Keep Going</Button></div>
+          </motion.div>
+        </motion.div>
+      ) : null}
+    </AnimatePresence>
+  );
+}
+
+// ─── Photo Source Modal ───────────────────────────────────────────────────────
+function PhotoSourceModal({ onSelect, onClose }: { onSelect: (s: "camera" | "gallery") => void; onClose: () => void }) {
+  return (
+    <AnimatePresence>
+      <motion.div className="modal-overlay" style={{ alignItems: "flex-end", padding: 0 }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
+        <motion.div onClick={(e) => e.stopPropagation()} initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", stiffness: 320, damping: 32 }}
+          style={{ width: "100%", maxWidth: 520, margin: "0 auto", background: "linear-gradient(160deg, #0a0000 0%, #140303 60%, #1c0505 100%)", borderRadius: "28px 28px 0 0", border: "1px solid rgba(127,29,29,0.72)", borderBottom: "none", padding: "14px 0 48px", boxShadow: "0 -20px 60px rgba(127,29,29,0.28)" }}>
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 24 }}><div style={{ width: 40, height: 4, borderRadius: 2, background: "rgba(252,165,165,0.25)" }} /></div>
+          <p style={{ textAlign: "center", margin: "0 0 28px", fontSize: 10, letterSpacing: "0.34em", textTransform: "uppercase", color: "rgba(252,165,165,0.55)" }}>Add Proof Photo</p>
+          <div style={{ padding: "0 20px", display: "flex", flexDirection: "column", gap: 12 }}>
+            <motion.button whileTap={{ scale: 0.97 }} onClick={() => onSelect("camera")} style={{ background: "linear-gradient(135deg, #7f1d1d 0%, #b91c1c 100%)", border: "1px solid rgba(248,113,113,0.35)", borderRadius: 20, padding: "20px 22px", display: "flex", alignItems: "center", gap: 18, cursor: "pointer", width: "100%", boxShadow: "0 8px 32px rgba(185,28,28,0.3)" }}>
+              <div style={{ width: 54, height: 54, borderRadius: 16, flexShrink: 0, background: "rgba(255,255,255,0.14)", display: "flex", alignItems: "center", justifyContent: "center" }}><Camera style={{ width: 26, height: 26, color: "#fff" }} /></div>
+              <div style={{ textAlign: "left" }}><p style={{ margin: 0, fontSize: 17, fontWeight: 700, color: "#fff" }}>Take Photo</p><p style={{ margin: "4px 0 0", fontSize: 13, color: "rgba(255,255,255,0.6)" }}>Open camera directly</p></div>
+            </motion.button>
+            <motion.button whileTap={{ scale: 0.97 }} onClick={() => onSelect("gallery")} style={{ background: "rgba(20,5,5,0.9)", border: "1px solid rgba(127,29,29,0.72)", borderRadius: 20, padding: "20px 22px", display: "flex", alignItems: "center", gap: 18, cursor: "pointer", width: "100%" }}>
+              <div style={{ width: 54, height: 54, borderRadius: 16, flexShrink: 0, background: "rgba(127,29,29,0.25)", display: "flex", alignItems: "center", justifyContent: "center" }}><Images style={{ width: 26, height: 26, color: "#fca5a5" }} /></div>
+              <div style={{ textAlign: "left" }}><p style={{ margin: 0, fontSize: 17, fontWeight: 700, color: "#ffe8e8" }}>Choose from Gallery</p><p style={{ margin: "4px 0 0", fontSize: 13, color: "rgba(252,165,165,0.6)" }}>Upload an existing photo</p></div>
+            </motion.button>
+            <button onClick={onClose} style={{ marginTop: 6, width: "100%", background: "transparent", border: "1px solid rgba(127,29,29,0.5)", borderRadius: 16, padding: "15px", color: "rgba(252,165,165,0.5)", fontSize: 15, cursor: "pointer" }}>Cancel</button>
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+// ─── Photo Viewer Modal ───────────────────────────────────────────────────────
+function PhotoViewerModal({ photo, rowLabel, onClose, onReplace }: { photo: string; rowLabel: string; onClose: () => void; onReplace: () => void }) {
+  return (
+    <AnimatePresence>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ position: "fixed", inset: 0, zIndex: 70, background: "rgba(0,0,0,0.97)", display: "flex", flexDirection: "column" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 18px", borderBottom: "1px solid rgba(127,29,29,0.72)", background: "linear-gradient(180deg, rgba(69,10,10,0.5) 0%, transparent 100%)" }}>
+          <button onClick={onClose} style={{ width: 38, height: 38, borderRadius: 12, background: "rgba(127,29,29,0.25)", border: "1px solid rgba(127,29,29,0.72)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fca5a5" }}><ArrowLeft style={{ width: 18, height: 18 }} /></button>
+          <p style={{ margin: 0, fontSize: 13, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "#ffe8e8" }}>{rowLabel}</p>
+          <button onClick={onReplace} style={{ display: "flex", alignItems: "center", gap: 7, background: "rgba(127,29,29,0.25)", border: "1px solid rgba(220,38,38,0.55)", borderRadius: 12, padding: "8px 14px", color: "#f87171", fontSize: 13, fontWeight: 600, cursor: "pointer" }}><RefreshCw style={{ width: 14, height: 14 }} /> Replace</button>
+        </div>
+        <motion.div initial={{ scale: 0.96, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", stiffness: 260, damping: 22 }} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+          <img src={photo} alt="Progress photo" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", borderRadius: 20, border: "1px solid rgba(127,29,29,0.5)", boxShadow: "0 0 80px rgba(185,28,28,0.22)" }} />
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+// ─── Before / After Modal ─────────────────────────────────────────────────────
+function BeforeAfterModal({ rows, onClose }: { rows: TrackerRow[]; onClose: () => void }) {
+  const photos = rows.filter((r) => r.photoUrl);
+  const first = photos[0];
+  const latest = photos[photos.length - 1];
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      style={{ position: "fixed", inset: 0, zIndex: 85, background: "#000", display: "flex", flexDirection: "column" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 18px", borderBottom: "1px solid rgba(127,29,29,0.72)", background: "linear-gradient(180deg, rgba(69,10,10,0.5) 0%, transparent 100%)" }}>
+        <button onClick={onClose} style={{ width: 38, height: 38, borderRadius: 12, background: "rgba(127,29,29,0.25)", border: "1px solid rgba(127,29,29,0.72)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fca5a5" }}>
+          <ArrowLeft style={{ width: 18, height: 18 }} />
+        </button>
+        <p style={{ margin: 0, fontSize: 12, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "#ffe8e8" }}>Before vs After</p>
+        <div style={{ width: 38 }} />
+      </div>
+
+      {photos.length < 2 ? (
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, padding: 32 }}>
+          <Layers style={{ width: 48, height: 48, color: "rgba(127,29,29,0.5)" }} />
+          <p style={{ color: "rgba(252,165,165,0.6)", fontSize: 14, textAlign: "center", letterSpacing: "0.06em" }}>
+            {photos.length === 0 ? "No progress photos yet" : "Need at least 2 photos to compare"}
+          </p>
+        </div>
+      ) : (
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: 16, gap: 12, overflow: "hidden" }}>
+          {/* Labels */}
+          <div style={{ display: "flex", gap: 12 }}>
+            <div style={{ flex: 1, textAlign: "center" }}>
+              <span style={{ fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(252,165,165,0.5)" }}>BEFORE</span>
+              <p style={{ margin: "3px 0 0", fontSize: 12, color: "#fca5a5", fontWeight: 700 }}>{first.countdown} · {first.dateLabel}</p>
+            </div>
+            <div style={{ width: 1, background: "rgba(127,29,29,0.6)" }} />
+            <div style={{ flex: 1, textAlign: "center" }}>
+              <span style={{ fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(252,165,165,0.5)" }}>AFTER</span>
+              <p style={{ margin: "3px 0 0", fontSize: 12, color: "#fca5a5", fontWeight: 700 }}>{latest.countdown} · {latest.dateLabel}</p>
+            </div>
+          </div>
+
+          {/* Split images */}
+          <div style={{ flex: 1, display: "flex", gap: 12, overflow: "hidden" }}>
+            <div style={{ flex: 1, borderRadius: 16, overflow: "hidden", border: "1px solid rgba(127,29,29,0.5)" }}>
+              <img src={first.photoUrl} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt="Before" />
+            </div>
+            <div style={{ width: 2, background: "linear-gradient(180deg, transparent, rgba(220,38,38,0.8), transparent)", borderRadius: 1 }} />
+            <div style={{ flex: 1, borderRadius: 16, overflow: "hidden", border: "1px solid rgba(127,29,29,0.5)" }}>
+              <img src={latest.photoUrl} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt="After" />
+            </div>
+          </div>
+
+          {/* Days elapsed */}
+          <div style={{ textAlign: "center", padding: "8px 0" }}>
+            <span style={{ fontSize: 11, color: "rgba(252,165,165,0.4)", letterSpacing: "0.1em" }}>
+              {latest.id - first.id} DAYS OF PROGRESS
+            </span>
+          </div>
+        </div>
+      )}
+    </motion.div>
+  );
+}
+
+// ─── Notification Settings Modal ──────────────────────────────────────────────
+function NotificationModal({ onClose }: { onClose: () => void }) {
+  const [permission, setPermission] = useState<NotificationPermission>(
+    typeof Notification !== "undefined" ? Notification.permission : "default"
+  );
+  const [hour, setHour] = useState(() => {
+    const saved = localStorage.getItem(NOTIF_KEY);
+    return saved ? JSON.parse(saved).hour : 20;
+  });
+  const [minute, setMinute] = useState(() => {
+    const saved = localStorage.getItem(NOTIF_KEY);
+    return saved ? JSON.parse(saved).minute : 0;
+  });
+  const [enabled, setEnabled] = useState(() => {
+    const saved = localStorage.getItem(NOTIF_KEY);
+    return saved ? JSON.parse(saved).enabled : false;
+  });
+  const [saved, setSaved] = useState(false);
+
+  const requestAndEnable = async () => {
+    if (typeof Notification === "undefined") { alert("Notifications not supported on this browser."); return; }
+    const result = await Notification.requestPermission();
+    setPermission(result);
+    if (result === "granted") {
+      setEnabled(true);
+      saveSettings(true);
+    }
+  };
+
+  const saveSettings = (forceEnabled?: boolean) => {
+    const isEnabled = forceEnabled ?? enabled;
+    localStorage.setItem(NOTIF_KEY, JSON.stringify({ hour, minute, enabled: isEnabled }));
+    scheduleNotification(hour, minute, isEnabled);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
+  const scheduleNotification = (h: number, m: number, isEnabled: boolean) => {
+    // Clear any existing scheduled notification
+    const existingId = localStorage.getItem("75_hard_notif_timeout");
+    if (existingId) clearTimeout(Number(existingId));
+    if (!isEnabled || permission !== "granted") return;
+
+    const schedule = () => {
+      const now = new Date();
+      const target = new Date();
+      target.setHours(h, m, 0, 0);
+      if (target <= now) target.setDate(target.getDate() + 1);
+      const delay = target.getTime() - now.getTime();
+      const id = window.setTimeout(() => {
+        new Notification("75 Hard Tracker 🔥", {
+          body: "Time to log your habits! Stay relentless.",
+          icon: "/icon-192.png",
+          badge: "/icon-192.png",
+        });
+        schedule(); // reschedule for next day
+      }, delay);
+      localStorage.setItem("75_hard_notif_timeout", String(id));
+    };
+    schedule();
+  };
+
+  const displayHour = hour % 12 === 0 ? 12 : hour % 12;
+  const ampm = hour < 12 ? "AM" : "PM";
+
+  return (
+    <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      onClick={onClose}>
+      <motion.div onClick={(e) => e.stopPropagation()}
+        initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
+        transition={{ type: "spring", stiffness: 320, damping: 32 }}
+        style={{ width: "100%", maxWidth: 520, margin: "0 auto", background: "linear-gradient(160deg, #0a0000 0%, #140303 60%, #1c0505 100%)", borderRadius: "28px 28px 0 0", border: "1px solid rgba(127,29,29,0.72)", borderBottom: "none", padding: "14px 24px 52px", boxShadow: "0 -20px 60px rgba(127,29,29,0.28)" }}>
+
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
+          <div style={{ width: 40, height: 4, borderRadius: 2, background: "rgba(252,165,165,0.25)" }} />
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 24 }}>
+          <Bell style={{ width: 20, height: 20, color: "#fca5a5" }} />
+          <p style={{ margin: 0, fontSize: 10, letterSpacing: "0.3em", textTransform: "uppercase", color: "rgba(252,165,165,0.6)" }}>Daily Reminder</p>
+        </div>
+
+        {permission === "denied" ? (
+          <div style={{ background: "rgba(220,38,38,0.1)", border: "1px solid rgba(220,38,38,0.3)", borderRadius: 14, padding: 16, marginBottom: 20 }}>
+            <p style={{ margin: 0, fontSize: 13, color: "#f87171", lineHeight: 1.5 }}>
+              Notifications are blocked. Please enable them in your browser/phone settings, then return here.
+            </p>
+          </div>
+        ) : permission !== "granted" ? (
+          <motion.button whileTap={{ scale: 0.97 }} onClick={requestAndEnable}
+            style={{ width: "100%", padding: "18px", background: "linear-gradient(135deg, #7f1d1d 0%, #b91c1c 100%)", border: "1px solid rgba(248,113,113,0.35)", borderRadius: 16, color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer", marginBottom: 20, display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
+            <Bell style={{ width: 18, height: 18 }} /> Enable Notifications
+          </motion.button>
+        ) : (
+          <>
+            {/* Toggle */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24, background: "rgba(255,255,255,0.04)", borderRadius: 14, padding: "14px 16px", border: "1px solid rgba(127,29,29,0.4)" }}>
+              <div>
+                <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: "#ffe8e8" }}>Daily reminder</p>
+                <p style={{ margin: "3px 0 0", fontSize: 12, color: "rgba(252,165,165,0.5)" }}>{enabled ? `Set for ${displayHour}:${String(minute).padStart(2,"0")} ${ampm}` : "Disabled"}</p>
+              </div>
+              <button onClick={() => { setEnabled(!enabled); }} style={{ width: 48, height: 26, borderRadius: 13, background: enabled ? "#dc2626" : "rgba(255,255,255,0.1)", border: "none", cursor: "pointer", position: "relative", transition: "background 0.2s" }}>
+                <div style={{ position: "absolute", top: 3, left: enabled ? 25 : 3, width: 20, height: 20, borderRadius: "50%", background: "#fff", transition: "left 0.2s" }} />
+              </button>
+            </div>
+
+            {/* Time picker */}
+            {enabled && (
+              <div style={{ marginBottom: 24 }}>
+                <p style={{ margin: "0 0 12px", fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(252,165,165,0.5)" }}>Reminder time</p>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ margin: "0 0 6px", fontSize: 11, color: "rgba(252,165,165,0.4)" }}>Hour</p>
+                    <input type="range" min={0} max={23} value={hour} onChange={(e) => setHour(Number(e.target.value))}
+                      style={{ width: "100%", accentColor: "#dc2626" }} />
+                    <p style={{ margin: "4px 0 0", fontSize: 16, fontWeight: 700, color: "#fff", textAlign: "center" }}>{displayHour} {ampm}</p>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ margin: "0 0 6px", fontSize: 11, color: "rgba(252,165,165,0.4)" }}>Minute</p>
+                    <input type="range" min={0} max={59} step={5} value={minute} onChange={(e) => setMinute(Number(e.target.value))}
+                      style={{ width: "100%", accentColor: "#dc2626" }} />
+                    <p style={{ margin: "4px 0 0", fontSize: 16, fontWeight: 700, color: "#fff", textAlign: "center" }}>{String(minute).padStart(2, "0")}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <motion.button whileTap={{ scale: 0.97 }} onClick={() => saveSettings()}
+              style={{ width: "100%", padding: "16px", background: saved ? "rgba(34,197,94,0.2)" : "linear-gradient(135deg, #7f1d1d 0%, #b91c1c 100%)", border: saved ? "1px solid rgba(34,197,94,0.5)" : "1px solid rgba(248,113,113,0.35)", borderRadius: 16, color: saved ? "#4ade80" : "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer", transition: "all 0.3s" }}>
+              {saved ? "✓ Saved!" : "Save Reminder"}
+            </motion.button>
+          </>
+        )}
+
+        <button onClick={onClose} style={{ marginTop: 12, width: "100%", background: "transparent", border: "1px solid rgba(127,29,29,0.4)", borderRadius: 14, padding: "13px", color: "rgba(252,165,165,0.4)", fontSize: 14, cursor: "pointer" }}>Close</button>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+// ─── Main App ─────────────────────────────────────────────────────────────────
+export default function App() {
+  const [rows, setRows] = useState<TrackerRow[]>(() => createRows());
+  const [loaded, setLoaded] = useState(false);
+  const [userName, setUserName] = useState<string | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [activeRow, setActiveRow] = useState<number | null>(null);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [showGallery, setShowGallery] = useState(false);
+  const [showBeforeAfter, setShowBeforeAfter] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showDailyCard, setShowDailyCard] = useState(false);
+  const [showCertificate, setShowCertificate] = useState(false);
+  const [showWidget, setShowWidget] = useState(false);
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem("75_hard_theme");
+    return saved ? saved === "dark" : true;
+  });
+  const [milestone, setMilestone] = useState<number | null>(null);
+  const [missedDayIndex, setMissedDayIndex] = useState<number | null>(null);
+  const [exportGroup, setExportGroup] = useState<{ weekNumber: number; rows: TrackerRow[]; startIndex: number } | null>(null);
+  const [photoSourceTarget, setPhotoSourceTarget] = useState<number | null>(null);
+  const [viewingPhotoIndex, setViewingPhotoIndex] = useState<number | null>(null);
+  const [weeklySummary, setWeeklySummary] = useState<null | { weekNumber: number; averageCalories: string; averageSteps: string; completionRate: number }>(null);
+  const [isWeeklySummaryOpen, setIsWeeklySummaryOpen] = useState(false);
+
+  const photoInputRefs = useRef<Record<number, HTMLInputElement | null>>({});
+  const galleryInputRefs = useRef<Record<number, HTMLInputElement | null>>({});
+  const todayRowRef = useRef<HTMLDivElement | null>(null);
+  const openedWeekSummariesRef = useRef<Set<number>>(new Set());
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const prevCompletedDaysRef = useRef(0);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) { const parsed = JSON.parse(saved); if (Array.isArray(parsed) && parsed.length === TOTAL_DAYS) setRows(parsed); }
+      const savedUser = localStorage.getItem(USER_KEY);
+      if (savedUser) setUserName(savedUser);
+      else setShowOnboarding(true);
+      // Reschedule notification if previously set
+      const notifSettings = localStorage.getItem(NOTIF_KEY);
+      if (notifSettings && typeof Notification !== "undefined" && Notification.permission === "granted") {
+        const { hour, minute, enabled } = JSON.parse(notifSettings);
+        if (enabled) {
+          const schedule = () => {
+            const now = new Date();
+            const target = new Date();
+            target.setHours(hour, minute, 0, 0);
+            if (target <= now) target.setDate(target.getDate() + 1);
+            const delay = target.getTime() - now.getTime();
+            const id = window.setTimeout(() => {
+              new Notification("75 Hard Tracker 🔥", { body: "Time to log your habits! Stay relentless.", icon: "/icon-192.png" });
+              schedule();
+            }, delay);
+            localStorage.setItem("75_hard_notif_timeout", String(id));
+          };
+          schedule();
+        }
+      }
+    } catch { setShowOnboarding(true); }
+    finally { setLoaded(true); }
+  }, []);
+
+  useEffect(() => {
+    if (!loaded) return;
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(rows)); }
+    catch { window.alert("Storage is full. Large photos may not save properly."); }
+  }, [rows, loaded]);
+
+  useEffect(() => {
+    if (!loaded || !todayRowRef.current) return;
+    const t = window.setTimeout(() => todayRowRef.current?.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" }), 450);
+    return () => window.clearTimeout(t);
+  }, [loaded]);
+
+  const triggerFeedback = useCallback((type: "check" | "uncheck" | "lock" = "check") => {
+    try {
+      if (navigator.vibrate) {
+        if (type === "check") navigator.vibrate([18, 10, 8]);
+        else if (type === "uncheck") navigator.vibrate([8]);
+        else if (type === "lock") navigator.vibrate([12, 20, 12]);
+      }
+      const AC = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AC) return;
+      if (!audioContextRef.current) audioContextRef.current = new AC();
+      const ctx = audioContextRef.current;
+      if (ctx.state === "suspended") ctx.resume();
+      const osc = ctx.createOscillator(); const gain = ctx.createGain();
+      osc.type = "triangle";
+      if (type === "check") {
+        osc.frequency.setValueAtTime(900, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(1250, ctx.currentTime + 0.04);
+        gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.03, ctx.currentTime + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.085);
+      } else {
+        osc.frequency.setValueAtTime(500, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(350, ctx.currentTime + 0.06);
+        gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.02, ctx.currentTime + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.09);
+      }
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(); osc.stop(ctx.currentTime + 0.1);
+    } catch { /* silent */ }
+  }, []);
+
+  const triggerDayCompleteSound = useCallback(() => {
+    try {
+      const AC = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AC) return;
+      if (!audioContextRef.current) audioContextRef.current = new AC();
+      const ctx = audioContextRef.current;
+      if (ctx.state === "suspended") ctx.resume();
+      [523, 659, 784, 1047].forEach((freq, i) => {
+        const osc = ctx.createOscillator(); const gain = ctx.createGain();
+        osc.type = "sine"; osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.0001, ctx.currentTime + i * 0.12);
+        gain.gain.exponentialRampToValueAtTime(0.06, ctx.currentTime + i * 0.12 + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + i * 0.12 + 0.18);
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.start(ctx.currentTime + i * 0.12); osc.stop(ctx.currentTime + i * 0.12 + 0.2);
+      });
+    } catch { /* silent */ }
+  }, []);
+
+  const updateRow = useCallback((index: number, patch: Partial<TrackerRow>) => {
+    setRows((prev) => { const next = [...prev]; next[index] = { ...next[index], ...patch }; return next; });
+  }, []);
+
+  const handleHabitToggle = useCallback((absoluteIndex: number, key: HabitKey) => {
+    if (rows[absoluteIndex].locked) return;
+    setActiveRow(absoluteIndex);
+    const newVal = !rows[absoluteIndex][key];
+    triggerFeedback(newVal ? "check" : "uncheck");
+    const after = { ...rows[absoluteIndex], [key]: newVal };
+    if (habitColumns.every((item) => after[item.key])) {
+      setTimeout(() => { setShowConfetti(true); triggerDayCompleteSound(); }, 100);
+    }
+    updateRow(absoluteIndex, { [key]: newVal } as Partial<TrackerRow>);
+  }, [rows, triggerFeedback, triggerDayCompleteSound, updateRow]);
+
+  const handlePhotoUpload = useCallback(async (absoluteIndex: number, file?: File | null) => {
+    if (rows[absoluteIndex].locked || !file) return;
+    try {
+      const compressed = await compressImage(file);
+      setActiveRow(absoluteIndex);
+      updateRow(absoluteIndex, { photoUrl: compressed, photo: true });
+      triggerFeedback();
+      const after = { ...rows[absoluteIndex], photoUrl: compressed, photo: true };
+      if (habitColumns.every((item) => after[item.key])) {
+        setTimeout(() => { setShowConfetti(true); triggerDayCompleteSound(); }, 100);
+      }
+    } catch { window.alert("Photo upload failed. Please try another image."); }
+  }, [rows, triggerFeedback, triggerDayCompleteSound, updateRow]);
+
+  const toggleRowLock = useCallback((absoluteIndex: number) => {
+    if (!rowHasData(rows[absoluteIndex])) return;
+    triggerFeedback("lock");
+    updateRow(absoluteIndex, { locked: !rows[absoluteIndex].locked });
+  }, [rows, triggerFeedback, updateRow]);
+
+  const handlePhotoSourceSelect = useCallback((source: "camera" | "gallery") => {
+    const idx = photoSourceTarget; setPhotoSourceTarget(null);
+    if (idx === null) return;
+    setTimeout(() => { source === "camera" ? photoInputRefs.current[idx]?.click() : galleryInputRefs.current[idx]?.click(); }, 200);
+  }, [photoSourceTarget]);
+
+  const todayIndex = useMemo(() => {
+    const now = new Date();
+    const startDate = getStartDate();
+    const start = new Date(`${startDate}T00:00:00`);
+    const todayMid = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startMid = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+    const diffDays = Math.floor((todayMid.getTime() - startMid.getTime()) / (1000 * 60 * 60 * 24));
+    if (diffDays >= 0 && diffDays < TOTAL_DAYS) return diffDays;
+    return -1;
+  }, [rows]);
+
+  const totalChecks = useMemo(() => rows.reduce((sum, r) => sum + habitColumns.reduce((s, item) => s + (r[item.key] ? 1 : 0), 0), 0), [rows]);
+  const completedDays = useMemo(() => rows.filter(isRowComplete).length, [rows]);
+  const progressPercent = Math.round((totalChecks / (TOTAL_DAYS * habitColumns.length)) * 100);
+
+  const latestWeight = useMemo(() => { const m = [...rows].reverse().find((r) => r.weight.trim()); return m ? m.weight : "—"; }, [rows]);
+  const firstWeight = useMemo(() => { const m = rows.find((r) => r.weight.trim()); return m ? parseFloat(m.weight) : null; }, [rows]);
+  const latestWeightNum = useMemo(() => { const m = [...rows].reverse().find((r) => r.weight.trim()); return m ? parseFloat(m.weight) : null; }, [rows]);
+  const weightDelta = useMemo(() => {
+    if (firstWeight === null || latestWeightNum === null || firstWeight === latestWeightNum) return null;
+    const diff = latestWeightNum - firstWeight;
+    const pct = ((diff / firstWeight) * 100).toFixed(1);
+    return { diff: diff.toFixed(1), pct, lost: diff < 0 };
+  }, [firstWeight, latestWeightNum]);
+
+  const averageCalories = useMemo(() => { const v = rows.map((r) => Number(String(r.calories).replace(/,/g, ""))).filter((n) => isFinite(n) && n > 0); return v.length ? Math.round(v.reduce((a, b) => a + b) / v.length).toLocaleString() : "—"; }, [rows]);
+  const averageSteps = useMemo(() => { const v = rows.map((r) => Number(String(r.steps).replace(/,/g, ""))).filter((n) => isFinite(n) && n > 0); return v.length ? Math.round(v.reduce((a, b) => a + b) / v.length).toLocaleString() : "—"; }, [rows]);
+
+  // Missed day detection
+  useEffect(() => {
+    if (!loaded || todayIndex <= 0) return;
+    const yesterday = rows[todayIndex - 1];
+    if (yesterday && !isRowComplete(yesterday) && rowHasData(yesterday) === false) {
+      const dismissed = localStorage.getItem(`75_hard_missed_dismissed_${todayIndex - 1}`);
+      if (!dismissed) setMissedDayIndex(todayIndex - 1);
+    }
+  }, [loaded, todayIndex, rows]);
+
+  const timelineBars = Array.from({ length: TOTAL_DAYS }, (_, i) => i < completedDays);
+  const weekGroups = Array.from({ length: Math.ceil(TOTAL_DAYS / 7) }, (_, i) => ({ weekNumber: i + 1, rows: rows.slice(i * 7, i * 7 + 7), startIndex: i * 7 }));
+
+  useEffect(() => {
+    if (!loaded) return;
+    if (prevCompletedDaysRef.current === 0 && completedDays > 0) {
+      // First load with existing data — set baseline without firing confetti
+      prevCompletedDaysRef.current = completedDays;
+      return;
+    }
+    if (completedDays > prevCompletedDaysRef.current) { setShowConfetti(true); triggerDayCompleteSound(); }
+    prevCompletedDaysRef.current = completedDays;
+  }, [completedDays, loaded, triggerDayCompleteSound]);
+
+  useEffect(() => {
+    weekGroups.forEach((group) => {
+      if (!group.rows.every(isRowComplete) || openedWeekSummariesRef.current.has(group.weekNumber)) return;
+      openedWeekSummariesRef.current.add(group.weekNumber);
+      // Show milestone screen instead of old weekly summary
+      setTimeout(() => setMilestone(group.weekNumber), 400);
+    });
+  }, [rows]);
+
+  // Dark mode effect
+  useEffect(() => {
+    document.body.classList.toggle("light-mode", !darkMode);
+    localStorage.setItem("75_hard_theme", darkMode ? "dark" : "light");
+  }, [darkMode]);
+
+  return (
+    <div className={`app-shell${darkMode ? "" : " light-mode"}`}>
+      <div className="background-noise" />
+      <div className="background-glow" />
+
+      <AnimatePresence>{showOnboarding && <OnboardingScreen onComplete={(name, startDate) => {
+        setUserName(name);
+        localStorage.setItem(USER_KEY, name);
+        localStorage.setItem(START_DATE_KEY, startDate);
+        setRows(createRows(startDate));
+        setShowOnboarding(false);
+      }} />}</AnimatePresence>
+      {showConfetti && <Confetti onDone={() => setShowConfetti(false)} />}
+      <WeeklySummaryModal open={isWeeklySummaryOpen} onClose={() => setIsWeeklySummaryOpen(false)} summary={weeklySummary} />
+      <AnimatePresence>{milestone !== null && <MilestoneScreen weekNumber={milestone} onClose={() => setMilestone(null)} />}</AnimatePresence>
+      <AnimatePresence>{missedDayIndex !== null && (
+        <MissedDayBanner
+          missedDay={rows[missedDayIndex]?.dateLabel || ""}
+          onDismiss={() => { localStorage.setItem(`75_hard_missed_dismissed_${missedDayIndex}`, "1"); setMissedDayIndex(null); }}
+          onMarkComplete={() => {
+            const patch: Partial<TrackerRow> = {};
+            habitColumns.forEach((item) => { if (item.key !== "photo") (patch as any)[item.key] = true; });
+            updateRow(missedDayIndex!, patch);
+            setMissedDayIndex(null);
+          }}
+        />
+      )}</AnimatePresence>
+      <AnimatePresence>{exportGroup && <WeeklyExportModal group={exportGroup} userName={userName} onClose={() => setExportGroup(null)} />}</AnimatePresence>
+      {photoSourceTarget !== null && <PhotoSourceModal onSelect={handlePhotoSourceSelect} onClose={() => setPhotoSourceTarget(null)} />}
+      {viewingPhotoIndex !== null && rows[viewingPhotoIndex]?.photoUrl && (
+        <PhotoViewerModal photo={rows[viewingPhotoIndex].photoUrl} rowLabel={rows[viewingPhotoIndex].countdown}
+          onClose={() => setViewingPhotoIndex(null)}
+          onReplace={() => { const idx = viewingPhotoIndex; setViewingPhotoIndex(null); setTimeout(() => setPhotoSourceTarget(idx), 150); }}
+        />
+      )}
+      <AnimatePresence>{showGallery && <PhotoGalleryModal rows={rows} onClose={() => setShowGallery(false)} />}</AnimatePresence>
+      <AnimatePresence>{showBeforeAfter && <BeforeAfterModal rows={rows} onClose={() => setShowBeforeAfter(false)} />}</AnimatePresence>
+      <AnimatePresence>{showNotifications && <NotificationModal onClose={() => setShowNotifications(false)} />}</AnimatePresence>
+      <AnimatePresence>{showDailyCard && <DailyChallengeCardModal todayIndex={todayIndex} userName={userName} rows={rows} onClose={() => setShowDailyCard(false)} />}</AnimatePresence>
+      <AnimatePresence>{showCertificate && <CertificateModal rows={rows} userName={userName} onClose={() => setShowCertificate(false)} />}</AnimatePresence>
+      <AnimatePresence>{showWidget && <WidgetExportModal rows={rows} todayIndex={todayIndex} userName={userName} onClose={() => setShowWidget(false)} />}</AnimatePresence>
+
+      <div className="page">
+        <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} className="hero-card">
+          <div className="hero-header">
+            <div className="pill"><Flame className="mini-icon" /> Discipline • Consistency • Power</div>
+            {userName ? (
+              <>
+                <h1 className="hero-title" style={{ marginBottom: 0 }}>{userName.toUpperCase()}'S</h1>
+                <h1 className="hero-title" style={{ marginTop: 4, color: "#b91c1c" }}>75 HARD CHALLENGE</h1>
+              </>
+            ) : (
+              <h1 className="hero-title">75 HARD CHALLENGE</h1>
+            )}
+          </div>
+
+          <div className="hero-body">
+            <div className="timeline-card">
+              <div className="timeline-row">
+                <div style={{ display: "flex", gap: 16, alignItems: "flex-end", flexWrap: "wrap" }}>
+                  <div>
+                    <div className="mini-label">Challenge Timeline</div>
+                    <div className="timeline-day">Day {Math.min(Math.max(completedDays + 1, 1), TOTAL_DAYS)} / {TOTAL_DAYS}</div>
+                  </div>
+                </div>
+                <div className="timeline-bars">
+                  {timelineBars.map((filled, i) => (
+                    <motion.div key={i} initial={{ opacity: 0.5, scaleY: 0.85 }} animate={{ opacity: 1, scaleY: 1 }} transition={{ delay: i * 0.005 }}
+                      className={filled ? "timeline-bar filled" : "timeline-bar"} />
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="summary-cards">
+              <SummaryCard title="Overall Progress" value={`${progressPercent}%`} subtext="Based on all 450 habit ticks" icon={Flame} />
+              <SummaryCard title="Latest Weight" value={latestWeight} subtext="Most recent value entered" icon={Scale}
+                extra={<>
+                  <WeightSparkline rows={rows} />
+                  {weightDelta && (
+                    <div style={{ marginTop: 6, fontSize: 12, fontWeight: 700, color: weightDelta.lost ? "#4ade80" : "#f87171" }}>
+                      {weightDelta.lost ? "▼" : "▲"} {Math.abs(Number(weightDelta.diff))} kg ({Math.abs(Number(weightDelta.pct))}% {weightDelta.lost ? "lost" : "gained"})
+                    </div>
+                  )}
+                </>}
+              />
+              <SummaryCard title="Avg Calories / Steps" value={`${averageCalories} / ${averageSteps}`} subtext="Daily averages" icon={Target} />
+            </div>
+
+            <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
+              {[
+                { icon: Images, label: "Gallery", action: () => setShowGallery(true) },
+                { icon: Layers, label: "Before/After", action: () => setShowBeforeAfter(true) },
+                { icon: Bell, label: "Reminder", action: () => setShowNotifications(true) },
+                { icon: Share2, label: "Day Card", action: () => setShowDailyCard(true) },
+                { icon: Trophy, label: "Certificate", action: () => setShowCertificate(true) },
+                { icon: Target, label: "Widget", action: () => setShowWidget(true) },
+              ].map(({ icon: Icon, label, action }) => (
+                <motion.button key={label} whileTap={{ scale: 0.95 }} onClick={action}
+                  style={{ flex: "1 1 calc(33% - 6px)", minWidth: 80, background: "rgba(127,29,29,0.18)", border: "1px solid rgba(127,29,29,0.55)", borderRadius: 14, padding: "12px 8px", display: "flex", flexDirection: "column", alignItems: "center", gap: 5, cursor: "pointer" }}>
+                  <Icon style={{ width: 18, height: 18, color: "#fca5a5" }} />
+                  <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(252,165,165,0.75)" }}>{label}</span>
+                </motion.button>
+              ))}
+            </div>
+
+            {/* Dark mode toggle */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 10, padding: "10px 14px", background: "rgba(127,29,29,0.1)", borderRadius: 12, border: "1px solid rgba(127,29,29,0.3)" }}>
+              <span style={{ fontSize: 12, color: "rgba(252,165,165,0.6)", fontWeight: 600, letterSpacing: "0.06em" }}>
+                {darkMode ? "🌙 Dark Mode" : "☀️ Light Mode"}
+              </span>
+              <button onClick={() => setDarkMode(!darkMode)}
+                style={{ width: 44, height: 24, borderRadius: 12, background: darkMode ? "#dc2626" : "rgba(255,255,255,0.3)", border: "none", cursor: "pointer", position: "relative", transition: "background 0.25s" }}>
+                <div style={{ position: "absolute", top: 3, left: darkMode ? 22 : 3, width: 18, height: 18, borderRadius: "50%", background: "#fff", transition: "left 0.25s", boxShadow: "0 1px 4px rgba(0,0,0,0.3)" }} />
+              </button>
+            </div>
+          </div>
+        </motion.div>
+
+        <div className="mobile-tip">Swipe sideways to use the full sheet</div>
+
+        <div className="sheet-wrap">
+          <div className="sheet-inner">
+            <div className="sheet-banner">Discipline • Consistency • Power</div>
+            <div className="sheet-grid header">
+              <div className="sheet-cell head date-col">Date</div>
+              <div className="sheet-cell head week-col">Week</div>
+              <div className="sheet-cell head count-col">Countdown</div>
+              {habitColumns.map((item) => { const Icon = item.icon; return (<div key={item.key} className="sheet-cell head icon-col head-icon-cell" title={item.label}><Icon className="head-icon" /></div>); })}
+              <div className="sheet-cell head metric-col">Weight</div>
+              <div className="sheet-cell head calories-col">Calories Burned</div>
+              <div className="sheet-cell head metric-col">Steps</div>
+            </div>
+
+            {weekGroups.map((group, groupIndex) => (
+              <div key={group.weekNumber} className="sheet-grid">
+                {group.rows.map((row, rowIndex) => {
+                  const absoluteIndex = group.startIndex + rowIndex;
+                  const isToday = absoluteIndex === todayIndex;
+                  const isFuture = todayIndex >= 0 && absoluteIndex > todayIndex;
+                  const zebra = groupIndex % 2 === 0 ? "zebra-a" : "zebra-b";
+                  const rowDone = isRowComplete(row);
+                  const rowLocked = row.locked || isFuture;
+                  const rowIsActive = activeRow === absoluteIndex;
+                  const rowTone = isFuture ? "future-row" : rowIsActive ? "active-row" : isToday ? "today-row" : rowDone ? "complete-row" : zebra;
+                  const showLockButton = rowHasData(row) && !isFuture;
+
+                  return (
+                    <React.Fragment key={row.id}>
+                      <DateCell
+                        row={row}
+                        isToday={isToday}
+                        isFuture={isFuture}
+                        rowTone={rowTone}
+                        todayRef={isToday ? todayRowRef : undefined}
+                      />
+
+                      {rowIndex === 0 ? (
+                        <div className="merged-week" style={{ gridRow: `span ${group.rows.length} / span ${group.rows.length}` }}>
+                          <div className="vertical-week">{`Week ${group.weekNumber}`}</div>
+                        </div>
+                      ) : null}
+
+                      <div className={`sheet-cell body count-col count-cell ${rowTone}`}>
+                        {showLockButton ? (
+                          <button type="button" onClick={() => toggleRowLock(absoluteIndex)} className={row.locked ? "lock-btn locked" : "lock-btn"}>
+                            {row.locked ? <Lock className="lock-icon" /> : <LockOpen className="lock-icon" />}
+                          </button>
+                        ) : null}
+                        <div className="count-text">{row.countdown}</div>
+                        <AnimatePresence>
+                          {rowDone ? (
+                            <motion.div initial={{ opacity: 0, scale: 0.92 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.96 }} transition={{ type: "spring", stiffness: 260, damping: 18 }} className="badge-row">DAY COMPLETE</motion.div>
+                          ) : null}
+                        </AnimatePresence>
+                      </div>
+
+                      {habitColumns.map((item) => (
+                        <div key={item.key} className={`sheet-cell body icon-col ${rowTone}`}>
+                          {item.key === "photo" ? (
+                            <>
+                              <input ref={(el) => { photoInputRefs.current[absoluteIndex] = el; }} type="file" accept="image/*" capture="environment" className="hidden-input" onChange={(e) => { handlePhotoUpload(absoluteIndex, e.target.files?.[0]); e.target.value = ""; }} />
+                              <input ref={(el) => { galleryInputRefs.current[absoluteIndex] = el; }} type="file" accept="image/*" className="hidden-input" onChange={(e) => { handlePhotoUpload(absoluteIndex, e.target.files?.[0]); e.target.value = ""; }} />
+                              <button type="button" onClick={() => { if (rowLocked) return; row.photoUrl ? setViewingPhotoIndex(absoluteIndex) : setPhotoSourceTarget(absoluteIndex); }} disabled={rowLocked} className={`photo-btn ${row.photo ? "has-photo" : ""} ${rowLocked ? "disabled" : ""}`}>
+                                {row.photoUrl ? <img src={row.photoUrl} alt="" className="photo-thumb" /> : <ImagePlus className="photo-placeholder-icon" />}
+                              </button>
+                            </>
+                          ) : (
+                            <button type="button" onClick={() => handleHabitToggle(absoluteIndex, item.key)} disabled={rowLocked} className={`habit-btn ${row[item.key] ? "checked" : ""} ${rowLocked ? "disabled" : ""}`}>
+                              {row[item.key] ? (
+                                <motion.span initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: [0.5, 1.18, 1], opacity: 1 }} transition={{ duration: 0.28, ease: "easeOut" }}>✓</motion.span>
+                              ) : null}
+                            </button>
+                          )}
+                        </div>
+                      ))}
+
+                      <div className={`sheet-cell body metric-col metric-pad ${rowTone}`}>
+                        <Input disabled={rowLocked} readOnly={rowLocked} onFocus={() => setActiveRow(absoluteIndex)} onBlur={() => setActiveRow((c) => (c === absoluteIndex ? null : c))} value={row.weight} onChange={(e) => updateRow(absoluteIndex, { weight: e.target.value })} placeholder="——" inputMode="decimal" className={rowLocked ? "disabled" : ""} />
+                      </div>
+                      <div className={`sheet-cell body calories-col metric-pad ${rowTone}`}>
+                        <Input disabled={rowLocked} readOnly={rowLocked} onFocus={() => setActiveRow(absoluteIndex)} onBlur={() => setActiveRow((c) => (c === absoluteIndex ? null : c))} value={row.calories} onChange={(e) => updateRow(absoluteIndex, { calories: e.target.value })} placeholder="——" inputMode="numeric" className={rowLocked ? "disabled" : ""} />
+                      </div>
+                      <div className={`sheet-cell body metric-col metric-pad ${rowTone}`}>
+                        <Input disabled={rowLocked} readOnly={rowLocked} onFocus={() => setActiveRow(absoluteIndex)} onBlur={() => setActiveRow((c) => (c === absoluteIndex ? null : c))} value={row.steps} onChange={(e) => updateRow(absoluteIndex, { steps: e.target.value })} placeholder="——" inputMode="numeric" className={rowLocked ? "disabled" : ""} />
+                      </div>
+                    </React.Fragment>
+                  );
+                })}
+              </div>
+            ))}
+            <div className="sheet-footer">Stay Relentless</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
