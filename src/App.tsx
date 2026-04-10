@@ -1459,7 +1459,6 @@ export default function App() {
 
   // Dark mode effect
   useEffect(() => {
-    document.body.classList.toggle("light-mode", !darkMode);
     localStorage.setItem("75_hard_theme", darkMode ? "dark" : "light");
   }, [darkMode]);
 
