@@ -384,7 +384,7 @@ button { cursor: pointer; }
 }
 .sheet-grid {
   display: grid;
-  grid-template-columns: 80px 60px 80px repeat(6, 40px) 80px 110px 80px;
+  grid-template-columns: 80px 60px 80px repeat(6, 40px) 80px 110px 80px 70px;
 }
 .sheet-grid.header {
   border-bottom: 1px solid var(--border);
