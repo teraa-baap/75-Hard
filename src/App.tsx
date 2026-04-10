@@ -17,6 +17,253 @@ const STORAGE_KEY = "premium_75_hard_tracker_pwa_v1";
 const USER_KEY = "75_hard_user_v1";
 const START_DATE_KEY = "75_hard_start_date_v1";
 const NOTIF_KEY = "75_hard_notif_v1";
+const STRAVA_TOKEN_KEY = "75_hard_strava_token_v1";
+const STRAVA_CLIENT_ID = "223103";
+const STRAVA_REDIRECT_URI = `${window.location.origin}/strava-callback`;
+
+// ─── Strava Types ─────────────────────────────────────────────────────────────
+type StravaToken = {
+  access_token: string;
+  refresh_token: string;
+  expires_at: number;
+  athlete: { firstname: string; lastname: string; profile: string };
+};
+
+type StravaActivity = {
+  id: number;
+  name: string;
+  type: string;
+  sport_type: string;
+  start_date_local: string;
+  elapsed_time: number;
+  moving_time: number;
+  distance: number;
+  total_elevation_gain: number;
+  average_heartrate?: number;
+  max_heartrate?: number;
+  calories?: number;
+  average_speed: number;
+  max_speed: number;
+  suffer_score?: number;
+  kilojoules?: number;
+};
+
+// ─── Strava Helpers ───────────────────────────────────────────────────────────
+function getStravaToken(): StravaToken | null {
+  try { const s = localStorage.getItem(STRAVA_TOKEN_KEY); return s ? JSON.parse(s) : null; } catch { return null; }
+}
+function saveStravaToken(token: StravaToken) {
+  localStorage.setItem(STRAVA_TOKEN_KEY, JSON.stringify(token));
+}
+function clearStravaToken() {
+  localStorage.removeItem(STRAVA_TOKEN_KEY);
+}
+async function refreshStravaTokenIfNeeded(token: StravaToken): Promise<StravaToken> {
+  if (Date.now() / 1000 < token.expires_at - 300) return token;
+  const res = await fetch("/api/strava-token", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ grant_type: "refresh_token", refresh_token: token.refresh_token }),
+  });
+  if (!res.ok) throw new Error("Token refresh failed");
+  const data = await res.json();
+  const newToken = { ...token, access_token: data.access_token, refresh_token: data.refresh_token, expires_at: data.expires_at };
+  saveStravaToken(newToken);
+  return newToken;
+}
+async function fetchStravaActivities(token: StravaToken, date: string): Promise<StravaActivity[]> {
+  const fresh = await refreshStravaTokenIfNeeded(token);
+  const start = new Date(`${date}T00:00:00`);
+  const end = new Date(`${date}T23:59:59`);
+  const after = Math.floor(start.getTime() / 1000);
+  const before = Math.floor(end.getTime() / 1000);
+  const res = await fetch(
+    `https://www.strava.com/api/v3/athlete/activities?after=${after}&before=${before}&per_page=10`,
+    { headers: { Authorization: `Bearer ${fresh.access_token}` } }
+  );
+  if (!res.ok) throw new Error("Failed to fetch activities");
+  return res.json();
+}
+function formatDuration(seconds: number): string {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+  if (h > 0) return `${h}h ${m}m`;
+  return `${m}m ${s}s`;
+}
+function formatDistance(meters: number): string {
+  if (meters >= 1000) return `${(meters / 1000).toFixed(2)} km`;
+  return `${Math.round(meters)} m`;
+}
+function formatPace(speed: number): string {
+  if (speed === 0) return "—";
+  const minPerKm = 1000 / speed / 60;
+  const min = Math.floor(minPerKm);
+  const sec = Math.round((minPerKm - min) * 60);
+  return `${min}:${String(sec).padStart(2, "0")} /km`;
+}
+function getActivityEmoji(type: string): string {
+  const t = type.toLowerCase();
+  if (t.includes("run")) return "🏃";
+  if (t.includes("ride") || t.includes("cycling")) return "🚴";
+  if (t.includes("swim")) return "🏊";
+  if (t.includes("walk")) return "🚶";
+  if (t.includes("hike")) return "🥾";
+  if (t.includes("weight") || t.includes("crossfit") || t.includes("workout")) return "🏋️";
+  if (t.includes("yoga")) return "🧘";
+  return "⚡";
+}
+
+// ─── Strava Workout Drawer ────────────────────────────────────────────────────
+function StravaWorkoutDrawer({ date, dateLabel, token, onClose, onAutoFill }: {
+  date: string; dateLabel: string; token: StravaToken;
+  onClose: () => void;
+  onAutoFill: (calories: string, steps: string, workout1Done: boolean, workout2Done: boolean) => void;
+}) {
+  const [activities, setActivities] = useState<StravaActivity[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchStravaActivities(token, date)
+      .then(setActivities)
+      .catch(e => setError(e.message))
+      .finally(() => setLoading(false));
+  }, [date, token]);
+
+  const totalCalories = activities.reduce((s, a) => s + (a.calories || Math.round((a.kilojoules || 0) * 0.239)), 0);
+  const isOutdoor = (a: StravaActivity) => ["Run","Ride","Walk","Hike","VirtualRide","TrailRun"].includes(a.sport_type);
+
+  const handleAutoFill = () => {
+    const workout1Done = activities.length >= 1;
+    const workout2Done = activities.some(a => isOutdoor(a));
+    onAutoFill(
+      totalCalories > 0 ? String(totalCalories) : "",
+      "",
+      workout1Done,
+      workout2Done
+    );
+    onClose();
+  };
+
+  return (
+    <motion.div initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }}
+      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+      style={{ position: "fixed", inset: 0, zIndex: 95, background: "#000", display: "flex", flexDirection: "column" }}>
+
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 18px", borderBottom: "1px solid rgba(127,29,29,0.72)", background: "linear-gradient(180deg, rgba(69,10,10,0.5) 0%, transparent 100%)" }}>
+        <button onClick={onClose} style={{ width: 38, height: 38, borderRadius: 12, background: "rgba(127,29,29,0.25)", border: "1px solid rgba(127,29,29,0.72)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fca5a5" }}>
+          <ArrowLeft style={{ width: 18, height: 18 }} />
+        </button>
+        <div style={{ textAlign: "center" }}>
+          <p style={{ margin: 0, fontSize: 11, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(252,165,165,0.6)" }}>Strava Activities</p>
+          <p style={{ margin: "2px 0 0", fontSize: 14, fontWeight: 700, color: "#fff" }}>{dateLabel}</p>
+        </div>
+        <div style={{ width: 38 }} />
+      </div>
+
+      <div style={{ flex: 1, overflowY: "auto", padding: "16px 16px 120px" }}>
+        {loading && (
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: 200, gap: 16 }}>
+            <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+              style={{ width: 32, height: 32, border: "3px solid rgba(127,29,29,0.3)", borderTop: "3px solid #dc2626", borderRadius: "50%" }} />
+            <p style={{ color: "rgba(252,165,165,0.5)", fontSize: 13 }}>Fetching from Strava...</p>
+          </div>
+        )}
+
+        {error && (
+          <div style={{ background: "rgba(220,38,38,0.1)", border: "1px solid rgba(220,38,38,0.3)", borderRadius: 14, padding: 16, margin: "8px 0" }}>
+            <p style={{ margin: 0, color: "#f87171", fontSize: 13 }}>Could not load activities: {error}</p>
+          </div>
+        )}
+
+        {!loading && !error && activities.length === 0 && (
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: 200, gap: 12 }}>
+            <span style={{ fontSize: 48 }}>🏃</span>
+            <p style={{ color: "rgba(252,165,165,0.5)", fontSize: 14, textAlign: "center" }}>No Strava activities found for this day</p>
+          </div>
+        )}
+
+        {!loading && activities.map((activity, i) => (
+          <motion.div key={activity.id}
+            initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}
+            style={{ background: "linear-gradient(135deg, #0a0000, #1a0404)", border: "1px solid rgba(127,29,29,0.5)", borderRadius: 18, padding: 18, marginBottom: 12 }}>
+
+            {/* Activity header */}
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+              <div style={{ width: 44, height: 44, borderRadius: 12, background: "rgba(127,29,29,0.3)", border: "1px solid rgba(127,29,29,0.5)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>
+                {getActivityEmoji(activity.sport_type)}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{activity.name}</p>
+                <p style={{ margin: "3px 0 0", fontSize: 11, color: "rgba(252,165,165,0.55)", letterSpacing: "0.06em" }}>
+                  {activity.sport_type} · {new Date(activity.start_date_local).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
+                </p>
+              </div>
+              {isOutdoor(activity) && (
+                <div style={{ background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.3)", borderRadius: 8, padding: "3px 8px" }}>
+                  <p style={{ margin: 0, fontSize: 9, fontWeight: 700, color: "#4ade80", letterSpacing: "0.1em" }}>OUTDOOR</p>
+                </div>
+              )}
+            </div>
+
+            {/* Stats grid */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+              {[
+                { label: "Duration", value: formatDuration(activity.moving_time) },
+                { label: "Distance", value: activity.distance > 0 ? formatDistance(activity.distance) : "—" },
+                { label: "Pace", value: activity.distance > 0 ? formatPace(activity.average_speed) : "—" },
+                { label: "Avg HR", value: activity.average_heartrate ? `${Math.round(activity.average_heartrate)} bpm` : "—" },
+                { label: "Max HR", value: activity.max_heartrate ? `${Math.round(activity.max_heartrate)} bpm` : "—" },
+                { label: "Calories", value: activity.calories ? `${activity.calories} kcal` : activity.kilojoules ? `~${Math.round(activity.kilojoules * 0.239)} kcal` : "—" },
+                { label: "Elevation", value: activity.total_elevation_gain > 0 ? `${Math.round(activity.total_elevation_gain)} m` : "—" },
+                { label: "Suffer Score", value: activity.suffer_score ? String(activity.suffer_score) : "—" },
+              ].map(stat => (
+                <div key={stat.label} style={{ background: "rgba(0,0,0,0.4)", borderRadius: 10, padding: "10px 8px", textAlign: "center" }}>
+                  <p style={{ margin: 0, fontSize: 9, color: "rgba(252,165,165,0.45)", letterSpacing: "0.1em", textTransform: "uppercase" }}>{stat.label}</p>
+                  <p style={{ margin: "4px 0 0", fontSize: 13, fontWeight: 700, color: "#fff" }}>{stat.value}</p>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Auto-fill button */}
+      {!loading && activities.length > 0 && (
+        <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, padding: "16px", background: "linear-gradient(0deg, #000 60%, transparent)", borderTop: "1px solid rgba(127,29,29,0.3)" }}>
+          <motion.button whileTap={{ scale: 0.97 }} onClick={handleAutoFill}
+            style={{ width: "100%", padding: "16px", background: "linear-gradient(135deg, #7f1d1d, #dc2626)", border: "1px solid rgba(248,113,113,0.35)", borderRadius: 16, color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
+            <RefreshCw style={{ width: 18, height: 18 }} />
+            Sync This Day Now
+          </motion.button>
+          {totalCalories > 0 && (
+            <p style={{ margin: "8px 0 0", textAlign: "center", fontSize: 12, color: "rgba(252,165,165,0.5)" }}>
+              {totalCalories} cal · {activities.length} workout{activities.length > 1 ? "s" : ""} · auto-synced on load
+            </p>
+          )}
+        </div>
+      )}
+    </motion.div>
+  );
+}
+
+// ─── Strava Connect Banner ────────────────────────────────────────────────────
+function StravaConnectBanner({ onConnect }: { onConnect: () => void }) {
+  return (
+    <motion.button whileTap={{ scale: 0.97 }} onClick={onConnect}
+      style={{ width: "100%", padding: "14px 18px", background: "linear-gradient(135deg, #fc4c02 0%, #e34402 100%)", border: "none", borderRadius: 14, display: "flex", alignItems: "center", gap: 14, cursor: "pointer", marginTop: 10 }}>
+      <div style={{ width: 36, height: 36, background: "rgba(255,255,255,0.2)", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+        <span style={{ fontSize: 18 }}>⚡</span>
+      </div>
+      <div style={{ textAlign: "left" }}>
+        <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#fff" }}>Connect Strava</p>
+        <p style={{ margin: "2px 0 0", fontSize: 11, color: "rgba(255,255,255,0.7)" }}>Auto-fill workouts, calories & heart rate</p>
+      </div>
+    </motion.button>
+  );
+}
 
 const MILESTONE_MESSAGES: Record<number, { title: string; subtitle: string }> = {
   1:  { title: "WEEK 1 DONE", subtitle: "The hardest week is behind you. Most quit here. You didn't." },
@@ -1241,6 +1488,8 @@ export default function App() {
   const [showDailyCard, setShowDailyCard] = useState(false);
   const [showCertificate, setShowCertificate] = useState(false);
   const [showWidget, setShowWidget] = useState(false);
+  const [stravaToken, setStravaToken] = useState<StravaToken | null>(() => getStravaToken());
+  const [stravaDrawer, setStravaDrawer] = useState<{ date: string; dateLabel: string } | null>(null);
   const [darkMode, setDarkMode] = useState(() => {
     const saved = localStorage.getItem("75_hard_theme");
     return saved ? saved === "dark" : true;
@@ -1291,11 +1540,94 @@ export default function App() {
     finally { setLoaded(true); }
   }, []);
 
+  // Handle Strava OAuth callback
   useEffect(() => {
-    if (!loaded) return;
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(rows)); }
-    catch { window.alert("Storage is full. Large photos may not save properly."); }
-  }, [rows, loaded]);
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("code");
+    const state = params.get("state");
+    if (!code || state !== "75hard") return;
+    // Clear the URL
+    window.history.replaceState({}, "", window.location.pathname);
+    // Exchange code for token
+    fetch("/api/strava-token", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code, grant_type: "authorization_code" }),
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (data.access_token) {
+          const token: StravaToken = {
+            access_token: data.access_token,
+            refresh_token: data.refresh_token,
+            expires_at: data.expires_at,
+            athlete: data.athlete,
+          };
+          saveStravaToken(token);
+          setStravaToken(token);
+        }
+      })
+      .catch(console.error);
+  }, []);
+
+  const handleStravaConnect = useCallback(() => {
+    const scope = "activity:read_all";
+    const url = `https://www.strava.com/oauth/authorize?client_id=${STRAVA_CLIENT_ID}&redirect_uri=${encodeURIComponent(window.location.origin)}&response_type=code&approval_prompt=auto&scope=${scope}&state=75hard`;
+    window.location.href = url;
+  }, []);
+
+  const handleStravaDisconnect = useCallback(() => {
+    clearStravaToken();
+    setStravaToken(null);
+  }, []);
+
+  // Auto-sync Strava data for all past days silently on load
+  useEffect(() => {
+    if (!loaded || !stravaToken || todayIndex < 0) return;
+    const STRAVA_SYNC_KEY = "75_hard_strava_synced_days";
+    let syncedDays: string[] = [];
+    try { syncedDays = JSON.parse(localStorage.getItem(STRAVA_SYNC_KEY) || "[]"); } catch {}
+
+    const daysToSync = rows
+      .slice(0, todayIndex + 1) // today and past only
+      .filter(row => !syncedDays.includes(row.date)); // not already synced
+
+    if (daysToSync.length === 0) return;
+
+    const syncDay = async (row: TrackerRow) => {
+      try {
+        const activities = await fetchStravaActivities(stravaToken, row.date);
+        if (activities.length === 0) return;
+
+        const isOutdoor = (a: StravaActivity) => ["Run","Ride","Walk","Hike","VirtualRide","TrailRun","NordicSki"].includes(a.sport_type);
+        const totalCalories = activities.reduce((s, a) => s + (a.calories || Math.round((a.kilojoules || 0) * 0.239)), 0);
+        const hasWorkout = activities.length >= 1;
+        const hasOutdoor = activities.some(a => isOutdoor(a));
+
+        const patch: Partial<TrackerRow> = {};
+        if (totalCalories > 0 && !row.calories) patch.calories = String(totalCalories);
+        if (hasWorkout && !row.workout1) patch.workout1 = true;
+        if (hasOutdoor && !row.workout2) patch.workout2 = true;
+
+        if (Object.keys(patch).length > 0) {
+          const idx = rows.findIndex(r => r.date === row.date);
+          if (idx >= 0) setRows(prev => {
+            const next = [...prev];
+            next[idx] = { ...next[idx], ...patch };
+            return next;
+          });
+        }
+
+        syncedDays.push(row.date);
+        localStorage.setItem(STRAVA_SYNC_KEY, JSON.stringify(syncedDays));
+      } catch { /* silent — don't break if one day fails */ }
+    };
+
+    // Stagger syncs so we don't hammer the API
+    daysToSync.forEach((row, i) => {
+      setTimeout(() => syncDay(row), i * 600);
+    });
+  }, [loaded, stravaToken, todayIndex]);
 
   useEffect(() => {
     if (!loaded || !todayRowRef.current) return;
@@ -1503,6 +1835,24 @@ export default function App() {
       <AnimatePresence>{showDailyCard && <DailyChallengeCardModal todayIndex={todayIndex} userName={userName} rows={rows} onClose={() => setShowDailyCard(false)} />}</AnimatePresence>
       <AnimatePresence>{showCertificate && <CertificateModal rows={rows} userName={userName} onClose={() => setShowCertificate(false)} />}</AnimatePresence>
       <AnimatePresence>{showWidget && <WidgetExportModal rows={rows} todayIndex={todayIndex} userName={userName} onClose={() => setShowWidget(false)} />}</AnimatePresence>
+      <AnimatePresence>{stravaDrawer && stravaToken && (
+        <StravaWorkoutDrawer
+          date={stravaDrawer.date}
+          dateLabel={stravaDrawer.dateLabel}
+          token={stravaToken}
+          onClose={() => setStravaDrawer(null)}
+          onAutoFill={(calories, steps, w1, w2) => {
+            const idx = rows.findIndex(r => r.date === stravaDrawer.date);
+            if (idx < 0) return;
+            const patch: Partial<TrackerRow> = {};
+            if (calories) patch.calories = calories;
+            if (steps) patch.steps = steps;
+            if (w1) patch.workout1 = true;
+            if (w2) patch.workout2 = true;
+            updateRow(idx, patch);
+          }}
+        />
+      )}</AnimatePresence>
 
       <div className="page">
         <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} className="hero-card">
@@ -1568,7 +1918,23 @@ export default function App() {
               ))}
             </div>
 
-            {/* Dark mode toggle */}
+            {/* Strava */}
+            {stravaToken ? (
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 10, padding: "10px 14px", background: "rgba(252,76,2,0.1)", border: "1px solid rgba(252,76,2,0.3)", borderRadius: 12 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <span style={{ fontSize: 16 }}>⚡</span>
+                  <div>
+                    <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: "#fc4c02" }}>Strava Connected</p>
+                    <p style={{ margin: 0, fontSize: 11, color: "rgba(252,165,165,0.5)" }}>{stravaToken.athlete?.firstname} {stravaToken.athlete?.lastname}</p>
+                  </div>
+                </div>
+                <button onClick={handleStravaDisconnect} style={{ background: "transparent", border: "1px solid rgba(252,76,2,0.3)", borderRadius: 8, padding: "5px 10px", color: "rgba(252,165,165,0.5)", fontSize: 11, cursor: "pointer" }}>
+                  Disconnect
+                </button>
+              </div>
+            ) : (
+              <StravaConnectBanner onConnect={handleStravaConnect} />
+            )}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 10, padding: "10px 14px", background: "rgba(127,29,29,0.1)", borderRadius: 12, border: "1px solid rgba(127,29,29,0.3)" }}>
               <span style={{ fontSize: 12, color: "rgba(252,165,165,0.6)", fontWeight: 600, letterSpacing: "0.06em" }}>
                 {darkMode ? "🌙 Dark Mode" : "☀️ Light Mode"}
@@ -1650,7 +2016,14 @@ export default function App() {
                               </button>
                             </>
                           ) : (
-                            <button type="button" onClick={() => handleHabitToggle(absoluteIndex, item.key)} disabled={rowLocked} className={`habit-btn ${row[item.key] ? "checked" : ""} ${rowLocked ? "disabled" : ""}`}>
+                            <button type="button" onClick={() => {
+                              if (rowLocked) return;
+                              if (stravaToken && (item.key === "workout1" || item.key === "workout2")) {
+                                setStravaDrawer({ date: row.date, dateLabel: row.dateLabel });
+                                return;
+                              }
+                              handleHabitToggle(absoluteIndex, item.key);
+                            }} disabled={rowLocked} className={`habit-btn ${row[item.key] ? "checked" : ""} ${rowLocked ? "disabled" : ""}`}>
                               {row[item.key] ? (
                                 <motion.span initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: [0.5, 1.18, 1], opacity: 1 }} transition={{ duration: 0.28, ease: "easeOut" }}>✓</motion.span>
                               ) : null}
