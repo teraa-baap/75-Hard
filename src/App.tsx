@@ -20,6 +20,24 @@ const NOTIF_KEY = "75_hard_notif_v1";
 const STRAVA_TOKEN_KEY = "75_hard_strava_token_v1";
 const STRAVA_CLIENT_ID = "223103";
 
+const DAILY_QUOTES = [
+  "Pain is temporary. Quitting lasts forever.",
+  "Your only competition is who you were yesterday.",
+  "Discipline is choosing between what you want now and what you want most.",
+  "The body achieves what the mind believes.",
+  "Hard days build champions.",
+  "Don't stop when you're tired. Stop when you're done.",
+  "Every rep, every mile, every page. It all counts.",
+  "Be harder to kill.",
+  "You don't find willpower. You build it.",
+  "Suffer now and live the rest of your life as a champion.",
+  "The only easy day was yesterday.",
+  "Mental toughness is a skill. Train it daily.",
+  "Results happen over time, not overnight.",
+  "When you feel like quitting, remember why you started.",
+  "Iron will. Iron body.",
+];
+
 const MILESTONE_MESSAGES: Record<number, { title: string; subtitle: string }> = {
   1:  { title: "WEEK 1 DONE", subtitle: "The hardest week is behind you. Most quit here. You didn't." },
   2:  { title: "2 WEEKS IN", subtitle: "Your body is adapting. This is where habits start forming." },
@@ -974,24 +992,6 @@ function WeeklyExportModal({ group, userName, onClose }: {
 }
 
 // ─── Daily Challenge Card ─────────────────────────────────────────────────────
-const DAILY_QUOTES = [
-  "Pain is temporary. Quitting lasts forever.",
-  "Your only competition is who you were yesterday.",
-  "Discipline is choosing between what you want now and what you want most.",
-  "The body achieves what the mind believes.",
-  "Hard days build champions.",
-  "Don't stop when you're tired. Stop when you're done.",
-  "Every rep, every mile, every page. It all counts.",
-  "Be harder to kill.",
-  "You don't find willpower. You build it.",
-  "Suffer now and live the rest of your life as a champion.",
-  "The only easy day was yesterday.",
-  "Mental toughness is a skill. Train it daily.",
-  "Results happen over time, not overnight.",
-  "When you feel like quitting, remember why you started.",
-  "Iron will. Iron body.",
-];
-
 function DailyChallengeCardModal({ todayIndex, userName, rows, onClose }: {
   todayIndex: number; userName: string | null; rows: TrackerRow[]; onClose: () => void;
 }) {
