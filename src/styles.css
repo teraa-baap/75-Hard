@@ -67,6 +67,8 @@
 .light-mode .mobile-tip { color: rgba(140,30,30,0.5); }
 .light-mode .input-base { background: #fff8f8; border-color: rgba(185,28,28,0.2); color: #1a0404; }
 .light-mode .head-icon { color: #b91c1c; }
+
+:root {
   --bg: #000000;
   --panel: rgba(8, 8, 8, 0.96);
   --panel-2: rgba(20, 5, 5, 0.86);
