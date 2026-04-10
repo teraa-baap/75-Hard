@@ -19,7 +19,6 @@ const START_DATE_KEY = "75_hard_start_date_v1";
 const NOTIF_KEY = "75_hard_notif_v1";
 const STRAVA_TOKEN_KEY = "75_hard_strava_token_v1";
 const STRAVA_CLIENT_ID = "223103";
-const STRAVA_REDIRECT_URI = `${window.location.origin}/strava-callback`;
 
 // ─── Strava Types ─────────────────────────────────────────────────────────────
 type StravaToken = {
