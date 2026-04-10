@@ -1,5 +1,72 @@
 
-:root {
+/* ─── Light Mode ─────────────────────────────────────────────────────────── */
+.light-mode {
+  --bg: #fdf5f5;
+  --panel: rgba(255,245,245,0.98);
+  --panel-2: rgba(255,235,235,0.9);
+  --border: rgba(180,30,30,0.35);
+  --border-soft: rgba(180,30,30,0.2);
+  --text: #2d0808;
+  --muted: rgba(100,20,20,0.65);
+  --muted-2: rgba(150,30,30,0.6);
+  --red: #b91c1c;
+  --red-soft: rgba(185,28,28,0.12);
+  --red-bright: #dc2626;
+  --black-glass: rgba(255,240,240,0.7);
+  --shadow: 0 20px 50px rgba(180,30,30,0.12);
+}
+.light-mode body { background: #fdf5f5; color: #2d0808; }
+.light-mode .app-shell { background: #fdf5f5; }
+.light-mode .background-glow {
+  background:
+    radial-gradient(circle at top, rgba(220,100,100,0.12), transparent 38%),
+    radial-gradient(circle at bottom, rgba(180,50,50,0.08), transparent 42%);
+}
+.light-mode .background-noise { opacity: 0.02; }
+.light-mode .hero-card {
+  background: linear-gradient(135deg, #fff 0%, #fff8f8 45%, #ffe8e8 100%);
+  border-color: rgba(185,28,28,0.25);
+  box-shadow: 0 20px 60px rgba(185,28,28,0.1);
+}
+.light-mode .hero-title { color: #1a0404; }
+.light-mode .pill { background: rgba(185,28,28,0.08); color: #b91c1c; border-color: rgba(185,28,28,0.25); }
+.light-mode .mini-icon { color: #b91c1c; }
+.light-mode .hero-body { background: rgba(255,240,240,0.5); border-color: rgba(185,28,28,0.15); }
+.light-mode .timeline-card {
+  background: linear-gradient(90deg, #fff 0%, rgba(220,100,100,0.1) 50%, #fff 100%);
+  border-color: rgba(185,28,28,0.2);
+}
+.light-mode .timeline-day { color: #1a0404; }
+.light-mode .mini-label { color: rgba(140,30,30,0.6); }
+.light-mode .summary-card {
+  background: linear-gradient(135deg, #fff 0%, #fff8f8 55%, #ffe8e8 100%);
+  border-color: rgba(185,28,28,0.18);
+}
+.light-mode .summary-title { color: rgba(120,20,20,0.6); }
+.light-mode .summary-value { color: #1a0404; }
+.light-mode .summary-subtext { color: rgba(100,20,20,0.55); }
+.light-mode .summary-icon-wrap { background: rgba(185,28,28,0.08); border-color: rgba(185,28,28,0.2); }
+.light-mode .summary-icon { color: #b91c1c; }
+.light-mode .sheet-wrap { background: #fff; border-color: rgba(185,28,28,0.2); }
+.light-mode .sheet-banner, .light-mode .sheet-footer { background: linear-gradient(90deg, #fff 0%, rgba(220,80,80,0.08) 50%, #fff 100%); color: #1a0404; border-color: rgba(185,28,28,0.15); }
+.light-mode .sheet-cell { border-color: rgba(185,28,28,0.12); }
+.light-mode .sheet-cell.head { background: linear-gradient(180deg, rgba(220,80,80,0.08) 0%, #fff 100%); color: #1a0404; }
+.light-mode .sheet-cell.body { background: #fff; color: #1a0404; }
+.light-mode .zebra-b { background: rgba(220,80,80,0.04) !important; }
+.light-mode .complete-row { background: rgba(185,28,28,0.08) !important; }
+.light-mode .today-row { background: rgba(185,28,28,0.12) !important; }
+.light-mode .future-row { background: rgba(0,0,0,0.02) !important; }
+.light-mode .habit-btn { border-color: rgba(185,28,28,0.3); color: #b91c1c; }
+.light-mode .habit-btn.checked { background: #b91c1c; border-color: #b91c1c; }
+.light-mode .photo-btn { border-color: rgba(185,28,28,0.3); }
+.light-mode .badge-row { background: rgba(185,28,28,0.1); color: #b91c1c; border-color: rgba(185,28,28,0.25); }
+.light-mode .lock-btn { background: rgba(255,240,240,0.9); border-color: rgba(185,28,28,0.3); color: #b91c1c; }
+.light-mode .lock-btn.locked { background: rgba(185,28,28,0.15); }
+.light-mode .merged-week { background: linear-gradient(180deg, rgba(220,80,80,0.1) 0%, #fff 100%); border-color: rgba(185,28,28,0.15); }
+.light-mode .vertical-week { color: #1a0404; }
+.light-mode .mobile-tip { color: rgba(140,30,30,0.5); }
+.light-mode .input-base { background: #fff8f8; border-color: rgba(185,28,28,0.2); color: #1a0404; }
+.light-mode .head-icon { color: #b91c1c; }
   --bg: #000000;
   --panel: rgba(8, 8, 8, 0.96);
   --panel-2: rgba(20, 5, 5, 0.86);
@@ -299,6 +366,11 @@ button { cursor: pointer; }
 }
 .zebra-a { background: #000 !important; }
 .zebra-b { background: rgba(69,10,10,0.18) !important; }
+.future-row {
+  background: rgba(0,0,0,0.6) !important;
+  opacity: 0.45;
+  cursor: not-allowed;
+}
 .today-row {
   background: rgba(185,28,28,0.28) !important;
   box-shadow: inset 0 0 0 1.5px rgba(248,113,113,0.6), inset 0 0 32px rgba(185,28,28,0.25) !important;
