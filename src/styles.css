@@ -9,7 +9,7 @@
   --red-soft: rgba(185,28,28,0.1);
 }
 .light-mode body { background: #f8f4f0; color: #1a0a0a; }
-.light-mode .app-shell { background: #f8f4f0; }
+.light-mode .app-shell { background: #f8f4f0; color: #1a0a0a; }
 .light-mode .background-glow { display: none; }
 .light-mode .background-noise { display: none; }
 
