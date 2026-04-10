@@ -287,11 +287,27 @@ const habitColumns = [
 const weekdayNames = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
 type HabitKey = (typeof habitColumns)[number]["key"];
 
+type SleepData = {
+  score: number | null;
+  durationSeconds: number;
+  startTime: string | null;
+  endTime: string | null;
+  deepSeconds: number;
+  lightSeconds: number;
+  remSeconds: number;
+  awakeSeconds: number;
+  averageSpO2: number | null;
+  averageHrv: number | null;
+  restingHeartRate: number | null;
+  bodyBattery: number | null;
+};
+
 type TrackerRow = {
   id: number; date: string; dateLabel: string; day: string; countdown: string;
   photo: boolean; photoUrl: string; workout1: boolean; diet: boolean;
   workout2: boolean; read: boolean; water: boolean;
   weight: string; calories: string; steps: string; locked: boolean;
+  sleepData: SleepData | null;
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -314,7 +330,7 @@ function createRows(startDateString?: string): TrackerRow[] {
       dateLabel: formatDateLabel(current), day: weekdayNames[current.getDay()],
       countdown: `Day ${i + 1}`, photo: false, photoUrl: "", workout1: false,
       diet: false, workout2: false, read: false, water: false,
-      weight: "", calories: "", steps: "", locked: false,
+      weight: "", calories: "", steps: "", locked: false, sleepData: null,
     };
   });
 }
@@ -348,7 +364,214 @@ function compressImage(file: File, maxSize = 1200, quality = 0.82): Promise<stri
   });
 }
 
-// ─── Date Cell ────────────────────────────────────────────────────────────────
+// ─── Garmin Helpers ───────────────────────────────────────────────────────────
+function formatSleepDuration(seconds: number): string {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  return `${h}h ${m}m`;
+}
+function formatTime(ts: string | null): string {
+  if (!ts) return "—";
+  return new Date(ts).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
+}
+function getSleepScoreColor(score: number | null): string {
+  if (!score) return "rgba(252,165,165,0.4)";
+  if (score >= 80) return "#4ade80";
+  if (score >= 60) return "#fbbf24";
+  return "#f87171";
+}
+function getActivityEmojiGarmin(type: string): string {
+  const t = (type || "").toLowerCase();
+  if (t.includes("run")) return "🏃";
+  if (t.includes("cycling") || t.includes("bike")) return "🚴";
+  if (t.includes("swim")) return "🏊";
+  if (t.includes("walk")) return "🚶";
+  if (t.includes("hike")) return "🥾";
+  if (t.includes("strength") || t.includes("cardio") || t.includes("fitness")) return "🏋️";
+  if (t.includes("yoga")) return "🧘";
+  return "⚡";
+}
+
+// ─── Sleep Detail Popup ───────────────────────────────────────────────────────
+function SleepPopup({ sleep, dateLabel, onClose }: { sleep: SleepData; dateLabel: string; onClose: () => void }) {
+  const total = sleep.durationSeconds || 1;
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.92)", display: "flex", flexDirection: "column" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 18px", borderBottom: "1px solid rgba(127,29,29,0.5)" }}>
+        <button onClick={onClose} style={{ width: 38, height: 38, borderRadius: 12, background: "rgba(127,29,29,0.25)", border: "1px solid rgba(127,29,29,0.72)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fca5a5" }}>
+          <ArrowLeft style={{ width: 18, height: 18 }} />
+        </button>
+        <div style={{ textAlign: "center" }}>
+          <p style={{ margin: 0, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(252,165,165,0.5)" }}>Sleep Analysis</p>
+          <p style={{ margin: "2px 0 0", fontSize: 14, fontWeight: 700, color: "#fff" }}>{dateLabel}</p>
+        </div>
+        <div style={{ width: 38 }} />
+      </div>
+
+      <div style={{ flex: 1, overflowY: "auto", padding: "20px 18px" }}>
+        {/* Score */}
+        <div style={{ textAlign: "center", marginBottom: 24 }}>
+          <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 100, height: 100, borderRadius: "50%", border: `4px solid ${getSleepScoreColor(sleep.score)}`, marginBottom: 12 }}>
+            <div>
+              <p style={{ margin: 0, fontSize: 36, fontWeight: 900, color: getSleepScoreColor(sleep.score) }}>{sleep.score ?? "—"}</p>
+              <p style={{ margin: 0, fontSize: 10, color: "rgba(252,165,165,0.5)", letterSpacing: "0.1em" }}>SCORE</p>
+            </div>
+          </div>
+          <p style={{ margin: 0, fontSize: 22, fontWeight: 700, color: "#fff" }}>{formatSleepDuration(sleep.durationSeconds)}</p>
+          <p style={{ margin: "4px 0 0", fontSize: 13, color: "rgba(252,165,165,0.5)" }}>
+            {formatTime(sleep.startTime)} → {formatTime(sleep.endTime)}
+          </p>
+        </div>
+
+        {/* Sleep stages bar */}
+        <div style={{ marginBottom: 20 }}>
+          <p style={{ margin: "0 0 8px", fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(252,165,165,0.5)" }}>Sleep Stages</p>
+          <div style={{ display: "flex", height: 16, borderRadius: 8, overflow: "hidden", gap: 2 }}>
+            {[
+              { seconds: sleep.deepSeconds, color: "#3b82f6", label: "Deep" },
+              { seconds: sleep.lightSeconds, color: "#818cf8", label: "Light" },
+              { seconds: sleep.remSeconds, color: "#a78bfa", label: "REM" },
+              { seconds: sleep.awakeSeconds, color: "rgba(255,255,255,0.15)", label: "Awake" },
+            ].map(stage => (
+              <div key={stage.label} style={{ flex: stage.seconds / total, background: stage.color, minWidth: stage.seconds > 0 ? 4 : 0 }} />
+            ))}
+          </div>
+          <div style={{ display: "flex", gap: 12, marginTop: 10, flexWrap: "wrap" }}>
+            {[
+              { seconds: sleep.deepSeconds, color: "#3b82f6", label: "Deep" },
+              { seconds: sleep.lightSeconds, color: "#818cf8", label: "Light" },
+              { seconds: sleep.remSeconds, color: "#a78bfa", label: "REM" },
+              { seconds: sleep.awakeSeconds, color: "rgba(255,255,255,0.3)", label: "Awake" },
+            ].map(stage => (
+              <div key={stage.label} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <div style={{ width: 10, height: 10, borderRadius: 2, background: stage.color, flexShrink: 0 }} />
+                <span style={{ fontSize: 12, color: "rgba(252,165,165,0.7)" }}>{stage.label}: {formatSleepDuration(stage.seconds)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Stats grid */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          {[
+            { label: "Avg SpO2", value: sleep.averageSpO2 ? `${sleep.averageSpO2.toFixed(1)}%` : "—" },
+            { label: "Avg HRV", value: sleep.averageHrv ? `${Math.round(sleep.averageHrv)} ms` : "—" },
+            { label: "Resting HR", value: sleep.restingHeartRate ? `${sleep.restingHeartRate} bpm` : "—" },
+            { label: "Body Battery", value: sleep.bodyBattery ? `+${sleep.bodyBattery}` : "—" },
+          ].map(stat => (
+            <div key={stat.label} style={{ background: "linear-gradient(135deg, #0a0000, #1a0404)", border: "1px solid rgba(127,29,29,0.4)", borderRadius: 14, padding: "14px 16px" }}>
+              <p style={{ margin: 0, fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: "rgba(252,165,165,0.45)" }}>{stat.label}</p>
+              <p style={{ margin: "6px 0 0", fontSize: 22, fontWeight: 700, color: "#fff" }}>{stat.value}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// ─── Garmin Workout Drawer ────────────────────────────────────────────────────
+function GarminWorkoutDrawer({ date, dateLabel, onClose, onAutoFill }: {
+  date: string; dateLabel: string; onClose: () => void;
+  onAutoFill: (calories: string, steps: string, workout1Done: boolean, workout2Done: boolean) => void;
+}) {
+  const [activities, setActivities] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch(`/api/garmin-activities?date=${date}`)
+      .then(r => r.json())
+      .then(d => setActivities(d.activities || []))
+      .catch(e => setError(e.message))
+      .finally(() => setLoading(false));
+  }, [date]);
+
+  const totalCalories = activities.reduce((s, a) => s + (a.calories || 0), 0);
+  const hasOutdoor = activities.some(a => a.isOutdoor);
+
+  return (
+    <motion.div initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }}
+      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+      style={{ position: "fixed", inset: 0, zIndex: 95, background: "#000", display: "flex", flexDirection: "column" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 18px", borderBottom: "1px solid rgba(127,29,29,0.72)", background: "linear-gradient(180deg, rgba(69,10,10,0.5) 0%, transparent 100%)" }}>
+        <button onClick={onClose} style={{ width: 38, height: 38, borderRadius: 12, background: "rgba(127,29,29,0.25)", border: "1px solid rgba(127,29,29,0.72)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fca5a5" }}>
+          <ArrowLeft style={{ width: 18, height: 18 }} />
+        </button>
+        <div style={{ textAlign: "center" }}>
+          <p style={{ margin: 0, fontSize: 11, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(252,165,165,0.6)" }}>Garmin Activities</p>
+          <p style={{ margin: "2px 0 0", fontSize: 14, fontWeight: 700, color: "#fff" }}>{dateLabel}</p>
+        </div>
+        <div style={{ width: 38 }} />
+      </div>
+
+      <div style={{ flex: 1, overflowY: "auto", padding: "16px 16px 120px" }}>
+        {loading && (
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: 200, gap: 16 }}>
+            <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+              style={{ width: 32, height: 32, border: "3px solid rgba(127,29,29,0.3)", borderTop: "3px solid #dc2626", borderRadius: "50%" }} />
+            <p style={{ color: "rgba(252,165,165,0.5)", fontSize: 13 }}>Fetching from Garmin...</p>
+          </div>
+        )}
+        {error && <div style={{ background: "rgba(220,38,38,0.1)", border: "1px solid rgba(220,38,38,0.3)", borderRadius: 14, padding: 16 }}><p style={{ margin: 0, color: "#f87171", fontSize: 13 }}>{error}</p></div>}
+        {!loading && !error && activities.length === 0 && (
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: 200, gap: 12 }}>
+            <span style={{ fontSize: 48 }}>🏋️</span>
+            <p style={{ color: "rgba(252,165,165,0.5)", fontSize: 14, textAlign: "center" }}>No activities found for this day</p>
+          </div>
+        )}
+        {!loading && activities.map((a, i) => (
+          <motion.div key={a.id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}
+            style={{ background: "linear-gradient(135deg, #0a0000, #1a0404)", border: "1px solid rgba(127,29,29,0.5)", borderRadius: 18, padding: 18, marginBottom: 12 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+              <div style={{ width: 44, height: 44, borderRadius: 12, background: "rgba(127,29,29,0.3)", border: "1px solid rgba(127,29,29,0.5)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>
+                {getActivityEmojiGarmin(a.type)}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.name}</p>
+                <p style={{ margin: "3px 0 0", fontSize: 11, color: "rgba(252,165,165,0.55)", letterSpacing: "0.06em" }}>
+                  {a.type} · {a.startTime ? new Date(a.startTime).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) : ""}
+                </p>
+              </div>
+              {a.isOutdoor && <div style={{ background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.3)", borderRadius: 8, padding: "3px 8px" }}><p style={{ margin: 0, fontSize: 9, fontWeight: 700, color: "#4ade80", letterSpacing: "0.1em" }}>OUTDOOR</p></div>}
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+              {[
+                { label: "Duration", value: formatDuration(a.movingDurationSeconds || a.durationSeconds) },
+                { label: "Distance", value: a.distanceMeters > 0 ? formatDistance(a.distanceMeters) : "—" },
+                { label: "Calories", value: a.calories ? `${a.calories} kcal` : "—" },
+                { label: "Avg HR", value: a.averageHR ? `${a.averageHR} bpm` : "—" },
+                { label: "Max HR", value: a.maxHR ? `${a.maxHR} bpm` : "—" },
+                { label: "Elevation", value: a.elevationGain > 0 ? `${Math.round(a.elevationGain)} m` : "—" },
+                { label: "Training Effect", value: a.trainingEffect ? a.trainingEffect.toFixed(1) : "—" },
+                { label: "VO2 Max", value: a.vo2max ? a.vo2max.toFixed(1) : "—" },
+              ].map(stat => (
+                <div key={stat.label} style={{ background: "rgba(0,0,0,0.4)", borderRadius: 10, padding: "10px 8px", textAlign: "center" }}>
+                  <p style={{ margin: 0, fontSize: 9, color: "rgba(252,165,165,0.45)", letterSpacing: "0.1em", textTransform: "uppercase" }}>{stat.label}</p>
+                  <p style={{ margin: "4px 0 0", fontSize: 13, fontWeight: 700, color: "#fff" }}>{stat.value}</p>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        ))}
+      </div>
+
+      {!loading && activities.length > 0 && (
+        <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, padding: "16px", background: "linear-gradient(0deg, #000 60%, transparent)", borderTop: "1px solid rgba(127,29,29,0.3)" }}>
+          <motion.button whileTap={{ scale: 0.97 }}
+            onClick={() => { onAutoFill(totalCalories > 0 ? String(totalCalories) : "", "", activities.length >= 1, hasOutdoor); onClose(); }}
+            style={{ width: "100%", padding: "16px", background: "linear-gradient(135deg, #7f1d1d, #dc2626)", border: "1px solid rgba(248,113,113,0.35)", borderRadius: 16, color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
+            <RefreshCw style={{ width: 18, height: 18 }} /> Sync This Day
+          </motion.button>
+          <p style={{ margin: "8px 0 0", textAlign: "center", fontSize: 12, color: "rgba(252,165,165,0.5)" }}>
+            {totalCalories > 0 ? `${totalCalories} cal · ` : ""}{activities.length} workout{activities.length > 1 ? "s" : ""} · auto-synced on load
+          </p>
+        </div>
+      )}
+    </motion.div>
+  );
+}
 function DateCell({ row, isToday, rowTone, todayRef, isFuture }: {
   row: TrackerRow; isToday: boolean; rowTone: string;
   todayRef?: React.RefObject<HTMLDivElement>; isFuture: boolean;
@@ -1489,6 +1712,8 @@ export default function App() {
   const [showWidget, setShowWidget] = useState(false);
   const [stravaToken, setStravaToken] = useState<StravaToken | null>(() => getStravaToken());
   const [stravaDrawer, setStravaDrawer] = useState<{ date: string; dateLabel: string } | null>(null);
+  const [garminDrawer, setGarminDrawer] = useState<{ date: string; dateLabel: string } | null>(null);
+  const [sleepPopup, setSleepPopup] = useState<{ sleep: SleepData; dateLabel: string } | null>(null);
   const [darkMode, setDarkMode] = useState(() => {
     const saved = localStorage.getItem("75_hard_theme");
     return saved ? saved === "dark" : true;
@@ -1580,53 +1805,46 @@ export default function App() {
     setStravaToken(null);
   }, []);
 
-  // Auto-sync Strava data for all past days silently on load
+  // Auto-sync Garmin data for all past days silently on load
   useEffect(() => {
-    if (!loaded || !stravaToken || todayIndex < 0) return;
-    const STRAVA_SYNC_KEY = "75_hard_strava_synced_days";
+    if (!loaded || todayIndex < 0) return;
+    const GARMIN_SYNC_KEY = "75_hard_garmin_synced_days";
     let syncedDays: string[] = [];
-    try { syncedDays = JSON.parse(localStorage.getItem(STRAVA_SYNC_KEY) || "[]"); } catch {}
+    try { syncedDays = JSON.parse(localStorage.getItem(GARMIN_SYNC_KEY) || "[]"); } catch {}
 
     const daysToSync = rows
-      .slice(0, todayIndex + 1) // today and past only
-      .filter(row => !syncedDays.includes(row.date)); // not already synced
+      .slice(0, todayIndex + 1)
+      .filter(row => !syncedDays.includes(row.date));
 
     if (daysToSync.length === 0) return;
 
     const syncDay = async (row: TrackerRow) => {
       try {
-        const activities = await fetchStravaActivities(stravaToken, row.date);
-        if (activities.length === 0) return;
-
-        const isOutdoor = (a: StravaActivity) => ["Run","Ride","Walk","Hike","VirtualRide","TrailRun","NordicSki"].includes(a.sport_type);
-        const totalCalories = activities.reduce((s, a) => s + (a.calories || Math.round((a.kilojoules || 0) * 0.239)), 0);
-        const hasWorkout = activities.length >= 1;
-        const hasOutdoor = activities.some(a => isOutdoor(a));
+        const [dataRes, activitiesRes] = await Promise.allSettled([
+          fetch(`/api/garmin-data?date=${row.date}`).then(r => r.json()),
+          fetch(`/api/garmin-activities?date=${row.date}`).then(r => r.json()),
+        ]);
+        const data = dataRes.status === "fulfilled" ? dataRes.value : null;
+        const acts = activitiesRes.status === "fulfilled" ? (activitiesRes.value?.activities || []) : [];
 
         const patch: Partial<TrackerRow> = {};
-        if (totalCalories > 0 && !row.calories) patch.calories = String(totalCalories);
-        if (hasWorkout && !row.workout1) patch.workout1 = true;
-        if (hasOutdoor && !row.workout2) patch.workout2 = true;
+        if (data?.steps && !row.steps) patch.steps = String(data.steps);
+        if (data?.activeCalories && !row.calories) patch.calories = String(Math.round(data.activeCalories));
+        if (data?.sleep) patch.sleepData = data.sleep;
+        if (acts.length >= 1 && !row.workout1) patch.workout1 = true;
+        if (acts.some((a: any) => a.isOutdoor) && !row.workout2) patch.workout2 = true;
 
         if (Object.keys(patch).length > 0) {
           const idx = rows.findIndex(r => r.date === row.date);
-          if (idx >= 0) setRows(prev => {
-            const next = [...prev];
-            next[idx] = { ...next[idx], ...patch };
-            return next;
-          });
+          if (idx >= 0) setRows(prev => { const next = [...prev]; next[idx] = { ...next[idx], ...patch }; return next; });
         }
-
         syncedDays.push(row.date);
-        localStorage.setItem(STRAVA_SYNC_KEY, JSON.stringify(syncedDays));
-      } catch { /* silent — don't break if one day fails */ }
+        localStorage.setItem(GARMIN_SYNC_KEY, JSON.stringify(syncedDays));
+      } catch { /* silent */ }
     };
 
-    // Stagger syncs so we don't hammer the API
-    daysToSync.forEach((row, i) => {
-      setTimeout(() => syncDay(row), i * 600);
-    });
-  }, [loaded, stravaToken, todayIndex]);
+    daysToSync.forEach((row, i) => setTimeout(() => syncDay(row), i * 800));
+  }, [loaded, todayIndex]);
 
   useEffect(() => {
     if (!loaded || !todayRowRef.current) return;
@@ -1834,7 +2052,25 @@ export default function App() {
       <AnimatePresence>{showDailyCard && <DailyChallengeCardModal todayIndex={todayIndex} userName={userName} rows={rows} onClose={() => setShowDailyCard(false)} />}</AnimatePresence>
       <AnimatePresence>{showCertificate && <CertificateModal rows={rows} userName={userName} onClose={() => setShowCertificate(false)} />}</AnimatePresence>
       <AnimatePresence>{showWidget && <WidgetExportModal rows={rows} todayIndex={todayIndex} userName={userName} onClose={() => setShowWidget(false)} />}</AnimatePresence>
-      <AnimatePresence>{stravaDrawer && stravaToken && (
+      <AnimatePresence>{garminDrawer && (
+        <GarminWorkoutDrawer
+          date={garminDrawer.date} dateLabel={garminDrawer.dateLabel}
+          onClose={() => setGarminDrawer(null)}
+          onAutoFill={(calories, steps, w1, w2) => {
+            const idx = rows.findIndex(r => r.date === garminDrawer.date);
+            if (idx < 0) return;
+            const patch: Partial<TrackerRow> = {};
+            if (calories) patch.calories = calories;
+            if (steps) patch.steps = steps;
+            if (w1) patch.workout1 = true;
+            if (w2) patch.workout2 = true;
+            updateRow(idx, patch);
+          }}
+        />
+      )}</AnimatePresence>
+      <AnimatePresence>{sleepPopup && (
+        <SleepPopup sleep={sleepPopup.sleep} dateLabel={sleepPopup.dateLabel} onClose={() => setSleepPopup(null)} />
+      )}</AnimatePresence>
         <StravaWorkoutDrawer
           date={stravaDrawer.date}
           dateLabel={stravaDrawer.dateLabel}
@@ -1959,6 +2195,7 @@ export default function App() {
               <div className="sheet-cell head metric-col">Weight</div>
               <div className="sheet-cell head calories-col">Calories Burned</div>
               <div className="sheet-cell head metric-col">Steps</div>
+              <div className="sheet-cell head metric-col">Sleep</div>
             </div>
 
             {weekGroups.map((group, groupIndex) => (
@@ -2017,8 +2254,8 @@ export default function App() {
                           ) : (
                             <button type="button" onClick={() => {
                               if (rowLocked) return;
-                              if (stravaToken && (item.key === "workout1" || item.key === "workout2")) {
-                                setStravaDrawer({ date: row.date, dateLabel: row.dateLabel });
+                              if (item.key === "workout1" || item.key === "workout2") {
+                                setGarminDrawer({ date: row.date, dateLabel: row.dateLabel });
                                 return;
                               }
                               handleHabitToggle(absoluteIndex, item.key);
@@ -2039,6 +2276,22 @@ export default function App() {
                       </div>
                       <div className={`sheet-cell body metric-col metric-pad ${rowTone}`}>
                         <Input disabled={rowLocked} readOnly={rowLocked} onFocus={() => setActiveRow(absoluteIndex)} onBlur={() => setActiveRow((c) => (c === absoluteIndex ? null : c))} value={row.steps} onChange={(e) => updateRow(absoluteIndex, { steps: e.target.value })} placeholder="——" inputMode="numeric" className={rowLocked ? "disabled" : ""} />
+                      </div>
+                      {/* Sleep cell */}
+                      <div className={`sheet-cell body metric-col ${rowTone}`} style={{ cursor: row.sleepData ? "pointer" : "default" }}
+                        onClick={() => row.sleepData && setSleepPopup({ sleep: row.sleepData, dateLabel: row.dateLabel })}>
+                        {row.sleepData ? (
+                          <div style={{ textAlign: "center" }}>
+                            <div style={{ fontSize: 14, fontWeight: 800, color: getSleepScoreColor(row.sleepData.score) }}>
+                              {row.sleepData.score ?? "—"}
+                            </div>
+                            <div style={{ fontSize: 9, color: "rgba(252,165,165,0.45)", letterSpacing: "0.06em", marginTop: 2 }}>
+                              {formatSleepDuration(row.sleepData.durationSeconds)}
+                            </div>
+                          </div>
+                        ) : (
+                          <span style={{ fontSize: 11, color: "rgba(252,165,165,0.2)" }}>——</span>
+                        )}
                       </div>
                     </React.Fragment>
                   );
