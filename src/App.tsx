@@ -505,6 +505,450 @@ function WeeklyExportModal({ group, userName, onClose }: {
   );
 }
 
+// ─── Daily Challenge Card ─────────────────────────────────────────────────────
+const DAILY_QUOTES = [
+  "Pain is temporary. Quitting lasts forever.",
+  "Your only competition is who you were yesterday.",
+  "Discipline is choosing between what you want now and what you want most.",
+  "The body achieves what the mind believes.",
+  "Hard days build champions.",
+  "Don't stop when you're tired. Stop when you're done.",
+  "Every rep, every mile, every page. It all counts.",
+  "Be harder to kill.",
+  "You don't find willpower. You build it.",
+  "Suffer now and live the rest of your life as a champion.",
+  "The only easy day was yesterday.",
+  "Mental toughness is a skill. Train it daily.",
+  "Results happen over time, not overnight.",
+  "When you feel like quitting, remember why you started.",
+  "Iron will. Iron body.",
+];
+
+function DailyChallengeCardModal({ todayIndex, userName, rows, onClose }: {
+  todayIndex: number; userName: string | null; rows: TrackerRow[]; onClose: () => void;
+}) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const dayNumber = todayIndex + 1;
+  const quote = DAILY_QUOTES[(todayIndex) % DAILY_QUOTES.length];
+  const todayRow = rows[todayIndex];
+  const completedHabits = todayRow ? habitColumns.filter(h => todayRow[h.key]).length : 0;
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    // Instagram Story dimensions 1080x1920
+    const W = 1080, H = 1920;
+    canvas.width = W; canvas.height = H;
+
+    // Background
+    ctx.fillStyle = "#050000";
+    ctx.fillRect(0, 0, W, H);
+
+    // Top red glow
+    const topGrad = ctx.createRadialGradient(W/2, 0, 0, W/2, 0, 900);
+    topGrad.addColorStop(0, "rgba(127,29,29,0.7)");
+    topGrad.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = topGrad;
+    ctx.fillRect(0, 0, W, H);
+
+    // Bottom glow
+    const botGrad = ctx.createRadialGradient(W/2, H, 0, W/2, H, 700);
+    botGrad.addColorStop(0, "rgba(69,10,10,0.5)");
+    botGrad.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = botGrad;
+    ctx.fillRect(0, 0, W, H);
+
+    // Top label
+    ctx.fillStyle = "rgba(252,165,165,0.5)";
+    ctx.font = "500 36px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("75 HARD CHALLENGE", W/2, 120);
+
+    // Name
+    if (userName) {
+      ctx.fillStyle = "rgba(252,165,165,0.7)";
+      ctx.font = "700 44px sans-serif";
+      ctx.fillText(userName.toUpperCase(), W/2, 185);
+    }
+
+    // Big day number
+    ctx.fillStyle = "#b91c1c";
+    ctx.font = "900 320px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(`${dayNumber}`, W/2, 620);
+
+    // "DAY" label above
+    ctx.fillStyle = "rgba(255,255,255,0.15)";
+    ctx.font = "900 100px sans-serif";
+    ctx.fillText("DAY", W/2, 340);
+
+    // "OF 75" below
+    ctx.fillStyle = "rgba(252,165,165,0.4)";
+    ctx.font = "700 64px sans-serif";
+    ctx.fillText(`OF 75`, W/2, 720);
+
+    // Divider line
+    ctx.strokeStyle = "rgba(127,29,29,0.6)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(W * 0.15, 790);
+    ctx.lineTo(W * 0.85, 790);
+    ctx.stroke();
+
+    // Habit checklist
+    const habitY = 860;
+    const habitLabels = ["Progress Photo", "Workout 1", "Diet", "Outdoor Workout", "Read 10 Pages", "1 Gallon Water"];
+    habitLabels.forEach((label, i) => {
+      const done = todayRow ? todayRow[habitColumns[i].key] : false;
+      const y = habitY + i * 110;
+      // Pill background
+      ctx.fillStyle = done ? "rgba(185,28,28,0.3)" : "rgba(255,255,255,0.04)";
+      ctx.beginPath();
+      ctx.roundRect(W*0.1, y, W*0.8, 86, 20);
+      ctx.fill();
+      // Checkbox
+      ctx.fillStyle = done ? "#dc2626" : "rgba(127,29,29,0.4)";
+      ctx.beginPath();
+      ctx.roundRect(W*0.1 + 18, y + 18, 50, 50, 12);
+      ctx.fill();
+      ctx.fillStyle = "#fff";
+      ctx.font = "700 34px sans-serif";
+      ctx.textAlign = "left";
+      ctx.fillText(done ? "✓" : "–", W*0.1 + 28, y + 54);
+      // Label
+      ctx.fillStyle = done ? "#fff" : "rgba(255,255,255,0.5)";
+      ctx.font = done ? "700 36px sans-serif" : "400 36px sans-serif";
+      ctx.fillText(label, W*0.1 + 90, y + 54);
+    });
+
+    // Progress bar
+    const barY = habitY + 6 * 110 + 30;
+    ctx.fillStyle = "rgba(255,255,255,0.08)";
+    ctx.beginPath(); ctx.roundRect(W*0.1, barY, W*0.8, 20, 10); ctx.fill();
+    ctx.fillStyle = "#dc2626";
+    ctx.beginPath(); ctx.roundRect(W*0.1, barY, W*0.8*(dayNumber/75), 20, 10); ctx.fill();
+    ctx.fillStyle = "rgba(252,165,165,0.5)";
+    ctx.font = "500 32px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(`${Math.round((dayNumber/75)*100)}% COMPLETE`, W/2, barY + 60);
+
+    // Quote
+    const qY = barY + 110;
+    ctx.fillStyle = "rgba(252,165,165,0.35)";
+    ctx.font = "italic 500 38px sans-serif";
+    ctx.textAlign = "center";
+    // Word wrap quote
+    const words = quote.split(" ");
+    let line = ""; const lines: string[] = [];
+    words.forEach(w => {
+      const test = line + w + " ";
+      if (ctx.measureText(test).width > W * 0.75) { lines.push(line.trim()); line = w + " "; }
+      else line = test;
+    });
+    lines.push(line.trim());
+    lines.forEach((l, i) => ctx.fillText(`"${i === 0 ? "" : ""}${l}${i === lines.length-1 ? "" : ""}"`, W/2, qY + i * 52));
+
+    // Footer
+    ctx.fillStyle = "rgba(252,165,165,0.2)";
+    ctx.font = "500 30px sans-serif";
+    ctx.fillText("STAY RELENTLESS", W/2, H - 60);
+  }, [todayIndex, userName, rows]);
+
+  const handleShare = async () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    canvas.toBlob(async (blob) => {
+      if (!blob) return;
+      const file = new File([blob], `75hard-day${dayNumber}.png`, { type: "image/png" });
+      try {
+        if (navigator.share && navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file], title: `75 Hard — Day ${dayNumber}` });
+        } else {
+          const a = document.createElement("a");
+          a.href = URL.createObjectURL(blob);
+          a.download = `75hard-day${dayNumber}.png`;
+          a.click();
+        }
+      } catch (e) { console.error(e); }
+    }, "image/png");
+  };
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      style={{ position: "fixed", inset: 0, zIndex: 90, background: "rgba(0,0,0,0.96)", display: "flex", flexDirection: "column" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 18px", borderBottom: "1px solid rgba(127,29,29,0.72)" }}>
+        <button onClick={onClose} style={{ width: 38, height: 38, borderRadius: 12, background: "rgba(127,29,29,0.25)", border: "1px solid rgba(127,29,29,0.72)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fca5a5" }}>
+          <ArrowLeft style={{ width: 18, height: 18 }} />
+        </button>
+        <p style={{ margin: 0, fontSize: 13, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#ffe8e8" }}>Day {dayNumber} Card</p>
+        <motion.button whileTap={{ scale: 0.95 }} onClick={handleShare}
+          style={{ display: "flex", alignItems: "center", gap: 6, background: "linear-gradient(135deg, #7f1d1d, #dc2626)", border: "none", borderRadius: 12, padding: "9px 16px", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+          <Share2 style={{ width: 15, height: 15 }} /> Share
+        </motion.button>
+      </div>
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, overflow: "hidden" }}>
+        <canvas ref={canvasRef} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", borderRadius: 12, border: "1px solid rgba(127,29,29,0.4)" }} />
+      </div>
+    </motion.div>
+  );
+}
+
+// ─── Certificate Modal ────────────────────────────────────────────────────────
+function CertificateModal({ rows, userName, onClose }: { rows: TrackerRow[]; userName: string | null; onClose: () => void }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const completedDays = rows.filter(isRowComplete).length;
+  const startDate = getStartDate();
+  const endRow = rows[TOTAL_DAYS - 1];
+  const firstW = rows.find(r => r.weight.trim());
+  const lastW = [...rows].reverse().find(r => r.weight.trim());
+  const weightLost = firstW && lastW ? (parseFloat(firstW.weight) - parseFloat(lastW.weight)).toFixed(1) : null;
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const W = 1400, H = 1000;
+    canvas.width = W; canvas.height = H;
+
+    // Background
+    ctx.fillStyle = "#050000";
+    ctx.fillRect(0, 0, W, H);
+    const grad = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, 700);
+    grad.addColorStop(0, "rgba(127,29,29,0.4)");
+    grad.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = grad; ctx.fillRect(0, 0, W, H);
+
+    // Border
+    ctx.strokeStyle = "rgba(127,29,29,0.8)";
+    ctx.lineWidth = 3;
+    ctx.strokeRect(30, 30, W - 60, H - 60);
+    ctx.strokeStyle = "rgba(127,29,29,0.3)";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(44, 44, W - 88, H - 88);
+
+    // Header
+    ctx.fillStyle = "rgba(252,165,165,0.5)";
+    ctx.font = "500 28px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("CERTIFICATE OF COMPLETION", W/2, 110);
+
+    // Trophy
+    ctx.font = "80px sans-serif";
+    ctx.fillText("🏆", W/2, 220);
+
+    // Title
+    ctx.fillStyle = "#fff";
+    ctx.font = "900 72px sans-serif";
+    ctx.fillText("75 HARD", W/2, 320);
+
+    ctx.fillStyle = "#b91c1c";
+    ctx.font = "900 36px sans-serif";
+    ctx.fillText("CHALLENGE COMPLETE", W/2, 375);
+
+    // Divider
+    ctx.strokeStyle = "rgba(127,29,29,0.6)"; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(W*0.2, 410); ctx.lineTo(W*0.8, 410); ctx.stroke();
+
+    // Name
+    ctx.fillStyle = "rgba(252,165,165,0.5)";
+    ctx.font = "400 28px sans-serif";
+    ctx.fillText("This certifies that", W/2, 460);
+    ctx.fillStyle = "#fff";
+    ctx.font = "900 68px sans-serif";
+    ctx.fillText((userName || "CHAMPION").toUpperCase(), W/2, 540);
+
+    ctx.fillStyle = "rgba(252,165,165,0.5)";
+    ctx.font = "400 28px sans-serif";
+    ctx.fillText("has completed 75 days of relentless discipline", W/2, 590);
+
+    // Stats row
+    const stats = [
+      { label: "Days Completed", value: `${completedDays}/75` },
+      { label: "Started", value: new Date(`${startDate}T00:00:00`).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) },
+      { label: "Finished", value: endRow?.dateLabel || "—" },
+      ...(weightLost && Number(weightLost) > 0 ? [{ label: "Weight Lost", value: `${weightLost} kg` }] : []),
+    ];
+    const statW = (W - 120) / stats.length;
+    stats.forEach((s, i) => {
+      const x = 60 + i * statW + statW / 2;
+      ctx.fillStyle = "rgba(127,29,29,0.4)";
+      ctx.beginPath(); ctx.roundRect(60 + i * statW + 10, 630, statW - 20, 110, 16); ctx.fill();
+      ctx.fillStyle = "rgba(252,165,165,0.6)";
+      ctx.font = "500 22px sans-serif"; ctx.textAlign = "center";
+      ctx.fillText(s.label.toUpperCase(), x, 668);
+      ctx.fillStyle = "#fff";
+      ctx.font = "700 36px sans-serif";
+      ctx.fillText(s.value, x, 712);
+    });
+
+    // Footer
+    ctx.fillStyle = "rgba(252,165,165,0.25)";
+    ctx.font = "400 24px sans-serif";
+    ctx.fillText("STAY RELENTLESS • 75 HARD CHALLENGE", W/2, 820);
+
+    // Signature line
+    ctx.strokeStyle = "rgba(127,29,29,0.4)"; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(W*0.35, 890); ctx.lineTo(W*0.65, 890); ctx.stroke();
+    ctx.fillStyle = "rgba(252,165,165,0.3)";
+    ctx.font = "400 20px sans-serif";
+    ctx.fillText("EARNED THROUGH DISCIPLINE", W/2, 920);
+  }, [rows, userName]);
+
+  const handleDownload = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const a = document.createElement("a");
+    a.href = canvas.toDataURL("image/png");
+    a.download = "75hard-certificate.png";
+    a.click();
+  };
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      style={{ position: "fixed", inset: 0, zIndex: 90, background: "rgba(0,0,0,0.96)", display: "flex", flexDirection: "column" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 18px", borderBottom: "1px solid rgba(127,29,29,0.72)" }}>
+        <button onClick={onClose} style={{ width: 38, height: 38, borderRadius: 12, background: "rgba(127,29,29,0.25)", border: "1px solid rgba(127,29,29,0.72)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fca5a5" }}>
+          <ArrowLeft style={{ width: 18, height: 18 }} />
+        </button>
+        <p style={{ margin: 0, fontSize: 13, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#ffe8e8" }}>Your Certificate</p>
+        <motion.button whileTap={{ scale: 0.95 }} onClick={handleDownload}
+          style={{ display: "flex", alignItems: "center", gap: 6, background: "linear-gradient(135deg, #7f1d1d, #dc2626)", border: "none", borderRadius: 12, padding: "9px 16px", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+          <Share2 style={{ width: 15, height: 15 }} /> Download
+        </motion.button>
+      </div>
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, overflow: "hidden" }}>
+        <canvas ref={canvasRef} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", borderRadius: 12, border: "1px solid rgba(127,29,29,0.4)" }} />
+      </div>
+    </motion.div>
+  );
+}
+
+// ─── Scriptable Widget Export ─────────────────────────────────────────────────
+function WidgetExportModal({ rows, todayIndex, userName, onClose }: {
+  rows: TrackerRow[]; todayIndex: number; userName: string | null; onClose: () => void;
+}) {
+  const todayRow = rows[todayIndex];
+  const completedHabits = todayRow ? habitColumns.filter(h => todayRow[h.key]).length : 0;
+  const dayNumber = todayIndex + 1;
+
+  const widgetData = {
+    name: userName || "Athlete",
+    day: dayNumber,
+    total: TOTAL_DAYS,
+    progress: Math.round((dayNumber / TOTAL_DAYS) * 100),
+    habits: habitColumns.map(h => ({
+      label: h.label,
+      done: todayRow ? Boolean(todayRow[h.key]) : false,
+    })),
+    completedToday: completedHabits,
+    totalHabits: habitColumns.length,
+    lastUpdated: new Date().toISOString(),
+  };
+
+  const scriptableCode = `// 75 Hard Widget for iOS Scriptable
+// Install Scriptable from App Store, paste this code
+const data = ${JSON.stringify(widgetData, null, 2)};
+
+const w = new ListWidget();
+w.backgroundColor = new Color("#050000");
+w.setPadding(12, 14, 12, 14);
+
+// Header
+const header = w.addText("75 HARD");
+header.font = Font.boldSystemFont(11);
+header.textColor = new Color("#b91c1c");
+header.textOpacity = 0.9;
+w.addSpacer(2);
+
+// Day
+const dayText = w.addText(\`DAY \${data.day} / \${data.total}\`);
+dayText.font = Font.boldSystemFont(22);
+dayText.textColor = Color.white();
+w.addSpacer(6);
+
+// Habits
+data.habits.forEach(h => {
+  const row = w.addText(\`\${h.done ? "✅" : "⬜"} \${h.label}\`);
+  row.font = Font.systemFont(11);
+  row.textColor = h.done ? Color.white() : new Color("#fca5a5", 0.4);
+  w.addSpacer(2);
+});
+
+w.addSpacer(6);
+const prog = w.addText(\`\${data.completedToday}/\${data.totalHabits} today • \${data.progress}% overall\`);
+prog.font = Font.systemFont(10);
+prog.textColor = new Color("#fca5a5", 0.5);
+
+Script.setWidget(w);
+w.presentSmall();`;
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(scriptableCode).catch(() => {
+      const ta = document.createElement("textarea");
+      ta.value = scriptableCode; document.body.appendChild(ta);
+      ta.select(); document.execCommand("copy"); document.body.removeChild(ta);
+    });
+  };
+
+  const handleDownload = () => {
+    const blob = new Blob([scriptableCode], { type: "text/plain" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "75Hard-Widget.js";
+    a.click();
+  };
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      style={{ position: "fixed", inset: 0, zIndex: 90, background: "#000", display: "flex", flexDirection: "column" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 18px", borderBottom: "1px solid rgba(127,29,29,0.72)" }}>
+        <button onClick={onClose} style={{ width: 38, height: 38, borderRadius: 12, background: "rgba(127,29,29,0.25)", border: "1px solid rgba(127,29,29,0.72)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fca5a5" }}>
+          <ArrowLeft style={{ width: 18, height: 18 }} />
+        </button>
+        <p style={{ margin: 0, fontSize: 13, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#ffe8e8" }}>Home Screen Widget</p>
+        <div style={{ width: 38 }} />
+      </div>
+
+      <div style={{ flex: 1, overflowY: "auto", padding: "20px 18px" }}>
+        {/* Preview */}
+        <div style={{ background: "linear-gradient(135deg, #050000, #1a0404)", border: "1px solid rgba(127,29,29,0.5)", borderRadius: 20, padding: 20, marginBottom: 20 }}>
+          <p style={{ margin: "0 0 4px", fontSize: 11, fontWeight: 700, color: "#b91c1c", letterSpacing: "0.1em" }}>75 HARD</p>
+          <p style={{ margin: "0 0 12px", fontSize: 22, fontWeight: 900, color: "#fff" }}>DAY {dayNumber} / {TOTAL_DAYS}</p>
+          {habitColumns.map(h => (
+            <div key={h.key} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+              <span style={{ fontSize: 14 }}>{todayRow?.[h.key] ? "✅" : "⬜"}</span>
+              <span style={{ fontSize: 12, color: todayRow?.[h.key] ? "#fff" : "rgba(252,165,165,0.35)" }}>{h.label}</span>
+            </div>
+          ))}
+          <p style={{ margin: "10px 0 0", fontSize: 11, color: "rgba(252,165,165,0.4)" }}>{completedHabits}/{habitColumns.length} today • {Math.round((dayNumber/TOTAL_DAYS)*100)}% overall</p>
+        </div>
+
+        <p style={{ fontSize: 12, color: "rgba(252,165,165,0.6)", marginBottom: 16, lineHeight: 1.6 }}>
+          Install <strong style={{ color: "#fca5a5" }}>Scriptable</strong> from the App Store, tap the button below to copy the code, then create a new script and paste it in.
+        </p>
+
+        <div style={{ display: "flex", gap: 10 }}>
+          <motion.button whileTap={{ scale: 0.97 }} onClick={handleCopy}
+            style={{ flex: 1, padding: "14px", background: "linear-gradient(135deg, #7f1d1d, #dc2626)", border: "none", borderRadius: 14, color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>
+            Copy Code
+          </motion.button>
+          <motion.button whileTap={{ scale: 0.97 }} onClick={handleDownload}
+            style={{ flex: 1, padding: "14px", background: "rgba(127,29,29,0.2)", border: "1px solid rgba(127,29,29,0.5)", borderRadius: 14, color: "#fca5a5", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>
+            Download .js
+          </motion.button>
+        </div>
+
+        <div style={{ marginTop: 16, background: "rgba(255,255,255,0.03)", borderRadius: 12, padding: 14, maxHeight: 200, overflowY: "auto", border: "1px solid rgba(127,29,29,0.2)" }}>
+          <pre style={{ margin: 0, fontSize: 10, color: "rgba(252,165,165,0.4)", whiteSpace: "pre-wrap", lineHeight: 1.5, fontFamily: "monospace" }}>{scriptableCode}</pre>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
 // ─── Weekly Summary Modal ─────────────────────────────────────────────────────
 function WeeklySummaryModal({ open, onClose, summary }: {
   open: boolean; onClose: () => void;
@@ -795,6 +1239,13 @@ export default function App() {
   const [showGallery, setShowGallery] = useState(false);
   const [showBeforeAfter, setShowBeforeAfter] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showDailyCard, setShowDailyCard] = useState(false);
+  const [showCertificate, setShowCertificate] = useState(false);
+  const [showWidget, setShowWidget] = useState(false);
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem("75_hard_theme");
+    return saved ? saved === "dark" : true;
+  });
   const [milestone, setMilestone] = useState<number | null>(null);
   const [missedDayIndex, setMissedDayIndex] = useState<number | null>(null);
   const [exportGroup, setExportGroup] = useState<{ weekNumber: number; rows: TrackerRow[]; startIndex: number } | null>(null);
@@ -1007,8 +1458,14 @@ export default function App() {
     });
   }, [rows]);
 
+  // Dark mode effect
+  useEffect(() => {
+    document.body.classList.toggle("light-mode", !darkMode);
+    localStorage.setItem("75_hard_theme", darkMode ? "dark" : "light");
+  }, [darkMode]);
+
   return (
-    <div className="app-shell">
+    <div className={`app-shell${darkMode ? "" : " light-mode"}`}>
       <div className="background-noise" />
       <div className="background-glow" />
 
@@ -1045,6 +1502,9 @@ export default function App() {
       <AnimatePresence>{showGallery && <PhotoGalleryModal rows={rows} onClose={() => setShowGallery(false)} />}</AnimatePresence>
       <AnimatePresence>{showBeforeAfter && <BeforeAfterModal rows={rows} onClose={() => setShowBeforeAfter(false)} />}</AnimatePresence>
       <AnimatePresence>{showNotifications && <NotificationModal onClose={() => setShowNotifications(false)} />}</AnimatePresence>
+      <AnimatePresence>{showDailyCard && <DailyChallengeCardModal todayIndex={todayIndex} userName={userName} rows={rows} onClose={() => setShowDailyCard(false)} />}</AnimatePresence>
+      <AnimatePresence>{showCertificate && <CertificateModal rows={rows} userName={userName} onClose={() => setShowCertificate(false)} />}</AnimatePresence>
+      <AnimatePresence>{showWidget && <WidgetExportModal rows={rows} todayIndex={todayIndex} userName={userName} onClose={() => setShowWidget(false)} />}</AnimatePresence>
 
       <div className="page">
         <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} className="hero-card">
@@ -1093,22 +1553,32 @@ export default function App() {
               <SummaryCard title="Avg Calories / Steps" value={`${averageCalories} / ${averageSteps}`} subtext="Daily averages" icon={Target} />
             </div>
 
-            <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
-              <motion.button whileTap={{ scale: 0.97 }} onClick={() => setShowGallery(true)}
-                style={{ flex: 1, background: "rgba(127,29,29,0.18)", border: "1px solid rgba(127,29,29,0.55)", borderRadius: 14, padding: "13px 10px", display: "flex", flexDirection: "column", alignItems: "center", gap: 6, cursor: "pointer" }}>
-                <Images style={{ width: 18, height: 18, color: "#fca5a5" }} />
-                <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(252,165,165,0.75)" }}>Gallery</span>
-              </motion.button>
-              <motion.button whileTap={{ scale: 0.97 }} onClick={() => setShowBeforeAfter(true)}
-                style={{ flex: 1, background: "rgba(127,29,29,0.18)", border: "1px solid rgba(127,29,29,0.55)", borderRadius: 14, padding: "13px 10px", display: "flex", flexDirection: "column", alignItems: "center", gap: 6, cursor: "pointer" }}>
-                <Layers style={{ width: 18, height: 18, color: "#fca5a5" }} />
-                <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(252,165,165,0.75)" }}>Before/After</span>
-              </motion.button>
-              <motion.button whileTap={{ scale: 0.97 }} onClick={() => setShowNotifications(true)}
-                style={{ flex: 1, background: "rgba(127,29,29,0.18)", border: "1px solid rgba(127,29,29,0.55)", borderRadius: 14, padding: "13px 10px", display: "flex", flexDirection: "column", alignItems: "center", gap: 6, cursor: "pointer" }}>
-                <Bell style={{ width: 18, height: 18, color: "#fca5a5" }} />
-                <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(252,165,165,0.75)" }}>Reminder</span>
-              </motion.button>
+            <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
+              {[
+                { icon: Images, label: "Gallery", action: () => setShowGallery(true) },
+                { icon: Layers, label: "Before/After", action: () => setShowBeforeAfter(true) },
+                { icon: Bell, label: "Reminder", action: () => setShowNotifications(true) },
+                { icon: Share2, label: "Day Card", action: () => setShowDailyCard(true) },
+                { icon: Trophy, label: "Certificate", action: () => setShowCertificate(true) },
+                { icon: Target, label: "Widget", action: () => setShowWidget(true) },
+              ].map(({ icon: Icon, label, action }) => (
+                <motion.button key={label} whileTap={{ scale: 0.95 }} onClick={action}
+                  style={{ flex: "1 1 calc(33% - 6px)", minWidth: 80, background: "rgba(127,29,29,0.18)", border: "1px solid rgba(127,29,29,0.55)", borderRadius: 14, padding: "12px 8px", display: "flex", flexDirection: "column", alignItems: "center", gap: 5, cursor: "pointer" }}>
+                  <Icon style={{ width: 18, height: 18, color: "#fca5a5" }} />
+                  <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(252,165,165,0.75)" }}>{label}</span>
+                </motion.button>
+              ))}
+            </div>
+
+            {/* Dark mode toggle */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 10, padding: "10px 14px", background: "rgba(127,29,29,0.1)", borderRadius: 12, border: "1px solid rgba(127,29,29,0.3)" }}>
+              <span style={{ fontSize: 12, color: "rgba(252,165,165,0.6)", fontWeight: 600, letterSpacing: "0.06em" }}>
+                {darkMode ? "🌙 Dark Mode" : "☀️ Light Mode"}
+              </span>
+              <button onClick={() => setDarkMode(!darkMode)}
+                style={{ width: 44, height: 24, borderRadius: 12, background: darkMode ? "#dc2626" : "rgba(255,255,255,0.3)", border: "none", cursor: "pointer", position: "relative", transition: "background 0.25s" }}>
+                <div style={{ position: "absolute", top: 3, left: darkMode ? 22 : 3, width: 18, height: 18, borderRadius: "50%", background: "#fff", transition: "left 0.25s", boxShadow: "0 1px 4px rgba(0,0,0,0.3)" }} />
+              </button>
             </div>
           </div>
         </motion.div>
