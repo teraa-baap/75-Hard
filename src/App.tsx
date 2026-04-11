@@ -634,8 +634,41 @@ function MissedDayBanner({ missedDay, onDismiss, onMarkComplete }: { missedDay: 
   );
 }
 
+// ─── Notification Scheduling ──────────────────────────────────────────────────
+async function registerAndSchedule(hour: number, minute: number, enabled: boolean) {
+  if (!("serviceWorker" in navigator) || !("Notification" in window)) return;
+  try {
+    const reg = await navigator.serviceWorker.register("/sw.js");
+    await navigator.serviceWorker.ready;
+    const sw = reg.active || reg.installing || reg.waiting;
+    if (!sw) return;
+    if (enabled) {
+      sw.postMessage({
+        type: "SCHEDULE_NOTIFICATION",
+        hour, minute,
+        title: "75 Hard — Daily Check-in",
+        body: "Don't forget to complete all 6 habits today! 💪🔥",
+      });
+    } else {
+      sw.postMessage({ type: "CANCEL_NOTIFICATION" });
+    }
+  } catch {}
+}
+
+function isIOS() {
+  return /iphone|ipad|ipod/i.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+}
+
+function isInStandaloneMode() {
+  return ("standalone" in navigator && (navigator as any).standalone) ||
+    window.matchMedia("(display-mode: standalone)").matches;
+}
+
 // ─── Notification Modal ───────────────────────────────────────────────────────
 function NotificationModal({ onClose }: { onClose: () => void }) {
+  const ios = isIOS();
+  const standalone = isInStandaloneMode();
   const [permission, setPermission] = useState<NotificationPermission>(typeof Notification !== "undefined" ? Notification.permission : "default");
   const saved = localStorage.getItem(NOTIF_KEY);
   const parsedSaved = saved ? JSON.parse(saved) : null;
@@ -643,73 +676,163 @@ function NotificationModal({ onClose }: { onClose: () => void }) {
   const [minute, setMinute] = useState(parsedSaved?.minute ?? 0);
   const [enabled, setEnabled] = useState(parsedSaved?.enabled ?? false);
   const [isSaved, setIsSaved] = useState(false);
+  const [showIOSSteps, setShowIOSSteps] = useState(false);
+
+  useEffect(() => {
+    if (parsedSaved?.enabled && permission === "granted") {
+      registerAndSchedule(parsedSaved.hour, parsedSaved.minute, true);
+    }
+  }, []);
 
   const requestAndEnable = async () => {
     if (typeof Notification === "undefined") { alert("Notifications not supported."); return; }
     const result = await Notification.requestPermission();
     setPermission(result);
-    if (result === "granted") { setEnabled(true); saveSettings(true); }
+    if (result === "granted") {
+      setEnabled(true);
+      localStorage.setItem(NOTIF_KEY, JSON.stringify({ hour, minute, enabled: true }));
+      await registerAndSchedule(hour, minute, true);
+      setIsSaved(true);
+      setTimeout(() => setIsSaved(false), 2000);
+    }
   };
 
-  const saveSettings = (forceEnabled?: boolean) => {
+  const saveSettings = async (forceEnabled?: boolean) => {
     const isEnabled = forceEnabled ?? enabled;
     localStorage.setItem(NOTIF_KEY, JSON.stringify({ hour, minute, enabled: isEnabled }));
+    await registerAndSchedule(hour, minute, isEnabled);
     setIsSaved(true);
     setTimeout(() => setIsSaved(false), 2000);
   };
 
   const displayHour = hour % 12 === 0 ? 12 : hour % 12;
   const ampm = hour < 12 ? "AM" : "PM";
+  const timeStr = `${displayHour}:${String(minute).padStart(2,"0")} ${ampm}`;
+
+  const nextFire = (() => {
+    const now = new Date();
+    const next = new Date();
+    next.setHours(hour, minute, 0, 0);
+    if (next <= now) next.setDate(next.getDate() + 1);
+    return next.toLocaleDateString("en-IN", { weekday: "short", month: "short", day: "numeric" }) + ` at ${timeStr}`;
+  })();
+
+  const iosSteps = [
+    { icon: "1️⃣", text: 'Open the iPhone **Shortcuts** app' },
+    { icon: "2️⃣", text: 'Tap the **Automation** tab at the bottom' },
+    { icon: "3️⃣", text: 'Tap **+** → **Time of Day**' },
+    { icon: "4️⃣", text: `Set time to **${timeStr}** → Daily → Next` },
+    { icon: "5️⃣", text: 'Tap **New Blank Automation** → Add Action' },
+    { icon: "6️⃣", text: 'Search **"Open App"** → choose **75 Hard**' },
+    { icon: "7️⃣", text: 'Turn off **"Ask Before Running"** → Done ✅' },
+  ];
 
   return (
     <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
       <motion.div onClick={e => e.stopPropagation()} initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", stiffness: 320, damping: 32 }}
-        style={{ width: "100%", maxWidth: 520, margin: "0 auto", background: "linear-gradient(160deg,#0a0000,#140303 60%,#1c0505 100%)", borderRadius: "28px 28px 0 0", border: "1px solid rgba(127,29,29,0.72)", borderBottom: "none", padding: "14px 24px 52px", boxShadow: "0 -20px 60px rgba(127,29,29,0.28)" }}>
-        <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}><div style={{ width: 40, height: 4, borderRadius: 2, background: "rgba(252,165,165,0.25)" }} /></div>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 24 }}>
+        style={{ width: "100%", maxWidth: 520, margin: "0 auto", background: "linear-gradient(160deg,#0a0000,#140303 60%,#1c0505 100%)", borderRadius: "28px 28px 0 0", border: "1px solid rgba(127,29,29,0.72)", borderBottom: "none", padding: "14px 24px 48px", boxShadow: "0 -20px 60px rgba(127,29,29,0.28)", maxHeight: "90vh", overflowY: "auto" }}>
+
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
+          <div style={{ width: 40, height: 4, borderRadius: 2, background: "rgba(252,165,165,0.25)" }} />
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
           <Bell style={{ width: 20, height: 20, color: "#fca5a5" }} />
           <p style={{ margin: 0, fontSize: 10, letterSpacing: "0.3em", textTransform: "uppercase", color: "rgba(252,165,165,0.6)" }}>Daily Reminder</p>
         </div>
-        {permission === "denied" ? (
-          <p style={{ color: "#f87171", fontSize: 13 }}>Notifications blocked. Enable in browser settings.</p>
-        ) : permission !== "granted" ? (
-          <motion.button whileTap={{ scale: 0.97 }} onClick={requestAndEnable}
-            style={{ width: "100%", padding: 18, background: "linear-gradient(135deg,#7f1d1d,#b91c1c)", border: "1px solid rgba(248,113,113,0.35)", borderRadius: 16, color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer", marginBottom: 20, display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
-            <Bell style={{ width: 18, height: 18 }} /> Enable Notifications
-          </motion.button>
-        ) : (
-          <>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24, background: "rgba(255,255,255,0.04)", borderRadius: 14, padding: "14px 16px", border: "1px solid rgba(127,29,29,0.4)" }}>
-              <div>
-                <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: "#ffe8e8" }}>Daily reminder</p>
-                <p style={{ margin: "3px 0 0", fontSize: 12, color: "rgba(252,165,165,0.5)" }}>{enabled ? `${displayHour}:${String(minute).padStart(2,"0")} ${ampm}` : "Disabled"}</p>
-              </div>
-              <button onClick={() => setEnabled(!enabled)} style={{ width: 48, height: 26, borderRadius: 13, background: enabled ? "#dc2626" : "rgba(255,255,255,0.1)", border: "none", cursor: "pointer", position: "relative", transition: "background 0.2s" }}>
-                <div style={{ position: "absolute", top: 3, left: enabled ? 25 : 3, width: 20, height: 20, borderRadius: "50%", background: "#fff", transition: "left 0.2s" }} />
-              </button>
+
+        {/* iOS Banner */}
+        {ios && (
+          <div style={{ background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.3)", borderRadius: 14, padding: "14px 16px", marginBottom: 20 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+              <span style={{ fontSize: 18 }}>🍎</span>
+              <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#fbbf24" }}>iPhone Detected</p>
             </div>
-            {enabled && (
-              <div style={{ marginBottom: 24 }}>
-                <div style={{ display: "flex", gap: 12 }}>
-                  <div style={{ flex: 1 }}>
-                    <p style={{ margin: "0 0 6px", fontSize: 11, color: "rgba(252,165,165,0.4)" }}>Hour</p>
-                    <input type="range" min={0} max={23} value={hour} onChange={e => setHour(Number(e.target.value))} style={{ width: "100%", accentColor: "#dc2626" }} />
-                    <p style={{ margin: "4px 0 0", fontSize: 16, fontWeight: 700, color: "#fff", textAlign: "center" }}>{displayHour} {ampm}</p>
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <p style={{ margin: "0 0 6px", fontSize: 11, color: "rgba(252,165,165,0.4)" }}>Minute</p>
-                    <input type="range" min={0} max={59} step={5} value={minute} onChange={e => setMinute(Number(e.target.value))} style={{ width: "100%", accentColor: "#dc2626" }} />
-                    <p style={{ margin: "4px 0 0", fontSize: 16, fontWeight: 700, color: "#fff", textAlign: "center" }}>{String(minute).padStart(2,"0")}</p>
-                  </div>
-                </div>
-              </div>
-            )}
-            <motion.button whileTap={{ scale: 0.97 }} onClick={() => saveSettings()}
-              style={{ width: "100%", padding: 16, background: isSaved ? "rgba(34,197,94,0.2)" : "linear-gradient(135deg,#7f1d1d,#b91c1c)", border: isSaved ? "1px solid rgba(34,197,94,0.5)" : "1px solid rgba(248,113,113,0.35)", borderRadius: 16, color: isSaved ? "#4ade80" : "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer", transition: "all 0.3s" }}>
-              {isSaved ? "✓ Saved!" : "Save Reminder"}
+            <p style={{ margin: "0 0 12px", fontSize: 12, color: "rgba(251,191,36,0.7)", lineHeight: 1.5 }}>
+              iOS doesn't support web push notifications reliably. Use the <strong style={{ color: "#fbbf24" }}>iOS Shortcuts</strong> app instead — it opens 75 Hard at your chosen time every day.
+            </p>
+            <motion.button whileTap={{ scale: 0.97 }} onClick={() => setShowIOSSteps(!showIOSSteps)}
+              style={{ width: "100%", padding: "10px 14px", background: "rgba(251,191,36,0.15)", border: "1px solid rgba(251,191,36,0.4)", borderRadius: 10, color: "#fbbf24", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+              {showIOSSteps ? "▲ Hide Steps" : "▼ Show Setup Steps"}
             </motion.button>
+          </div>
+        )}
+
+        {/* iOS Steps */}
+        {ios && showIOSSteps && (
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
+            style={{ background: "rgba(0,0,0,0.4)", border: "1px solid rgba(251,191,36,0.2)", borderRadius: 14, padding: "16px 18px", marginBottom: 20 }}>
+            <p style={{ margin: "0 0 14px", fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(251,191,36,0.5)" }}>Setup in 2 minutes</p>
+            {iosSteps.map((step, i) => (
+              <div key={i} style={{ display: "flex", gap: 12, marginBottom: 14, alignItems: "flex-start" }}>
+                <span style={{ fontSize: 18, flexShrink: 0 }}>{step.icon}</span>
+                <p style={{ margin: 0, fontSize: 13, color: "rgba(252,165,165,0.8)", lineHeight: 1.5 }}
+                  dangerouslySetInnerHTML={{ __html: step.text.replace(/\*\*(.*?)\*\*/g, '<strong style="color:#fff">$1</strong>') }} />
+              </div>
+            ))}
+            <div style={{ marginTop: 8, padding: "10px 12px", background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.25)", borderRadius: 10 }}>
+              <p style={{ margin: 0, fontSize: 12, color: "#4ade80" }}>💡 Make sure 75 Hard is added to your Home Screen first (Safari → Share → Add to Home Screen)</p>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Non-iOS or iOS with notification support */}
+        {!ios && (
+          <>
+            {permission === "denied" ? (
+              <div style={{ background: "rgba(220,38,38,0.1)", border: "1px solid rgba(220,38,38,0.3)", borderRadius: 14, padding: 16, marginBottom: 16 }}>
+                <p style={{ margin: 0, color: "#f87171", fontSize: 13 }}>Notifications blocked. Go to browser Settings → Notifications and allow 75-hard-tau.vercel.app</p>
+              </div>
+            ) : permission !== "granted" ? (
+              <motion.button whileTap={{ scale: 0.97 }} onClick={requestAndEnable}
+                style={{ width: "100%", padding: 18, background: "linear-gradient(135deg,#7f1d1d,#b91c1c)", border: "1px solid rgba(248,113,113,0.35)", borderRadius: 16, color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer", marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
+                <Bell style={{ width: 18, height: 18 }} /> Enable Notifications
+              </motion.button>
+            ) : (
+              <>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20, background: "rgba(255,255,255,0.04)", borderRadius: 14, padding: "14px 16px", border: "1px solid rgba(127,29,29,0.4)" }}>
+                  <div>
+                    <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: "#ffe8e8" }}>Daily reminder</p>
+                    <p style={{ margin: "3px 0 0", fontSize: 12, color: "rgba(252,165,165,0.5)" }}>{enabled ? `Next: ${nextFire}` : "Disabled"}</p>
+                  </div>
+                  <button onClick={() => setEnabled(!enabled)} style={{ width: 48, height: 26, borderRadius: 13, background: enabled ? "#dc2626" : "rgba(255,255,255,0.1)", border: "none", cursor: "pointer", position: "relative", transition: "background 0.2s" }}>
+                    <div style={{ position: "absolute", top: 3, left: enabled ? 25 : 3, width: 20, height: 20, borderRadius: "50%", background: "#fff", transition: "left 0.2s" }} />
+                  </button>
+                </div>
+                {enabled && (
+                  <div style={{ marginBottom: 20 }}>
+                    <div style={{ display: "flex", gap: 12 }}>
+                      <div style={{ flex: 1 }}>
+                        <p style={{ margin: "0 0 6px", fontSize: 11, color: "rgba(252,165,165,0.4)" }}>Hour</p>
+                        <input type="range" min={0} max={23} value={hour} onChange={e => setHour(Number(e.target.value))} style={{ width: "100%", accentColor: "#dc2626" }} />
+                        <p style={{ margin: "4px 0 0", fontSize: 16, fontWeight: 700, color: "#fff", textAlign: "center" }}>{displayHour} {ampm}</p>
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <p style={{ margin: "0 0 6px", fontSize: 11, color: "rgba(252,165,165,0.4)" }}>Minute</p>
+                        <input type="range" min={0} max={59} step={5} value={minute} onChange={e => setMinute(Number(e.target.value))} style={{ width: "100%", accentColor: "#dc2626" }} />
+                        <p style={{ margin: "4px 0 0", fontSize: 16, fontWeight: 700, color: "#fff", textAlign: "center" }}>{String(minute).padStart(2,"0")}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <motion.button whileTap={{ scale: 0.97 }} onClick={() => saveSettings()}
+                  style={{ width: "100%", padding: 16, background: isSaved ? "rgba(34,197,94,0.2)" : "linear-gradient(135deg,#7f1d1d,#b91c1c)", border: isSaved ? "1px solid rgba(34,197,94,0.5)" : "1px solid rgba(248,113,113,0.35)", borderRadius: 16, color: isSaved ? "#4ade80" : "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer", transition: "all 0.3s", marginBottom: 0 }}>
+                  {isSaved ? "✓ Saved!" : "Save Reminder"}
+                </motion.button>
+              </>
+            )}
           </>
         )}
+
+        {/* If iOS but NOT installed as PWA yet */}
+        {ios && !standalone && (
+          <div style={{ background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.3)", borderRadius: 14, padding: "14px 16px", marginBottom: 16 }}>
+            <p style={{ margin: "0 0 6px", fontSize: 13, fontWeight: 700, color: "#818cf8" }}>📲 Install the app first</p>
+            <p style={{ margin: 0, fontSize: 12, color: "rgba(129,140,248,0.7)", lineHeight: 1.5 }}>
+              In Safari: tap the <strong style={{ color: "#818cf8" }}>Share</strong> button (□↑) → <strong style={{ color: "#818cf8" }}>Add to Home Screen</strong> → then set up the Shortcut above.
+            </p>
+          </div>
+        )}
+
         <button onClick={onClose} style={{ marginTop: 12, width: "100%", background: "transparent", border: "1px solid rgba(127,29,29,0.4)", borderRadius: 14, padding: 13, color: "rgba(252,165,165,0.4)", fontSize: 14, cursor: "pointer" }}>Close</button>
       </motion.div>
     </motion.div>
