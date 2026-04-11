@@ -1,731 +1,1397 @@
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+  Camera, Dumbbell, Utensils, TreeDeciduous, BookOpen, Droplets,
+  Flame, Scale, Target, ImagePlus, Lock, LockOpen, X, Images,
+  RefreshCw, ArrowLeft, Trophy, ChevronLeft, ChevronRight,
+  User, Bell, Layers, Share2, Calendar,
+} from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
-/* ─── Light Mode ─────────────────────────────────────────────────────────── */
-.light-mode {
-  --bg: #f8f4f0;
-  --text: #1a0a0a;
-  --muted: rgba(80,20,20,0.6);
-  --border: rgba(160,30,30,0.25);
-  --red: #b91c1c;
-  --red-soft: rgba(185,28,28,0.1);
-}
-.light-mode body { background: #f8f4f0; color: #1a0a0a; }
-.light-mode .app-shell { background: #f8f4f0; color: #1a0a0a; }
-.light-mode .background-glow { display: none; }
-.light-mode .background-noise { display: none; }
+// ─── Constants ────────────────────────────────────────────────────────────────
+const TOTAL_DAYS = 75;
+const STORAGE_KEY = "premium_75_hard_tracker_pwa_v1";
+const USER_KEY = "75_hard_user_v1";
+const START_DATE_KEY = "75_hard_start_date_v1";
+const NOTIF_KEY = "75_hard_notif_v1";
+const GARMIN_SYNC_KEY = "75_hard_garmin_synced_days";
 
-.light-mode .hero-card {
-  background: #fff;
-  border: 1px solid rgba(185,28,28,0.2);
-  box-shadow: 0 4px 24px rgba(185,28,28,0.08);
-}
-.light-mode .hero-header { border-bottom-color: rgba(185,28,28,0.12); }
-.light-mode .hero-title { color: #1a0a0a; }
-.light-mode .pill {
-  background: rgba(185,28,28,0.06);
-  border-color: rgba(185,28,28,0.2);
-  color: #b91c1c;
-}
-.light-mode .mini-icon { color: #b91c1c; }
-.light-mode .hero-body {
-  background: #f8f4f0;
-  border-top-color: rgba(185,28,28,0.1);
-  border-bottom-color: rgba(185,28,28,0.1);
-}
-.light-mode .timeline-card {
-  background: #fff;
-  border-color: rgba(185,28,28,0.18);
-  box-shadow: none;
-}
-.light-mode .mini-label { color: rgba(120,20,20,0.5); }
-.light-mode .timeline-day { color: #1a0a0a; }
-.light-mode .timeline-bar { background: #ede8e8; border-color: rgba(185,28,28,0.15); }
-.light-mode .timeline-bar.filled {
-  background: linear-gradient(90deg, #b91c1c 0%, #dc2626 100%);
-  border-color: #b91c1c;
-  box-shadow: none;
-}
-.light-mode .summary-card {
-  background: #fff;
-  border-color: rgba(185,28,28,0.15);
-  box-shadow: 0 2px 12px rgba(185,28,28,0.06);
-}
-.light-mode .summary-title { color: rgba(100,20,20,0.5); }
-.light-mode .summary-value { color: #1a0a0a; }
-.light-mode .summary-subtext { color: rgba(80,20,20,0.5); }
-.light-mode .summary-icon-wrap { background: rgba(185,28,28,0.07); border-color: rgba(185,28,28,0.18); }
-.light-mode .summary-icon { color: #b91c1c; }
-.light-mode .summary-card-content::before { opacity: 0; }
-.light-mode .summary-card-content::after { opacity: 0; }
+const DAILY_QUOTES = [
+  "Pain is temporary. Quitting lasts forever.",
+  "Your only competition is who you were yesterday.",
+  "Discipline is choosing between what you want now and what you want most.",
+  "The body achieves what the mind believes.",
+  "Hard days build champions.",
+  "Don't stop when you're tired. Stop when you're done.",
+  "Every rep, every mile, every page. It all counts.",
+  "Be harder to kill.",
+  "You don't find willpower. You build it.",
+  "Suffer now and live the rest of your life as a champion.",
+  "The only easy day was yesterday.",
+  "Mental toughness is a skill. Train it daily.",
+  "Results happen over time, not overnight.",
+  "When you feel like quitting, remember why you started.",
+  "Iron will. Iron body.",
+];
 
-.light-mode .mobile-tip { color: rgba(100,20,20,0.4); }
-.light-mode .sheet-wrap {
-  background: #fff;
-  border-color: rgba(185,28,28,0.18);
-  box-shadow: 0 4px 20px rgba(185,28,28,0.06);
-}
-.light-mode .sheet-banner, .light-mode .sheet-footer {
-  background: #fff;
-  color: #1a0a0a;
-  border-color: rgba(185,28,28,0.12);
-}
-.light-mode .sheet-cell { border-color: rgba(185,28,28,0.1); }
-.light-mode .sheet-cell.head {
-  background: #fdf5f5;
-  color: #1a0a0a;
-}
-.light-mode .sheet-cell.body { background: #fff; color: #1a0a0a; font-weight: 600; }
-.light-mode .zebra-a { background: #fff !important; }
-.light-mode .zebra-b { background: #fdf5f5 !important; }
-.light-mode .today-row {
-  background: rgba(185,28,28,0.06) !important;
-  box-shadow: inset 0 0 0 1.5px rgba(185,28,28,0.35), inset 0 0 16px rgba(185,28,28,0.08) !important;
-  animation: none !important;
-}
-.light-mode .complete-row { background: rgba(185,28,28,0.05) !important; box-shadow: none !important; }
-.light-mode .active-row { background: rgba(185,28,28,0.08) !important; box-shadow: none !important; }
-.light-mode .future-row { background: #f5f5f5 !important; }
-.light-mode .merged-week {
-  background: #fdf5f5;
-  border-color: rgba(185,28,28,0.12);
-}
-.light-mode .vertical-week { color: #4a1010; }
-.light-mode .count-text { color: #1a0a0a; }
-.light-mode .badge-row {
-  background: rgba(185,28,28,0.08);
-  border-color: rgba(185,28,28,0.2);
-  color: #b91c1c;
-  box-shadow: none;
-}
-.light-mode .habit-btn {
-  border-color: rgba(185,28,28,0.25);
-  color: #b91c1c;
-  background: transparent;
-}
-.light-mode .habit-btn:hover { background: rgba(185,28,28,0.06); border-color: #b91c1c; }
-.light-mode .habit-btn.checked {
-  background: #b91c1c;
-  border-color: #b91c1c;
-  color: #fff;
-  box-shadow: none;
-}
-.light-mode .photo-btn { border-color: rgba(185,28,28,0.25); color: #b91c1c; }
-.light-mode .photo-btn.has-photo { background: rgba(185,28,28,0.08); border-color: #b91c1c; }
-.light-mode .lock-btn {
-  background: #fff;
-  border-color: rgba(185,28,28,0.3);
-  color: #b91c1c;
-}
-.light-mode .lock-btn.locked { background: rgba(185,28,28,0.1); }
-.light-mode .head-icon { color: #b91c1c; }
-.light-mode .input-base {
-  background: #fdf5f5;
-  border-color: rgba(185,28,28,0.2);
-  color: #1a0a0a;
-  box-shadow: none;
-}
-.light-mode .input-base:focus { border-color: #b91c1c; box-shadow: 0 0 0 2px rgba(185,28,28,0.12); }
+const MILESTONE_MESSAGES: Record<number, { title: string; subtitle: string }> = {
+  1: { title: "WEEK 1 DONE", subtitle: "The hardest week is behind you. Most quit here. You didn't." },
+  2: { title: "2 WEEKS IN", subtitle: "Your body is adapting. This is where habits start forming." },
+  3: { title: "3 WEEKS STRONG", subtitle: "21 days. Science says that's a habit. You're wired differently now." },
+  4: { title: "HALFWAY THERE", subtitle: "30 days of relentless discipline. The other half is yours to take." },
+  5: { title: "WEEK 5 BEAST", subtitle: "Most people dream about this. You're living it." },
+  6: { title: "6 WEEKS LOCKED IN", subtitle: "Your mind is iron. Your body is following." },
+  7: { title: "FINAL WEEK", subtitle: "One week left. This is what legends are made of. Finish it." },
+  8: { title: "75 HARD COMPLETE", subtitle: "You did what most people only talk about. Elite." },
+};
 
-:root {
-  --bg: #000000;
-  --panel: rgba(8, 8, 8, 0.96);
-  --panel-2: rgba(20, 5, 5, 0.86);
-  --border: rgba(127, 29, 29, 0.72);
-  --border-soft: rgba(127, 29, 29, 0.45);
-  --text: #ffe8e8;
-  --muted: rgba(255, 214, 214, 0.68);
-  --muted-2: rgba(252, 165, 165, 0.68);
-  --red: #dc2626;
-  --red-soft: rgba(220, 38, 38, 0.22);
-  --red-bright: #f87171;
-  --black-glass: rgba(0, 0, 0, 0.55);
-  --shadow: 0 20px 50px rgba(127, 29, 29, 0.18);
-  --radius: 30px;
-  --font: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-}
+const habitColumns = [
+  { key: "photo",    icon: Camera,        label: "Progress Photo" },
+  { key: "workout1", icon: Dumbbell,      label: "Workout 1" },
+  { key: "diet",     icon: Utensils,      label: "Diet" },
+  { key: "workout2", icon: TreeDeciduous, label: "Outdoor Workout" },
+  { key: "read",     icon: BookOpen,      label: "Read" },
+  { key: "water",    icon: Droplets,      label: "Water" },
+] as const;
 
-* { box-sizing: border-box; }
-html, body, #root { height: 100%; }
-body {
-  margin: 0;
-  background: var(--bg);
-  color: var(--text);
-  font-family: var(--font);
-  overflow-x: hidden;
-}
-button, input { font: inherit; }
-button { cursor: pointer; }
+const weekdayNames = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
 
-.app-shell {
-  position: relative;
-  min-height: 100vh;
-  overflow: hidden;
-  background: #000;
-  color: var(--text);
-}
-.background-noise {
-  pointer-events: none;
-  position: absolute;
-  inset: 0;
-  opacity: 0.055;
-  background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.55) 1px, transparent 0);
-  background-size: 18px 18px;
-}
-.background-glow {
-  pointer-events: none;
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(circle at top, rgba(127,29,29,0.24), transparent 38%),
-    radial-gradient(circle at bottom, rgba(69,10,10,0.28), transparent 42%);
-}
-.page {
-  position: relative;
-  max-width: 1900px;
-  margin: 0 auto;
-  padding: 16px 12px 28px;
-}
-.hero-card {
-  overflow: hidden;
-  border-radius: var(--radius);
-  border: 1px solid var(--border);
-  background: linear-gradient(135deg, #000 0%, #0c0a0a 45%, #200606 100%);
-  box-shadow: 0 20px 60px rgba(127,29,29,0.24);
-}
-.hero-header {
-  border-bottom: 1px solid var(--border);
-  padding: 20px 18px;
-}
-.pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  border-radius: 999px;
-  border: 1px solid rgba(153, 27, 27, 0.75);
-  background: rgba(127,29,29,0.22);
-  padding: 6px 12px;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.35em;
-  text-transform: uppercase;
-  color: #fca5a5;
-}
-.mini-icon {
-  width: 16px;
-  height: 16px;
-}
-.hero-title {
-  margin: 12px 0 0;
-  font-size: clamp(28px, 4vw, 42px);
-  line-height: 1.05;
-  font-weight: 900;
-  letter-spacing: 0.18em;
-  color: #fff;
-}
-.hero-body {
-  border-top: 1px solid rgba(127,29,29,0.28);
-  border-bottom: 1px solid rgba(127,29,29,0.28);
-  background: rgba(0,0,0,0.2);
-  padding: 16px 18px 18px;
-  backdrop-filter: blur(2px);
-}
-.timeline-card {
-  margin-bottom: 16px;
-  border-radius: 16px;
-  border: 1px solid var(--border);
-  background: linear-gradient(90deg, #000 0%, rgba(127,29,29,0.5) 50%, #000 100%);
-  padding: 16px;
-  box-shadow: 0 8px 24px rgba(127,29,29,0.14);
-  backdrop-filter: blur(12px);
-}
-.timeline-row {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-.mini-label {
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.34em;
-  color: rgba(252,165,165,0.72);
-}
-.timeline-day {
-  margin-top: 10px;
-  font-size: 24px;
-  line-height: 1;
-  font-weight: 900;
-  letter-spacing: 0.16em;
-  color: #fff;
-}
-.timeline-bars {
-  display: grid;
-  grid-template-columns: repeat(15, minmax(0, 1fr));
-  gap: 6px;
-  flex: 1;
-}
-.timeline-bar {
-  height: 12px;
-  border-radius: 999px;
-  border: 1px solid rgba(69,10,10,0.7);
-  background: #000;
-}
-.timeline-bar.filled {
-  border-color: rgba(248,113,113,0.8);
-  background: linear-gradient(90deg, #b91c1c 0%, #ef4444 100%);
-  box-shadow: 0 0 10px rgba(220,38,38,0.35);
-}
-.summary-cards {
-  display: grid;
-  gap: 12px;
-}
-.summary-card {
-  border-radius: 16px;
-  border: 1px solid rgba(127,29,29,0.45);
-  background: linear-gradient(135deg, #000 0%, rgba(9,9,11,0.95) 55%, rgba(69,10,10,0.8) 100%);
-  color: var(--text);
-  box-shadow: 0 8px 24px rgba(127,29,29,0.14);
-  backdrop-filter: blur(14px);
-}
-.summary-card-content {
-  position: relative;
-  overflow: hidden;
-  padding: 16px;
-}
-.summary-card-content::before {
-  content: "";
-  pointer-events: none;
-  position: absolute;
-  inset: 0;
-  opacity: 0.08;
-  background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.35) 1px, transparent 0);
-  background-size: 18px 18px;
-}
-.summary-card-content::after {
-  content: "";
-  pointer-events: none;
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(127,29,29,0.15), transparent 40%, rgba(127,29,29,0.08));
-}
-.summary-grid {
-  position: relative;
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-}
-.summary-title {
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.32em;
-  color: rgba(252,165,165,0.72);
-}
-.summary-value {
-  margin-top: 8px;
-  font-size: 34px;
-  font-weight: 900;
-  line-height: 1;
-  color: #fff;
-}
-.summary-subtext {
-  margin-top: 6px;
-  font-size: 14px;
-  color: rgba(255, 212, 212, 0.65);
-}
-.summary-icon-wrap {
-  border-radius: 18px;
-  border: 1px solid rgba(153, 27, 27, 0.7);
-  background: rgba(127,29,29,0.22);
-  padding: 10px;
-  box-shadow: 0 10px 18px rgba(127,29,29,0.16);
-  backdrop-filter: blur(8px);
-}
-.summary-icon {
-  width: 20px;
-  height: 20px;
-  color: #fca5a5;
-}
-.mobile-tip {
-  margin: 16px 0 12px;
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.22em;
-  color: rgba(252,165,165,0.6);
-}
-.sheet-wrap {
-  overflow: auto;
-  border-radius: var(--radius);
-  border: 1px solid var(--border);
-  background: rgba(0,0,0,0.9);
-  box-shadow: 0 18px 50px rgba(127,29,29,0.22);
-  backdrop-filter: blur(14px);
-  margin: 0 12px;
-}
-.sheet-inner {
-  width: fit-content;
-  min-width: fit-content;
-}
-.sheet-banner, .sheet-footer {
-  border-bottom: 1px solid var(--border);
-  background: linear-gradient(90deg, #000 0%, #3b0707 50%, #000 100%);
-  padding: 12px 16px;
-  text-align: center;
-  font-size: 15px;
-  font-weight: 900;
-  letter-spacing: 0.42em;
-  text-transform: uppercase;
-  color: var(--text);
-}
-.sheet-footer {
-  border-top: 1px solid var(--border);
-  border-bottom: 0;
-  font-size: 12px;
-  letter-spacing: 0.55em;
-  color: #fecaca;
-}
-.sheet-grid {
-  display: grid;
-  grid-template-columns: 80px 60px 80px repeat(6, 40px) 80px 110px 80px 70px;
-}
-.sheet-grid.header {
-  border-bottom: 1px solid var(--border);
-}
-.sheet-cell {
-  border-right: 1px solid rgba(69,10,10,0.82);
-  border-bottom: 1px solid rgba(69,10,10,0.82);
-  padding: 0 4px;
-}
-.sheet-cell.head {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 40px;
-  background: linear-gradient(180deg, #450a0a 0%, #000 65%, #000 100%);
-  color: var(--text);
-  font-size: 11px;
-  font-weight: 900;
-}
-.sheet-cell.body {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 52px;
-  background: #000;
-  color: var(--text);
-  font-size: 11px;
-  font-weight: 600;
-  transition: all .2s ease;
-}
-.head-icon-cell {
-  pointer-events: none;
-}
-.head-icon {
-  width: 16px;
-  height: 16px;
-  color: #fca5a5;
-}
-.zebra-a { background: #000 !important; }
-.zebra-b { background: rgba(69,10,10,0.18) !important; }
-.future-row {
-  background: rgba(0,0,0,0.6) !important;
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-.today-row {
-  background: rgba(185,28,28,0.28) !important;
-  box-shadow: inset 0 0 0 1.5px rgba(248,113,113,0.6), inset 0 0 32px rgba(185,28,28,0.25) !important;
-  animation: today-pulse 2.5s ease-in-out infinite;
-}
-@keyframes today-pulse {
-  0%, 100% { box-shadow: inset 0 0 0 1.5px rgba(248,113,113,0.6), inset 0 0 32px rgba(185,28,28,0.25); }
-  50% { box-shadow: inset 0 0 0 1.5px rgba(248,113,113,1), inset 0 0 44px rgba(185,28,28,0.45); }
-}
-.active-row {
-  background: rgba(69,10,10,0.42) !important;
-  box-shadow: inset 0 0 0 1px rgba(248,113,113,0.5), inset 0 0 22px rgba(127,29,29,0.28);
-}
-.complete-row {
-  background: rgba(127,29,29,0.30) !important;
-  box-shadow: inset 0 0 0 1px rgba(248,113,113,0.22), inset 0 0 28px rgba(185,28,28,0.22);
-}
-.merged-week {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 392px;
-  border-right: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
-  background: linear-gradient(180deg, #450a0a 0%, #000 45%, #000 100%);
-}
-.vertical-week {
-  writing-mode: vertical-rl;
-  transform: rotate(180deg);
-  text-align: center;
-  font-size: 13px;
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: 0.2em;
-  color: var(--text);
-}
-.count-cell {
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  gap: 5px;
-  padding: 10px 6px;
-  min-height: 64px;
-}
-.count-text {
-  line-height: 1.15;
-  font-size: 12px;
-  text-align: center;
-}
-.lock-btn {
-  display: flex;
-  width: 22px;
-  height: 22px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 999px;
-  border: 1px solid rgba(127,29,29,0.85);
-  background: rgba(0,0,0,0.7);
-  color: #fecaca;
-  transition: all .2s ease;
-  flex-shrink: 0;
-}
-.lock-btn:hover {
-  border-color: #ef4444;
-  background: rgba(69,10,10,0.4);
-}
-.lock-btn.locked {
-  border-color: rgba(252,165,165,0.8);
-  background: rgba(220,38,38,0.25);
-  color: #fff;
-  box-shadow: 0 0 10px rgba(220,38,38,0.25);
-}
-.lock-icon { width: 12px; height: 12px; }
-.badge-row {
-  margin-top: 0;
-  border-radius: 999px;
-  border: 1px solid rgba(248,113,113,0.4);
-  background: rgba(220,38,38,0.20);
-  padding: 2px 7px;
-  font-size: 8px;
-  font-weight: 900;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  text-align: center;
-  color: #ffe4e6;
-  box-shadow: 0 0 12px rgba(220,38,38,0.25);
-}
-.badge-row.muted {
-  border-color: rgba(248,113,113,0.35);
-  background: rgba(0,0,0,0.70);
-  box-shadow: 0 0 10px rgba(220,38,38,0.2);
-}
-.habit-btn {
-  display: flex;
-  width: 20px;
-  height: 20px;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid rgba(127,29,29,0.8);
-  background: transparent;
-  color: #fecaca;
-  font-size: 12px;
-  font-weight: 900;
-  transition: all .2s ease;
-}
-.habit-btn:hover { border-color: #ef4444; background: rgba(69,10,10,0.3); }
-.habit-btn.checked {
-  border-color: #fee2e2;
-  background: #dc2626;
-  color: white;
-  box-shadow: 0 0 14px rgba(220,38,38,0.35);
-}
-.habit-btn.disabled,
-.photo-btn.disabled,
-.input-base.disabled {
-  cursor: not-allowed;
-  opacity: .55;
-}
-.photo-btn {
-  position: relative;
-  display: flex;
-  width: 32px;
-  height: 32px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 12px;
-  border: 1px solid rgba(127,29,29,0.8);
-  background: transparent;
-  color: #fecaca;
-  transition: all .3s ease;
-}
-.photo-btn:hover { border-color: #ef4444; background: rgba(69,10,10,0.3); }
-.photo-btn.has-photo {
-  border-color: #fecaca;
-  background: rgba(220,38,38,0.20);
-  color: white;
-  box-shadow: 0 0 18px rgba(220,38,38,0.28);
-}
-.photo-thumb {
-  width: 100%;
-  height: 100%;
-  border-radius: 10px;
-  object-fit: cover;
-}
-.photo-placeholder-icon {
-  width: 16px;
-  height: 16px;
-  transition: all .3s ease;
-}
-.photo-btn:hover .photo-placeholder-icon {
-  transform: scale(1.1);
-  filter: drop-shadow(0 0 10px rgba(248,113,113,0.85));
-}
-.hidden-input { display: none; }
-.metric-pad { padding: 8px; }
-.input-base {
-  width: 100%;
-  height: 36px;
-  border-radius: 8px;
-  border: 1px solid rgba(127,29,29,0.7);
-  background: #000;
-  color: var(--text);
-  text-align: center;
-  box-shadow: inset 0 3px 10px rgba(127,29,29,0.2);
-  outline: none;
-}
-.input-base::placeholder { color: rgba(252,165,165,0.35); }
-.input-base:focus {
-  border-color: #ef4444;
-  box-shadow: inset 0 3px 10px rgba(127,29,29,0.2), 0 0 0 2px rgba(220,38,38,0.22);
-}
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  border-radius: 16px;
-  border: 1px solid #b91c1c;
-  background: #dc2626;
-  color: #fff;
-  padding: 12px 16px;
-  font-weight: 700;
-}
-.btn:hover { background: #ef4444; }
-.btn-outline {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  border-radius: 16px;
-  border: 1px solid rgba(127,29,29,0.85);
-  background: transparent;
-  color: var(--text);
-  padding: 12px 16px;
-  font-weight: 700;
-}
-.btn-outline:hover { background: rgba(69,10,10,0.35); }
-.w-full { width: 100%; }
+// ─── Types ────────────────────────────────────────────────────────────────────
+type HabitKey = (typeof habitColumns)[number]["key"];
 
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 50;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-  background: rgba(0,0,0,0.7);
-  backdrop-filter: blur(6px);
+type SleepData = {
+  score: number | null;
+  durationSeconds: number;
+  startTime: string | null;
+  endTime: string | null;
+  deepSeconds: number;
+  lightSeconds: number;
+  remSeconds: number;
+  awakeSeconds: number;
+  averageSpO2: number | null;
+  averageHrv: number | null;
+  restingHeartRate: number | null;
+  bodyBattery: number | null;
+};
+
+type TrackerRow = {
+  id: number; date: string; dateLabel: string; day: string; countdown: string;
+  photo: boolean; photoUrl: string; workout1: boolean; diet: boolean;
+  workout2: boolean; read: boolean; water: boolean;
+  weight: string; calories: string; steps: string; locked: boolean;
+  sleepData: SleepData | null;
+};
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function formatDateLabel(date: Date) {
+  return new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short" }).format(date).replace(" ", "-");
 }
-.modal-card {
-  position: relative;
-  width: min(100%, 430px);
-  overflow: hidden;
-  border-radius: 28px;
-  border: 1px solid var(--border);
-  background: linear-gradient(135deg, #000 0%, rgba(9,9,11,0.95) 55%, rgba(69,10,10,0.82) 100%);
-  color: var(--text);
-  box-shadow: 0 24px 60px rgba(127,29,29,0.28);
+function getStartDate(): string {
+  return localStorage.getItem(START_DATE_KEY) || "2026-04-06";
 }
-.modal-card::before {
-  content: "";
-  pointer-events: none;
-  position: absolute;
-  inset: 0;
-  opacity: 0.08;
-  background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.4) 1px, transparent 0);
-  background-size: 18px 18px;
+function createRows(startDateString?: string): TrackerRow[] {
+  const s = startDateString || getStartDate();
+  const start = new Date(`${s}T00:00:00`);
+  return Array.from({ length: TOTAL_DAYS }, (_, i) => {
+    const current = new Date(start);
+    current.setDate(start.getDate() + i);
+    const localDate = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, "0")}-${String(current.getDate()).padStart(2, "0")}`;
+    return {
+      id: i + 1, date: localDate,
+      dateLabel: formatDateLabel(current), day: weekdayNames[current.getDay()],
+      countdown: `Day ${i + 1}`, photo: false, photoUrl: "", workout1: false,
+      diet: false, workout2: false, read: false, water: false,
+      weight: "", calories: "", steps: "", locked: false, sleepData: null,
+    };
+  });
 }
-.modal-header {
-  position: relative;
-  border-bottom: 1px solid var(--border);
-  padding: 16px 20px;
+function rowHasData(row: TrackerRow) {
+  return habitColumns.some((h) => row[h.key]) || Boolean(row.photoUrl) ||
+    row.weight.trim() !== "" || row.calories.trim() !== "" || row.steps.trim() !== "";
 }
-.icon-close-btn {
-  position: absolute;
-  right: 16px;
-  top: 16px;
-  display: flex;
-  width: 36px;
-  height: 36px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 999px;
-  border: 1px solid rgba(127,29,29,0.72);
-  background: rgba(127,29,29,0.22);
-  color: #fecaca;
+function isRowComplete(row: TrackerRow) {
+  return habitColumns.every((h) => row[h.key]);
 }
-.icon-close-btn:hover { background: rgba(153,27,27,0.5); color: white; }
-.modal-title {
-  margin: 10px 0 0;
-  font-size: 28px;
-  line-height: 1.1;
-  font-weight: 900;
-  letter-spacing: 0.14em;
-  color: #fff;
+function compressImage(file: File, maxSize = 1200, quality = 0.82): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        const ctx = canvas.getContext("2d");
+        if (!ctx) { reject(new Error("Canvas error")); return; }
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL("image/jpeg", quality));
+      };
+      img.onerror = () => reject(new Error("Image load failed"));
+      img.src = String(reader.result);
+    };
+    reader.onerror = () => reject(new Error("File read failed"));
+    reader.readAsDataURL(file);
+  });
 }
-.modal-copy {
-  margin: 10px 0 0;
-  font-size: 14px;
-  color: rgba(255, 212, 212, 0.72);
+function formatDuration(seconds: number): string {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+  if (h > 0) return `${h}h ${m}m`;
+  return `${m}m ${s}s`;
 }
-.modal-stats {
-  position: relative;
-  display: grid;
-  gap: 12px;
-  padding: 20px;
+function formatDistance(meters: number): string {
+  if (meters >= 1000) return `${(meters / 1000).toFixed(2)} km`;
+  return `${Math.round(meters)} m`;
 }
-.modal-stat {
-  border-radius: 18px;
-  border: 1px solid rgba(127,29,29,0.72);
-  background: rgba(0,0,0,0.5);
-  padding: 16px;
-  text-align: center;
-  backdrop-filter: blur(8px);
+function formatSleepDuration(seconds: number): string {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  return `${h}h ${m}m`;
 }
-.modal-stat-value {
-  margin-top: 10px;
-  font-size: 30px;
-  line-height: 1;
-  font-weight: 900;
-  color: #fff;
+function formatTime(ts: string | null): string {
+  if (!ts) return "—";
+  return new Date(ts).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
 }
-.modal-footer {
-  position: relative;
-  padding: 0 20px 20px;
+function getSleepScoreColor(score: number | null): string {
+  if (!score) return "rgba(252,165,165,0.4)";
+  if (score >= 80) return "#4ade80";
+  if (score >= 60) return "#fbbf24";
+  return "#f87171";
+}
+function getActivityEmoji(type: string): string {
+  const t = (type || "").toLowerCase();
+  if (t.includes("run")) return "🏃";
+  if (t.includes("cycling") || t.includes("bike")) return "🚴";
+  if (t.includes("swim")) return "🏊";
+  if (t.includes("walk")) return "🚶";
+  if (t.includes("hike")) return "🥾";
+  if (t.includes("strength") || t.includes("cardio") || t.includes("fitness") || t.includes("weight")) return "🏋️";
+  if (t.includes("yoga")) return "🧘";
+  return "⚡";
 }
 
-@media (min-width: 768px) {
-  .page { padding: 16px 16px 32px; }
-  .hero-header { padding: 22px 24px; }
-  .hero-body { padding: 16px 24px 20px; }
-  .summary-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .modal-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+// ─── Sleep Popup ──────────────────────────────────────────────────────────────
+function SleepPopup({ sleep, dateLabel, onClose }: { sleep: SleepData; dateLabel: string; onClose: () => void }) {
+  const total = sleep.durationSeconds || 1;
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.95)", display: "flex", flexDirection: "column" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 18px", borderBottom: "1px solid rgba(127,29,29,0.5)" }}>
+        <button onClick={onClose} style={{ width: 38, height: 38, borderRadius: 12, background: "rgba(127,29,29,0.25)", border: "1px solid rgba(127,29,29,0.72)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fca5a5" }}>
+          <ArrowLeft style={{ width: 18, height: 18 }} />
+        </button>
+        <div style={{ textAlign: "center" }}>
+          <p style={{ margin: 0, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(252,165,165,0.5)" }}>Sleep Analysis</p>
+          <p style={{ margin: "2px 0 0", fontSize: 14, fontWeight: 700, color: "#fff" }}>{dateLabel}</p>
+        </div>
+        <div style={{ width: 38 }} />
+      </div>
+      <div style={{ flex: 1, overflowY: "auto", padding: "20px 18px" }}>
+        <div style={{ textAlign: "center", marginBottom: 24 }}>
+          <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 100, height: 100, borderRadius: "50%", border: `4px solid ${getSleepScoreColor(sleep.score)}`, marginBottom: 12 }}>
+            <div>
+              <p style={{ margin: 0, fontSize: 36, fontWeight: 900, color: getSleepScoreColor(sleep.score) }}>{sleep.score ?? "—"}</p>
+              <p style={{ margin: 0, fontSize: 10, color: "rgba(252,165,165,0.5)", letterSpacing: "0.1em" }}>SCORE</p>
+            </div>
+          </div>
+          <p style={{ margin: 0, fontSize: 22, fontWeight: 700, color: "#fff" }}>{formatSleepDuration(sleep.durationSeconds)}</p>
+          <p style={{ margin: "4px 0 0", fontSize: 13, color: "rgba(252,165,165,0.5)" }}>{formatTime(sleep.startTime)} → {formatTime(sleep.endTime)}</p>
+        </div>
+        <div style={{ marginBottom: 20 }}>
+          <p style={{ margin: "0 0 8px", fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(252,165,165,0.5)" }}>Sleep Stages</p>
+          <div style={{ display: "flex", height: 16, borderRadius: 8, overflow: "hidden", gap: 2 }}>
+            {[
+              { seconds: sleep.deepSeconds, color: "#3b82f6" },
+              { seconds: sleep.lightSeconds, color: "#818cf8" },
+              { seconds: sleep.remSeconds, color: "#a78bfa" },
+              { seconds: sleep.awakeSeconds, color: "rgba(255,255,255,0.15)" },
+            ].map((stage, i) => (
+              <div key={i} style={{ flex: stage.seconds / total, background: stage.color, minWidth: stage.seconds > 0 ? 4 : 0 }} />
+            ))}
+          </div>
+          <div style={{ display: "flex", gap: 12, marginTop: 10, flexWrap: "wrap" }}>
+            {[
+              { seconds: sleep.deepSeconds, color: "#3b82f6", label: "Deep" },
+              { seconds: sleep.lightSeconds, color: "#818cf8", label: "Light" },
+              { seconds: sleep.remSeconds, color: "#a78bfa", label: "REM" },
+              { seconds: sleep.awakeSeconds, color: "rgba(255,255,255,0.3)", label: "Awake" },
+            ].map((stage) => (
+              <div key={stage.label} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <div style={{ width: 10, height: 10, borderRadius: 2, background: stage.color }} />
+                <span style={{ fontSize: 12, color: "rgba(252,165,165,0.7)" }}>{stage.label}: {formatSleepDuration(stage.seconds)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          {[
+            { label: "Avg SpO2", value: sleep.averageSpO2 ? `${sleep.averageSpO2.toFixed(1)}%` : "—" },
+            { label: "Avg HRV", value: sleep.averageHrv ? `${Math.round(sleep.averageHrv)} ms` : "—" },
+            { label: "Resting HR", value: sleep.restingHeartRate ? `${sleep.restingHeartRate} bpm` : "—" },
+            { label: "Body Battery", value: sleep.bodyBattery ? `+${sleep.bodyBattery}` : "—" },
+          ].map((stat) => (
+            <div key={stat.label} style={{ background: "linear-gradient(135deg,#0a0000,#1a0404)", border: "1px solid rgba(127,29,29,0.4)", borderRadius: 14, padding: "14px 16px" }}>
+              <p style={{ margin: 0, fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: "rgba(252,165,165,0.45)" }}>{stat.label}</p>
+              <p style={{ margin: "6px 0 0", fontSize: 22, fontWeight: 700, color: "#fff" }}>{stat.value}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </motion.div>
+  );
 }
-@media (min-width: 1280px) {
-  .summary-cards { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-  .timeline-row { flex-direction: row; align-items: center; justify-content: space-between; }
+
+// ─── Garmin Workout Drawer ────────────────────────────────────────────────────
+function GarminWorkoutDrawer({ date, dateLabel, onClose, onSync }: {
+  date: string; dateLabel: string; onClose: () => void;
+  onSync: (calories: string, w1: boolean, w2: boolean) => void;
+}) {
+  const [activities, setActivities] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch(`/api/garmin-activities?date=${date}`)
+      .then(r => r.json())
+      .then(d => setActivities(d.activities || []))
+      .catch(e => setError(e.message))
+      .finally(() => setLoading(false));
+  }, [date]);
+
+  const totalCalories = activities.reduce((s, a) => s + (a.calories || 0), 0);
+  const hasOutdoor = activities.some(a => a.isOutdoor);
+
+  return (
+    <motion.div initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }}
+      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+      style={{ position: "fixed", inset: 0, zIndex: 95, background: "#000", display: "flex", flexDirection: "column" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 18px", borderBottom: "1px solid rgba(127,29,29,0.72)", background: "linear-gradient(180deg,rgba(69,10,10,0.5) 0%,transparent 100%)" }}>
+        <button onClick={onClose} style={{ width: 38, height: 38, borderRadius: 12, background: "rgba(127,29,29,0.25)", border: "1px solid rgba(127,29,29,0.72)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fca5a5" }}>
+          <ArrowLeft style={{ width: 18, height: 18 }} />
+        </button>
+        <div style={{ textAlign: "center" }}>
+          <p style={{ margin: 0, fontSize: 11, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(252,165,165,0.6)" }}>Garmin Activities</p>
+          <p style={{ margin: "2px 0 0", fontSize: 14, fontWeight: 700, color: "#fff" }}>{dateLabel}</p>
+        </div>
+        <div style={{ width: 38 }} />
+      </div>
+      <div style={{ flex: 1, overflowY: "auto", padding: "16px 16px 120px" }}>
+        {loading && (
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: 200, gap: 16 }}>
+            <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+              style={{ width: 32, height: 32, border: "3px solid rgba(127,29,29,0.3)", borderTop: "3px solid #dc2626", borderRadius: "50%" }} />
+            <p style={{ color: "rgba(252,165,165,0.5)", fontSize: 13 }}>Fetching from Garmin...</p>
+          </div>
+        )}
+        {error && (
+          <div style={{ background: "rgba(220,38,38,0.1)", border: "1px solid rgba(220,38,38,0.3)", borderRadius: 14, padding: 16 }}>
+            <p style={{ margin: 0, color: "#f87171", fontSize: 13 }}>{error}</p>
+          </div>
+        )}
+        {!loading && !error && activities.length === 0 && (
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: 200, gap: 12 }}>
+            <span style={{ fontSize: 48 }}>🏋️</span>
+            <p style={{ color: "rgba(252,165,165,0.5)", fontSize: 14, textAlign: "center" }}>No activities found for this day</p>
+          </div>
+        )}
+        {!loading && activities.map((a, i) => (
+          <motion.div key={a.id || i} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}
+            style={{ background: "linear-gradient(135deg,#0a0000,#1a0404)", border: "1px solid rgba(127,29,29,0.5)", borderRadius: 18, padding: 18, marginBottom: 12 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+              <div style={{ width: 44, height: 44, borderRadius: 12, background: "rgba(127,29,29,0.3)", border: "1px solid rgba(127,29,29,0.5)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>
+                {getActivityEmoji(a.type)}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.name || a.type}</p>
+                <p style={{ margin: "3px 0 0", fontSize: 11, color: "rgba(252,165,165,0.55)", letterSpacing: "0.06em" }}>
+                  {a.type} · {a.startTime ? new Date(a.startTime).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) : ""}
+                </p>
+              </div>
+              {a.isOutdoor && (
+                <div style={{ background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.3)", borderRadius: 8, padding: "3px 8px" }}>
+                  <p style={{ margin: 0, fontSize: 9, fontWeight: 700, color: "#4ade80", letterSpacing: "0.1em" }}>OUTDOOR</p>
+                </div>
+              )}
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8 }}>
+              {[
+                { label: "Duration", value: formatDuration(a.movingDurationSeconds || a.durationSeconds || 0) },
+                { label: "Distance", value: a.distanceMeters > 0 ? formatDistance(a.distanceMeters) : "—" },
+                { label: "Calories", value: a.calories ? `${a.calories} kcal` : "—" },
+                { label: "Avg HR", value: a.averageHR ? `${a.averageHR} bpm` : "—" },
+                { label: "Max HR", value: a.maxHR ? `${a.maxHR} bpm` : "—" },
+                { label: "Elevation", value: a.elevationGain > 0 ? `${Math.round(a.elevationGain)} m` : "—" },
+                { label: "Training Effect", value: a.trainingEffect ? a.trainingEffect.toFixed(1) : "—" },
+                { label: "VO2 Max", value: a.vo2max ? a.vo2max.toFixed(1) : "—" },
+              ].map((stat) => (
+                <div key={stat.label} style={{ background: "rgba(0,0,0,0.4)", borderRadius: 10, padding: "10px 8px", textAlign: "center" }}>
+                  <p style={{ margin: 0, fontSize: 9, color: "rgba(252,165,165,0.45)", letterSpacing: "0.1em", textTransform: "uppercase" }}>{stat.label}</p>
+                  <p style={{ margin: "4px 0 0", fontSize: 13, fontWeight: 700, color: "#fff" }}>{stat.value}</p>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        ))}
+      </div>
+      {!loading && activities.length > 0 && (
+        <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, padding: 16, background: "linear-gradient(0deg,#000 60%,transparent)", borderTop: "1px solid rgba(127,29,29,0.3)" }}>
+          <motion.button whileTap={{ scale: 0.97 }}
+            onClick={() => { onSync(totalCalories > 0 ? String(totalCalories) : "", activities.length >= 1, hasOutdoor); onClose(); }}
+            style={{ width: "100%", padding: 16, background: "linear-gradient(135deg,#7f1d1d,#dc2626)", border: "1px solid rgba(248,113,113,0.35)", borderRadius: 16, color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
+            <RefreshCw style={{ width: 18, height: 18 }} /> Sync This Day
+          </motion.button>
+          <p style={{ margin: "8px 0 0", textAlign: "center", fontSize: 12, color: "rgba(252,165,165,0.5)" }}>
+            {totalCalories > 0 ? `${totalCalories} cal · ` : ""}{activities.length} workout{activities.length !== 1 ? "s" : ""}
+          </p>
+        </div>
+      )}
+    </motion.div>
+  );
+}
+
+// ─── Date Cell ────────────────────────────────────────────────────────────────
+function DateCell({ row, isToday, rowTone, todayRef }: {
+  row: TrackerRow; isToday: boolean; rowTone: string;
+  todayRef?: React.RefObject<HTMLDivElement>;
+}) {
+  return (
+    <div className={`sheet-cell body date-col ${rowTone}`}>
+      <div ref={todayRef} style={{ textAlign: "center", lineHeight: 1.35 }}>
+        {isToday && <div style={{ fontSize: 8, letterSpacing: "0.2em", textTransform: "uppercase", color: "#f87171", fontWeight: 800, marginBottom: 2 }}>TODAY</div>}
+        <div>{row.dateLabel}</div>
+        <div style={{ fontSize: 11, color: "rgba(252,165,165,0.6)", letterSpacing: "0.06em", marginTop: 2 }}>{row.day}</div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Confetti ─────────────────────────────────────────────────────────────────
+function Confetti({ onDone }: { onDone: () => void }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const particles = Array.from({ length: 120 }, () => ({
+      x: Math.random() * canvas.width, y: -20 - Math.random() * 100,
+      vx: (Math.random() - 0.5) * 4, vy: 2 + Math.random() * 4,
+      color: ["#dc2626","#f87171","#fca5a5","#fff","#fecaca","#ef4444"][Math.floor(Math.random() * 6)],
+      size: 4 + Math.random() * 8, rotation: Math.random() * Math.PI * 2,
+      rotationSpeed: (Math.random() - 0.5) * 0.2,
+    }));
+    let frame = 0;
+    const animate = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles.forEach(p => {
+        p.x += p.vx; p.y += p.vy; p.vy += 0.1; p.rotation += p.rotationSpeed;
+        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rotation);
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.5);
+        ctx.restore();
+      });
+      if (++frame < 120) requestAnimationFrame(animate); else onDone();
+    };
+    animate();
+  }, [onDone]);
+  return <canvas ref={canvasRef} style={{ position: "fixed", inset: 0, zIndex: 200, pointerEvents: "none" }} />;
+}
+
+// ─── Onboarding ───────────────────────────────────────────────────────────────
+function OnboardingScreen({ onComplete }: { onComplete: (name: string, startDate: string) => void }) {
+  const [name, setName] = useState("");
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-${String(today.getDate()).padStart(2,"0")}`;
+  const [startDate, setStartDate] = useState(todayStr);
+  const canProceed = name.trim() && startDate;
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+      style={{ position: "fixed", inset: 0, zIndex: 300, background: "#000", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 32 }}>
+      <div className="background-noise" /><div className="background-glow" />
+      <motion.div initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2, type: "spring", stiffness: 200, damping: 20 }}
+        style={{ position: "relative", zIndex: 1, textAlign: "center", width: "100%", maxWidth: 380 }}>
+        <div className="pill" style={{ display: "inline-flex", marginBottom: 24 }}><Flame style={{ width: 16, height: 16 }} /> Discipline • Consistency • Power</div>
+        <h1 style={{ fontSize: 42, fontWeight: 900, letterSpacing: "0.14em", color: "#fff", margin: "0 0 8px" }}>75 HARD</h1>
+        <p style={{ fontSize: 14, color: "rgba(252,165,165,0.7)", letterSpacing: "0.1em", marginBottom: 32 }}>YOUR TRANSFORMATION BEGINS NOW</p>
+        <div style={{ background: "linear-gradient(135deg,#0c0000,#1a0404)", border: "1px solid rgba(127,29,29,0.72)", borderRadius: 24, padding: 28 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 64, height: 64, borderRadius: "50%", background: "rgba(127,29,29,0.3)", border: "1px solid rgba(127,29,29,0.7)", margin: "0 auto 20px" }}>
+            <User style={{ width: 28, height: 28, color: "#fca5a5" }} />
+          </div>
+          <p style={{ fontSize: 11, letterSpacing: "0.3em", textTransform: "uppercase", color: "rgba(252,165,165,0.6)", marginBottom: 10 }}>What should we call you?</p>
+          <input value={name} onChange={e => setName(e.target.value)} onKeyDown={e => e.key === "Enter" && canProceed && onComplete(name.trim(), startDate)}
+            placeholder="Enter your name" autoFocus
+            style={{ width: "100%", padding: "14px 16px", background: "rgba(0,0,0,0.6)", border: "1px solid rgba(127,29,29,0.6)", borderRadius: 12, color: "#ffe8e8", fontSize: 16, outline: "none", textAlign: "center", letterSpacing: "0.04em", marginBottom: 20 }} />
+          <p style={{ fontSize: 11, letterSpacing: "0.3em", textTransform: "uppercase", color: "rgba(252,165,165,0.6)", marginBottom: 10 }}>Challenge start date</p>
+          <div style={{ position: "relative", marginBottom: 20 }}>
+            <Calendar style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", width: 16, height: 16, color: "#fca5a5", pointerEvents: "none" }} />
+            <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
+              style={{ width: "100%", padding: "14px 16px 14px 40px", background: "rgba(0,0,0,0.6)", border: "1px solid rgba(127,29,29,0.6)", borderRadius: 12, color: "#ffe8e8", fontSize: 15, outline: "none", colorScheme: "dark" }} />
+          </div>
+          <motion.button whileTap={{ scale: 0.97 }} onClick={() => canProceed && onComplete(name.trim(), startDate)}
+            style={{ width: "100%", padding: 16, background: canProceed ? "linear-gradient(135deg,#7f1d1d,#dc2626)" : "rgba(127,29,29,0.2)", border: "1px solid rgba(220,38,38,0.5)", borderRadius: 14, color: canProceed ? "#fff" : "rgba(252,165,165,0.4)", fontSize: 15, fontWeight: 700, letterSpacing: "0.1em", cursor: canProceed ? "pointer" : "default", transition: "all 0.2s" }}>
+            START THE CHALLENGE →
+          </motion.button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+// ─── Photo Gallery ────────────────────────────────────────────────────────────
+function PhotoGalleryModal({ rows, onClose }: { rows: TrackerRow[]; onClose: () => void }) {
+  const photos = rows.filter(r => r.photoUrl);
+  const [current, setCurrent] = useState(0);
+  if (photos.length === 0) return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      style={{ position: "fixed", inset: 0, zIndex: 80, background: "#000", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+      <button onClick={onClose} style={{ position: "absolute", top: 20, left: 18, width: 38, height: 38, borderRadius: 12, background: "rgba(127,29,29,0.25)", border: "1px solid rgba(127,29,29,0.72)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fca5a5" }}><ArrowLeft style={{ width: 18, height: 18 }} /></button>
+      <Images style={{ width: 48, height: 48, color: "rgba(127,29,29,0.6)", marginBottom: 16 }} />
+      <p style={{ color: "rgba(252,165,165,0.6)", fontSize: 14 }}>No progress photos yet</p>
+    </motion.div>
+  );
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      style={{ position: "fixed", inset: 0, zIndex: 80, background: "#000", display: "flex", flexDirection: "column" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 18px", borderBottom: "1px solid rgba(127,29,29,0.72)" }}>
+        <button onClick={onClose} style={{ width: 38, height: 38, borderRadius: 12, background: "rgba(127,29,29,0.25)", border: "1px solid rgba(127,29,29,0.72)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fca5a5" }}><ArrowLeft style={{ width: 18, height: 18 }} /></button>
+        <div style={{ textAlign: "center" }}>
+          <p style={{ margin: 0, fontSize: 12, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(252,165,165,0.7)" }}>Progress Gallery</p>
+          <p style={{ margin: "2px 0 0", fontSize: 13, color: "#fff", fontWeight: 700 }}>{photos[current]?.countdown} — {photos[current]?.dateLabel}</p>
+        </div>
+        <div style={{ fontSize: 12, color: "rgba(252,165,165,0.6)" }}>{current + 1}/{photos.length}</div>
+      </div>
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", position: "relative", padding: "20px 60px" }}>
+        <AnimatePresence mode="wait">
+          <motion.img key={photos[current]?.id} src={photos[current]?.photoUrl}
+            initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -40 }} transition={{ duration: 0.2 }}
+            style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", borderRadius: 20, border: "1px solid rgba(127,29,29,0.5)" }} />
+        </AnimatePresence>
+        {current > 0 && <button onClick={() => setCurrent(c => c - 1)} style={{ position: "absolute", left: 12, width: 40, height: 40, borderRadius: 12, background: "rgba(127,29,29,0.3)", border: "1px solid rgba(127,29,29,0.6)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fca5a5" }}><ChevronLeft style={{ width: 20, height: 20 }} /></button>}
+        {current < photos.length - 1 && <button onClick={() => setCurrent(c => c + 1)} style={{ position: "absolute", right: 12, width: 40, height: 40, borderRadius: 12, background: "rgba(127,29,29,0.3)", border: "1px solid rgba(127,29,29,0.6)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fca5a5" }}><ChevronRight style={{ width: 20, height: 20 }} /></button>}
+      </div>
+      <div style={{ display: "flex", gap: 8, padding: "12px 16px 32px", overflowX: "auto", borderTop: "1px solid rgba(127,29,29,0.4)" }}>
+        {photos.map((p, i) => (
+          <button key={p.id} onClick={() => setCurrent(i)} style={{ width: 52, height: 52, flexShrink: 0, borderRadius: 10, overflow: "hidden", padding: 0, border: i === current ? "2px solid #ef4444" : "2px solid transparent", cursor: "pointer" }}>
+            <img src={p.photoUrl} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          </button>
+        ))}
+      </div>
+    </motion.div>
+  );
+}
+
+// ─── Before/After ─────────────────────────────────────────────────────────────
+function BeforeAfterModal({ rows, onClose }: { rows: TrackerRow[]; onClose: () => void }) {
+  const photos = rows.filter(r => r.photoUrl);
+  const first = photos[0], latest = photos[photos.length - 1];
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      style={{ position: "fixed", inset: 0, zIndex: 85, background: "#000", display: "flex", flexDirection: "column" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 18px", borderBottom: "1px solid rgba(127,29,29,0.72)" }}>
+        <button onClick={onClose} style={{ width: 38, height: 38, borderRadius: 12, background: "rgba(127,29,29,0.25)", border: "1px solid rgba(127,29,29,0.72)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fca5a5" }}><ArrowLeft style={{ width: 18, height: 18 }} /></button>
+        <p style={{ margin: 0, fontSize: 12, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "#ffe8e8" }}>Before vs After</p>
+        <div style={{ width: 38 }} />
+      </div>
+      {photos.length < 2 ? (
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
+          <Layers style={{ width: 48, height: 48, color: "rgba(127,29,29,0.5)" }} />
+          <p style={{ color: "rgba(252,165,165,0.6)", fontSize: 14 }}>{photos.length === 0 ? "No progress photos yet" : "Need at least 2 photos"}</p>
+        </div>
+      ) : (
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: 16, gap: 12, overflow: "hidden" }}>
+          <div style={{ display: "flex", gap: 12 }}>
+            <div style={{ flex: 1, textAlign: "center" }}><span style={{ fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(252,165,165,0.5)" }}>BEFORE</span><p style={{ margin: "3px 0 0", fontSize: 12, color: "#fca5a5", fontWeight: 700 }}>{first.countdown} · {first.dateLabel}</p></div>
+            <div style={{ width: 1, background: "rgba(127,29,29,0.6)" }} />
+            <div style={{ flex: 1, textAlign: "center" }}><span style={{ fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(252,165,165,0.5)" }}>AFTER</span><p style={{ margin: "3px 0 0", fontSize: 12, color: "#fca5a5", fontWeight: 700 }}>{latest.countdown} · {latest.dateLabel}</p></div>
+          </div>
+          <div style={{ flex: 1, display: "flex", gap: 12, overflow: "hidden" }}>
+            <div style={{ flex: 1, borderRadius: 16, overflow: "hidden", border: "1px solid rgba(127,29,29,0.5)" }}><img src={first.photoUrl} style={{ width: "100%", height: "100%", objectFit: "cover" }} /></div>
+            <div style={{ width: 2, background: "linear-gradient(180deg,transparent,rgba(220,38,38,0.8),transparent)", borderRadius: 1 }} />
+            <div style={{ flex: 1, borderRadius: 16, overflow: "hidden", border: "1px solid rgba(127,29,29,0.5)" }}><img src={latest.photoUrl} style={{ width: "100%", height: "100%", objectFit: "cover" }} /></div>
+          </div>
+          <div style={{ textAlign: "center" }}><span style={{ fontSize: 11, color: "rgba(252,165,165,0.4)", letterSpacing: "0.1em" }}>{latest.id - first.id} DAYS OF PROGRESS</span></div>
+        </div>
+      )}
+    </motion.div>
+  );
+}
+
+// ─── Weight Sparkline ─────────────────────────────────────────────────────────
+function WeightSparkline({ rows }: { rows: TrackerRow[] }) {
+  const points = rows.map((r, i) => ({ i, v: parseFloat(r.weight) })).filter(p => !isNaN(p.v) && p.v > 0);
+  if (points.length < 2) return null;
+  const min = Math.min(...points.map(p => p.v)), max = Math.max(...points.map(p => p.v));
+  const range = max - min || 1;
+  const W = 80, H = 28;
+  const d = points.map((p, idx) => `${idx === 0 ? "M" : "L"} ${((p.i / (TOTAL_DAYS - 1)) * W).toFixed(1)} ${(H - ((p.v - min) / range) * H).toFixed(1)}`).join(" ");
+  return (
+    <svg width={W} height={H} style={{ display: "block", marginTop: 8 }}>
+      <path d={d} fill="none" stroke="#ef4444" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx={((points[points.length-1].i / (TOTAL_DAYS-1)) * W).toFixed(1)} cy={(H - ((points[points.length-1].v - min) / range) * H).toFixed(1)} r="2.5" fill="#f87171" />
+    </svg>
+  );
+}
+
+// ─── Animated Counter ─────────────────────────────────────────────────────────
+function AnimatedCounter({ value }: { value: number }) {
+  const [display, setDisplay] = useState(0);
+  useEffect(() => {
+    const start = Date.now(), duration = 800;
+    const tick = () => {
+      const p = Math.min((Date.now() - start) / duration, 1);
+      setDisplay(Math.round(value * (1 - Math.pow(1 - p, 3))));
+      if (p < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }, [value]);
+  return <>{display.toLocaleString()}</>;
+}
+
+// ─── Summary Card ─────────────────────────────────────────────────────────────
+function SummaryCard({ title, value, subtext, icon: Icon, extra }: {
+  title: string; value: string | number; subtext: string;
+  icon: React.ComponentType<{ className?: string }>; extra?: React.ReactNode;
+}) {
+  return (
+    <Card className="summary-card">
+      <CardContent className="summary-card-content">
+        <div className="summary-grid">
+          <div>
+            <div className="summary-title">{title}</div>
+            <div className="summary-value">{typeof value === "number" ? <AnimatedCounter value={value} /> : value}</div>
+            <div className="summary-subtext">{subtext}</div>
+            {extra}
+          </div>
+          <div className="summary-icon-wrap"><Icon className="summary-icon" /></div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── Milestone Screen ─────────────────────────────────────────────────────────
+function MilestoneScreen({ weekNumber, onClose }: { weekNumber: number; onClose: () => void }) {
+  const msg = MILESTONE_MESSAGES[weekNumber] || { title: `WEEK ${weekNumber} DONE`, subtitle: "Keep going. Never stop." };
+  return (
+    <AnimatePresence>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        style={{ position: "fixed", inset: 0, zIndex: 250, background: "#000", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 32 }}>
+        <div className="background-noise" /><div className="background-glow" />
+        <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.1, type: "spring", stiffness: 200, damping: 18 }}
+          style={{ position: "relative", zIndex: 1, textAlign: "center", maxWidth: 380, width: "100%" }}>
+          <motion.div animate={{ rotate: [0,-10,10,-6,6,0] }} transition={{ delay: 0.4, duration: 0.6 }} style={{ fontSize: 72, marginBottom: 16 }}>🏆</motion.div>
+          <div style={{ fontSize: 11, letterSpacing: "0.3em", textTransform: "uppercase", color: "rgba(252,165,165,0.6)", marginBottom: 12 }}>Week {weekNumber} of 75 Hard</div>
+          <h1 style={{ fontSize: 36, fontWeight: 900, letterSpacing: "0.1em", color: "#fff", margin: "0 0 16px", lineHeight: 1.1 }}>{msg.title}</h1>
+          <p style={{ fontSize: 16, color: "rgba(252,165,165,0.8)", lineHeight: 1.6, marginBottom: 40 }}>{msg.subtitle}</p>
+          <motion.button whileTap={{ scale: 0.97 }} onClick={onClose}
+            style={{ width: "100%", padding: 18, background: "linear-gradient(135deg,#7f1d1d,#dc2626)", border: "1px solid rgba(248,113,113,0.35)", borderRadius: 16, color: "#fff", fontSize: 16, fontWeight: 700, letterSpacing: "0.1em", cursor: "pointer" }}>
+            KEEP GOING →
+          </motion.button>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+// ─── Missed Day Banner ────────────────────────────────────────────────────────
+function MissedDayBanner({ missedDay, onDismiss, onMarkComplete }: { missedDay: string; onDismiss: () => void; onMarkComplete: () => void }) {
+  return (
+    <motion.div initial={{ y: -60, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -60, opacity: 0 }} transition={{ type: "spring", stiffness: 260, damping: 22 }}
+      style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 150, padding: "12px 16px", background: "linear-gradient(135deg,#1a0404,#2d0808)", borderBottom: "1px solid rgba(220,38,38,0.4)", display: "flex", alignItems: "center", gap: 12 }}>
+      <div style={{ fontSize: 20 }}>⚠️</div>
+      <div style={{ flex: 1 }}>
+        <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#fff" }}>Yesterday ({missedDay}) wasn't logged</p>
+        <p style={{ margin: "2px 0 0", fontSize: 11, color: "rgba(252,165,165,0.6)" }}>Want to mark it complete?</p>
+      </div>
+      <button onClick={onMarkComplete} style={{ background: "#dc2626", border: "none", borderRadius: 10, padding: "8px 14px", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>Mark Done</button>
+      <button onClick={onDismiss} style={{ background: "transparent", border: "none", color: "rgba(252,165,165,0.5)", cursor: "pointer", padding: 4 }}><X style={{ width: 16, height: 16 }} /></button>
+    </motion.div>
+  );
+}
+
+// ─── Notification Modal ───────────────────────────────────────────────────────
+function NotificationModal({ onClose }: { onClose: () => void }) {
+  const [permission, setPermission] = useState<NotificationPermission>(typeof Notification !== "undefined" ? Notification.permission : "default");
+  const saved = localStorage.getItem(NOTIF_KEY);
+  const parsedSaved = saved ? JSON.parse(saved) : null;
+  const [hour, setHour] = useState(parsedSaved?.hour ?? 20);
+  const [minute, setMinute] = useState(parsedSaved?.minute ?? 0);
+  const [enabled, setEnabled] = useState(parsedSaved?.enabled ?? false);
+  const [isSaved, setIsSaved] = useState(false);
+
+  const requestAndEnable = async () => {
+    if (typeof Notification === "undefined") { alert("Notifications not supported."); return; }
+    const result = await Notification.requestPermission();
+    setPermission(result);
+    if (result === "granted") { setEnabled(true); saveSettings(true); }
+  };
+
+  const saveSettings = (forceEnabled?: boolean) => {
+    const isEnabled = forceEnabled ?? enabled;
+    localStorage.setItem(NOTIF_KEY, JSON.stringify({ hour, minute, enabled: isEnabled }));
+    setIsSaved(true);
+    setTimeout(() => setIsSaved(false), 2000);
+  };
+
+  const displayHour = hour % 12 === 0 ? 12 : hour % 12;
+  const ampm = hour < 12 ? "AM" : "PM";
+
+  return (
+    <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
+      <motion.div onClick={e => e.stopPropagation()} initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", stiffness: 320, damping: 32 }}
+        style={{ width: "100%", maxWidth: 520, margin: "0 auto", background: "linear-gradient(160deg,#0a0000,#140303 60%,#1c0505 100%)", borderRadius: "28px 28px 0 0", border: "1px solid rgba(127,29,29,0.72)", borderBottom: "none", padding: "14px 24px 52px", boxShadow: "0 -20px 60px rgba(127,29,29,0.28)" }}>
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}><div style={{ width: 40, height: 4, borderRadius: 2, background: "rgba(252,165,165,0.25)" }} /></div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 24 }}>
+          <Bell style={{ width: 20, height: 20, color: "#fca5a5" }} />
+          <p style={{ margin: 0, fontSize: 10, letterSpacing: "0.3em", textTransform: "uppercase", color: "rgba(252,165,165,0.6)" }}>Daily Reminder</p>
+        </div>
+        {permission === "denied" ? (
+          <p style={{ color: "#f87171", fontSize: 13 }}>Notifications blocked. Enable in browser settings.</p>
+        ) : permission !== "granted" ? (
+          <motion.button whileTap={{ scale: 0.97 }} onClick={requestAndEnable}
+            style={{ width: "100%", padding: 18, background: "linear-gradient(135deg,#7f1d1d,#b91c1c)", border: "1px solid rgba(248,113,113,0.35)", borderRadius: 16, color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer", marginBottom: 20, display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
+            <Bell style={{ width: 18, height: 18 }} /> Enable Notifications
+          </motion.button>
+        ) : (
+          <>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24, background: "rgba(255,255,255,0.04)", borderRadius: 14, padding: "14px 16px", border: "1px solid rgba(127,29,29,0.4)" }}>
+              <div>
+                <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: "#ffe8e8" }}>Daily reminder</p>
+                <p style={{ margin: "3px 0 0", fontSize: 12, color: "rgba(252,165,165,0.5)" }}>{enabled ? `${displayHour}:${String(minute).padStart(2,"0")} ${ampm}` : "Disabled"}</p>
+              </div>
+              <button onClick={() => setEnabled(!enabled)} style={{ width: 48, height: 26, borderRadius: 13, background: enabled ? "#dc2626" : "rgba(255,255,255,0.1)", border: "none", cursor: "pointer", position: "relative", transition: "background 0.2s" }}>
+                <div style={{ position: "absolute", top: 3, left: enabled ? 25 : 3, width: 20, height: 20, borderRadius: "50%", background: "#fff", transition: "left 0.2s" }} />
+              </button>
+            </div>
+            {enabled && (
+              <div style={{ marginBottom: 24 }}>
+                <div style={{ display: "flex", gap: 12 }}>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ margin: "0 0 6px", fontSize: 11, color: "rgba(252,165,165,0.4)" }}>Hour</p>
+                    <input type="range" min={0} max={23} value={hour} onChange={e => setHour(Number(e.target.value))} style={{ width: "100%", accentColor: "#dc2626" }} />
+                    <p style={{ margin: "4px 0 0", fontSize: 16, fontWeight: 700, color: "#fff", textAlign: "center" }}>{displayHour} {ampm}</p>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ margin: "0 0 6px", fontSize: 11, color: "rgba(252,165,165,0.4)" }}>Minute</p>
+                    <input type="range" min={0} max={59} step={5} value={minute} onChange={e => setMinute(Number(e.target.value))} style={{ width: "100%", accentColor: "#dc2626" }} />
+                    <p style={{ margin: "4px 0 0", fontSize: 16, fontWeight: 700, color: "#fff", textAlign: "center" }}>{String(minute).padStart(2,"0")}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+            <motion.button whileTap={{ scale: 0.97 }} onClick={() => saveSettings()}
+              style={{ width: "100%", padding: 16, background: isSaved ? "rgba(34,197,94,0.2)" : "linear-gradient(135deg,#7f1d1d,#b91c1c)", border: isSaved ? "1px solid rgba(34,197,94,0.5)" : "1px solid rgba(248,113,113,0.35)", borderRadius: 16, color: isSaved ? "#4ade80" : "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer", transition: "all 0.3s" }}>
+              {isSaved ? "✓ Saved!" : "Save Reminder"}
+            </motion.button>
+          </>
+        )}
+        <button onClick={onClose} style={{ marginTop: 12, width: "100%", background: "transparent", border: "1px solid rgba(127,29,29,0.4)", borderRadius: 14, padding: 13, color: "rgba(252,165,165,0.4)", fontSize: 14, cursor: "pointer" }}>Close</button>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+// ─── Photo Source Modal ───────────────────────────────────────────────────────
+function PhotoSourceModal({ onSelect, onClose }: { onSelect: (s: "camera" | "gallery") => void; onClose: () => void }) {
+  return (
+    <AnimatePresence>
+      <motion.div className="modal-overlay" style={{ alignItems: "flex-end", padding: 0 }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
+        <motion.div onClick={e => e.stopPropagation()} initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", stiffness: 320, damping: 32 }}
+          style={{ width: "100%", maxWidth: 520, margin: "0 auto", background: "linear-gradient(160deg,#0a0000,#140303 60%,#1c0505 100%)", borderRadius: "28px 28px 0 0", border: "1px solid rgba(127,29,29,0.72)", borderBottom: "none", padding: "14px 0 48px" }}>
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 24 }}><div style={{ width: 40, height: 4, borderRadius: 2, background: "rgba(252,165,165,0.25)" }} /></div>
+          <p style={{ textAlign: "center", margin: "0 0 28px", fontSize: 10, letterSpacing: "0.34em", textTransform: "uppercase", color: "rgba(252,165,165,0.55)" }}>Add Proof Photo</p>
+          <div style={{ padding: "0 20px", display: "flex", flexDirection: "column", gap: 12 }}>
+            <motion.button whileTap={{ scale: 0.97 }} onClick={() => onSelect("camera")} style={{ background: "linear-gradient(135deg,#7f1d1d,#b91c1c)", border: "1px solid rgba(248,113,113,0.35)", borderRadius: 20, padding: "20px 22px", display: "flex", alignItems: "center", gap: 18, cursor: "pointer", width: "100%" }}>
+              <div style={{ width: 54, height: 54, borderRadius: 16, flexShrink: 0, background: "rgba(255,255,255,0.14)", display: "flex", alignItems: "center", justifyContent: "center" }}><Camera style={{ width: 26, height: 26, color: "#fff" }} /></div>
+              <div style={{ textAlign: "left" }}><p style={{ margin: 0, fontSize: 17, fontWeight: 700, color: "#fff" }}>Take Photo</p><p style={{ margin: "4px 0 0", fontSize: 13, color: "rgba(255,255,255,0.6)" }}>Open camera directly</p></div>
+            </motion.button>
+            <motion.button whileTap={{ scale: 0.97 }} onClick={() => onSelect("gallery")} style={{ background: "rgba(20,5,5,0.9)", border: "1px solid rgba(127,29,29,0.72)", borderRadius: 20, padding: "20px 22px", display: "flex", alignItems: "center", gap: 18, cursor: "pointer", width: "100%" }}>
+              <div style={{ width: 54, height: 54, borderRadius: 16, flexShrink: 0, background: "rgba(127,29,29,0.25)", display: "flex", alignItems: "center", justifyContent: "center" }}><Images style={{ width: 26, height: 26, color: "#fca5a5" }} /></div>
+              <div style={{ textAlign: "left" }}><p style={{ margin: 0, fontSize: 17, fontWeight: 700, color: "#ffe8e8" }}>Choose from Gallery</p><p style={{ margin: "4px 0 0", fontSize: 13, color: "rgba(252,165,165,0.6)" }}>Upload an existing photo</p></div>
+            </motion.button>
+            <button onClick={onClose} style={{ marginTop: 6, width: "100%", background: "transparent", border: "1px solid rgba(127,29,29,0.5)", borderRadius: 16, padding: 15, color: "rgba(252,165,165,0.5)", fontSize: 15, cursor: "pointer" }}>Cancel</button>
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+// ─── Photo Viewer ─────────────────────────────────────────────────────────────
+function PhotoViewerModal({ photo, rowLabel, onClose, onReplace }: { photo: string; rowLabel: string; onClose: () => void; onReplace: () => void }) {
+  return (
+    <AnimatePresence>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ position: "fixed", inset: 0, zIndex: 70, background: "rgba(0,0,0,0.97)", display: "flex", flexDirection: "column" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 18px", borderBottom: "1px solid rgba(127,29,29,0.72)" }}>
+          <button onClick={onClose} style={{ width: 38, height: 38, borderRadius: 12, background: "rgba(127,29,29,0.25)", border: "1px solid rgba(127,29,29,0.72)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fca5a5" }}><ArrowLeft style={{ width: 18, height: 18 }} /></button>
+          <p style={{ margin: 0, fontSize: 13, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "#ffe8e8" }}>{rowLabel}</p>
+          <button onClick={onReplace} style={{ display: "flex", alignItems: "center", gap: 7, background: "rgba(127,29,29,0.25)", border: "1px solid rgba(220,38,38,0.55)", borderRadius: 12, padding: "8px 14px", color: "#f87171", fontSize: 13, fontWeight: 600, cursor: "pointer" }}><RefreshCw style={{ width: 14, height: 14 }} /> Replace</button>
+        </div>
+        <motion.div initial={{ scale: 0.96, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+          <img src={photo} alt="Progress" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", borderRadius: 20, border: "1px solid rgba(127,29,29,0.5)" }} />
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+// ─── Daily Challenge Card ─────────────────────────────────────────────────────
+function DailyChallengeCardModal({ todayIndex, userName, rows, onClose }: { todayIndex: number; userName: string | null; rows: TrackerRow[]; onClose: () => void }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const dayNumber = todayIndex + 1;
+  const quote = DAILY_QUOTES[todayIndex % DAILY_QUOTES.length];
+  const todayRow = rows[todayIndex];
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const W = 1080, H = 1920;
+    canvas.width = W; canvas.height = H;
+    ctx.fillStyle = "#050000"; ctx.fillRect(0, 0, W, H);
+    const topGrad = ctx.createRadialGradient(W/2, 0, 0, W/2, 0, 900);
+    topGrad.addColorStop(0, "rgba(127,29,29,0.7)"); topGrad.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = topGrad; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = "rgba(252,165,165,0.5)"; ctx.font = "500 36px sans-serif"; ctx.textAlign = "center";
+    ctx.fillText("75 HARD CHALLENGE", W/2, 120);
+    if (userName) { ctx.fillStyle = "rgba(252,165,165,0.7)"; ctx.font = "700 44px sans-serif"; ctx.fillText(userName.toUpperCase(), W/2, 185); }
+    ctx.fillStyle = "rgba(255,255,255,0.15)"; ctx.font = "900 100px sans-serif"; ctx.fillText("DAY", W/2, 340);
+    ctx.fillStyle = "#b91c1c"; ctx.font = "900 320px sans-serif"; ctx.fillText(`${dayNumber}`, W/2, 620);
+    ctx.fillStyle = "rgba(252,165,165,0.4)"; ctx.font = "700 64px sans-serif"; ctx.fillText("OF 75", W/2, 720);
+    ctx.strokeStyle = "rgba(127,29,29,0.6)"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(W*0.15, 790); ctx.lineTo(W*0.85, 790); ctx.stroke();
+    const habitLabels = ["Progress Photo","Workout 1","Diet","Outdoor Workout","Read 10 Pages","1 Gallon Water"];
+    habitLabels.forEach((label, i) => {
+      const done = todayRow ? todayRow[habitColumns[i].key] : false;
+      const y = 860 + i * 110;
+      ctx.fillStyle = done ? "rgba(185,28,28,0.3)" : "rgba(255,255,255,0.04)";
+      ctx.beginPath(); ctx.roundRect(W*0.1, y, W*0.8, 86, 20); ctx.fill();
+      ctx.fillStyle = done ? "#dc2626" : "rgba(127,29,29,0.4)";
+      ctx.beginPath(); ctx.roundRect(W*0.1+18, y+18, 50, 50, 12); ctx.fill();
+      ctx.fillStyle = "#fff"; ctx.font = "700 34px sans-serif"; ctx.textAlign = "left";
+      ctx.fillText(done ? "✓" : "–", W*0.1+28, y+54);
+      ctx.fillStyle = done ? "#fff" : "rgba(255,255,255,0.5)"; ctx.font = `${done?"700":"400"} 36px sans-serif`;
+      ctx.fillText(label, W*0.1+90, y+54);
+    });
+    const barY = 860 + 6*110 + 30;
+    ctx.fillStyle = "rgba(255,255,255,0.08)"; ctx.beginPath(); ctx.roundRect(W*0.1, barY, W*0.8, 20, 10); ctx.fill();
+    ctx.fillStyle = "#dc2626"; ctx.beginPath(); ctx.roundRect(W*0.1, barY, W*0.8*(dayNumber/75), 20, 10); ctx.fill();
+    ctx.fillStyle = "rgba(252,165,165,0.5)"; ctx.font = "500 32px sans-serif"; ctx.textAlign = "center";
+    ctx.fillText(`${Math.round((dayNumber/75)*100)}% COMPLETE`, W/2, barY+60);
+    ctx.fillStyle = "rgba(252,165,165,0.35)"; ctx.font = "italic 500 38px sans-serif";
+    const words = quote.split(" "); let line = ""; const lines: string[] = [];
+    words.forEach(w => { const test = line + w + " "; if (ctx.measureText(test).width > W*0.75) { lines.push(line.trim()); line = w + " "; } else line = test; });
+    lines.push(line.trim());
+    lines.forEach((l, i) => ctx.fillText(`"${l}"`, W/2, barY + 110 + i * 52));
+    ctx.fillStyle = "rgba(252,165,165,0.2)"; ctx.font = "500 30px sans-serif"; ctx.fillText("STAY RELENTLESS", W/2, H-60);
+  }, [todayIndex, userName, rows]);
+
+  const handleShare = async () => {
+    const canvas = canvasRef.current; if (!canvas) return;
+    canvas.toBlob(async blob => {
+      if (!blob) return;
+      const file = new File([blob], `75hard-day${dayNumber}.png`, { type: "image/png" });
+      try {
+        if (navigator.share && navigator.canShare({ files: [file] })) await navigator.share({ files: [file], title: `75 Hard — Day ${dayNumber}` });
+        else { const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `75hard-day${dayNumber}.png`; a.click(); }
+      } catch (e) { console.error(e); }
+    }, "image/png");
+  };
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ position: "fixed", inset: 0, zIndex: 90, background: "rgba(0,0,0,0.96)", display: "flex", flexDirection: "column" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 18px", borderBottom: "1px solid rgba(127,29,29,0.72)" }}>
+        <button onClick={onClose} style={{ width: 38, height: 38, borderRadius: 12, background: "rgba(127,29,29,0.25)", border: "1px solid rgba(127,29,29,0.72)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fca5a5" }}><ArrowLeft style={{ width: 18, height: 18 }} /></button>
+        <p style={{ margin: 0, fontSize: 13, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#ffe8e8" }}>Day {dayNumber} Card</p>
+        <motion.button whileTap={{ scale: 0.95 }} onClick={handleShare} style={{ display: "flex", alignItems: "center", gap: 6, background: "linear-gradient(135deg,#7f1d1d,#dc2626)", border: "none", borderRadius: 12, padding: "9px 16px", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer" }}><Share2 style={{ width: 15, height: 15 }} /> Share</motion.button>
+      </div>
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, overflow: "hidden" }}>
+        <canvas ref={canvasRef} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", borderRadius: 12, border: "1px solid rgba(127,29,29,0.4)" }} />
+      </div>
+    </motion.div>
+  );
+}
+
+// ─── Certificate ──────────────────────────────────────────────────────────────
+function CertificateModal({ rows, userName, onClose }: { rows: TrackerRow[]; userName: string | null; onClose: () => void }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const completedDays = rows.filter(isRowComplete).length;
+  const startDate = getStartDate();
+  const endRow = rows[TOTAL_DAYS - 1];
+  const firstW = rows.find(r => r.weight.trim());
+  const lastW = [...rows].reverse().find(r => r.weight.trim());
+  const weightLost = firstW && lastW ? (parseFloat(firstW.weight) - parseFloat(lastW.weight)).toFixed(1) : null;
+
+  useEffect(() => {
+    const canvas = canvasRef.current; if (!canvas) return;
+    const ctx = canvas.getContext("2d"); if (!ctx) return;
+    const W = 1400, H = 1000; canvas.width = W; canvas.height = H;
+    ctx.fillStyle = "#050000"; ctx.fillRect(0, 0, W, H);
+    const grad = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, 700);
+    grad.addColorStop(0, "rgba(127,29,29,0.4)"); grad.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = grad; ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = "rgba(127,29,29,0.8)"; ctx.lineWidth = 3; ctx.strokeRect(30, 30, W-60, H-60);
+    ctx.strokeStyle = "rgba(127,29,29,0.3)"; ctx.lineWidth = 1; ctx.strokeRect(44, 44, W-88, H-88);
+    ctx.fillStyle = "rgba(252,165,165,0.5)"; ctx.font = "500 28px sans-serif"; ctx.textAlign = "center";
+    ctx.fillText("CERTIFICATE OF COMPLETION", W/2, 110);
+    ctx.font = "80px sans-serif"; ctx.fillText("🏆", W/2, 220);
+    ctx.fillStyle = "#fff"; ctx.font = "900 72px sans-serif"; ctx.fillText("75 HARD", W/2, 320);
+    ctx.fillStyle = "#b91c1c"; ctx.font = "900 36px sans-serif"; ctx.fillText("CHALLENGE COMPLETE", W/2, 375);
+    ctx.strokeStyle = "rgba(127,29,29,0.6)"; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(W*0.2, 410); ctx.lineTo(W*0.8, 410); ctx.stroke();
+    ctx.fillStyle = "rgba(252,165,165,0.5)"; ctx.font = "400 28px sans-serif"; ctx.fillText("This certifies that", W/2, 460);
+    ctx.fillStyle = "#fff"; ctx.font = "900 68px sans-serif"; ctx.fillText((userName || "CHAMPION").toUpperCase(), W/2, 540);
+    ctx.fillStyle = "rgba(252,165,165,0.5)"; ctx.font = "400 28px sans-serif"; ctx.fillText("has completed 75 days of relentless discipline", W/2, 590);
+    const stats = [
+      { label: "Days Completed", value: `${completedDays}/75` },
+      { label: "Started", value: new Date(`${startDate}T00:00:00`).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) },
+      { label: "Finished", value: endRow?.dateLabel || "—" },
+      ...(weightLost && Number(weightLost) > 0 ? [{ label: "Weight Lost", value: `${weightLost} kg` }] : []),
+    ];
+    const statW = (W - 120) / stats.length;
+    stats.forEach((s, i) => {
+      const x = 60 + i * statW + statW / 2;
+      ctx.fillStyle = "rgba(127,29,29,0.4)"; ctx.beginPath(); ctx.roundRect(60 + i*statW+10, 630, statW-20, 110, 16); ctx.fill();
+      ctx.fillStyle = "rgba(252,165,165,0.6)"; ctx.font = "500 22px sans-serif"; ctx.textAlign = "center"; ctx.fillText(s.label.toUpperCase(), x, 668);
+      ctx.fillStyle = "#fff"; ctx.font = "700 36px sans-serif"; ctx.fillText(s.value, x, 712);
+    });
+    ctx.fillStyle = "rgba(252,165,165,0.25)"; ctx.font = "400 24px sans-serif"; ctx.fillText("STAY RELENTLESS • 75 HARD CHALLENGE", W/2, 820);
+    ctx.strokeStyle = "rgba(127,29,29,0.4)"; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(W*0.35, 890); ctx.lineTo(W*0.65, 890); ctx.stroke();
+    ctx.fillStyle = "rgba(252,165,165,0.3)"; ctx.font = "400 20px sans-serif"; ctx.fillText("EARNED THROUGH DISCIPLINE", W/2, 920);
+  }, [rows, userName]);
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ position: "fixed", inset: 0, zIndex: 90, background: "rgba(0,0,0,0.96)", display: "flex", flexDirection: "column" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 18px", borderBottom: "1px solid rgba(127,29,29,0.72)" }}>
+        <button onClick={onClose} style={{ width: 38, height: 38, borderRadius: 12, background: "rgba(127,29,29,0.25)", border: "1px solid rgba(127,29,29,0.72)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fca5a5" }}><ArrowLeft style={{ width: 18, height: 18 }} /></button>
+        <p style={{ margin: 0, fontSize: 13, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#ffe8e8" }}>Your Certificate</p>
+        <motion.button whileTap={{ scale: 0.95 }} onClick={() => { const a = document.createElement("a"); a.href = canvasRef.current!.toDataURL("image/png"); a.download = "75hard-certificate.png"; a.click(); }}
+          style={{ display: "flex", alignItems: "center", gap: 6, background: "linear-gradient(135deg,#7f1d1d,#dc2626)", border: "none", borderRadius: 12, padding: "9px 16px", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer" }}><Share2 style={{ width: 15, height: 15 }} /> Download</motion.button>
+      </div>
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, overflow: "hidden" }}>
+        <canvas ref={canvasRef} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", borderRadius: 12, border: "1px solid rgba(127,29,29,0.4)" }} />
+      </div>
+    </motion.div>
+  );
+}
+
+// ─── Widget Export ────────────────────────────────────────────────────────────
+function WidgetExportModal({ rows, todayIndex, userName, onClose }: { rows: TrackerRow[]; todayIndex: number; userName: string | null; onClose: () => void }) {
+  const todayRow = rows[todayIndex];
+  const completedHabits = todayRow ? habitColumns.filter(h => todayRow[h.key]).length : 0;
+  const dayNumber = todayIndex + 1;
+  const scriptableCode = `// 75 Hard Widget - iOS Scriptable
+const w = new ListWidget();
+w.backgroundColor = new Color("#050000");
+w.setPadding(12,14,12,14);
+const h = w.addText("75 HARD");
+h.font = Font.boldSystemFont(11);
+h.textColor = new Color("#b91c1c");
+w.addSpacer(2);
+const d = w.addText("DAY ${dayNumber} / 75");
+d.font = Font.boldSystemFont(22);
+d.textColor = Color.white();
+w.addSpacer(6);
+${habitColumns.map(h => `const r_${h.key} = w.addText("${todayRow?.[h.key] ? "✅" : "⬜"} ${h.label}");
+r_${h.key}.font = Font.systemFont(11);
+r_${h.key}.textColor = ${todayRow?.[h.key] ? "Color.white()" : 'new Color("#fca5a5", 0.4)'};
+w.addSpacer(2);`).join("\n")}
+w.addSpacer(6);
+const p = w.addText("${completedHabits}/${habitColumns.length} today");
+p.font = Font.systemFont(10);
+p.textColor = new Color("#fca5a5", 0.5);
+Script.setWidget(w);
+w.presentSmall();`;
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ position: "fixed", inset: 0, zIndex: 90, background: "#000", display: "flex", flexDirection: "column" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 18px", borderBottom: "1px solid rgba(127,29,29,0.72)" }}>
+        <button onClick={onClose} style={{ width: 38, height: 38, borderRadius: 12, background: "rgba(127,29,29,0.25)", border: "1px solid rgba(127,29,29,0.72)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fca5a5" }}><ArrowLeft style={{ width: 18, height: 18 }} /></button>
+        <p style={{ margin: 0, fontSize: 13, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#ffe8e8" }}>Home Screen Widget</p>
+        <div style={{ width: 38 }} />
+      </div>
+      <div style={{ flex: 1, overflowY: "auto", padding: "20px 18px" }}>
+        <div style={{ background: "linear-gradient(135deg,#050000,#1a0404)", border: "1px solid rgba(127,29,29,0.5)", borderRadius: 20, padding: 20, marginBottom: 20 }}>
+          <p style={{ margin: "0 0 4px", fontSize: 11, fontWeight: 700, color: "#b91c1c" }}>75 HARD</p>
+          <p style={{ margin: "0 0 12px", fontSize: 22, fontWeight: 900, color: "#fff" }}>DAY {dayNumber} / {TOTAL_DAYS}</p>
+          {habitColumns.map(h => (
+            <div key={h.key} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+              <span style={{ fontSize: 14 }}>{todayRow?.[h.key] ? "✅" : "⬜"}</span>
+              <span style={{ fontSize: 12, color: todayRow?.[h.key] ? "#fff" : "rgba(252,165,165,0.35)" }}>{h.label}</span>
+            </div>
+          ))}
+        </div>
+        <p style={{ fontSize: 12, color: "rgba(252,165,165,0.6)", marginBottom: 16, lineHeight: 1.6 }}>Install <strong style={{ color: "#fca5a5" }}>Scriptable</strong> from the App Store, copy the code and create a new script.</p>
+        <div style={{ display: "flex", gap: 10 }}>
+          <motion.button whileTap={{ scale: 0.97 }} onClick={() => navigator.clipboard.writeText(scriptableCode).catch(() => {})}
+            style={{ flex: 1, padding: 14, background: "linear-gradient(135deg,#7f1d1d,#dc2626)", border: "none", borderRadius: 14, color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>Copy Code</motion.button>
+          <motion.button whileTap={{ scale: 0.97 }} onClick={() => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([scriptableCode], { type: "text/plain" })); a.download = "75Hard-Widget.js"; a.click(); }}
+            style={{ flex: 1, padding: 14, background: "rgba(127,29,29,0.2)", border: "1px solid rgba(127,29,29,0.5)", borderRadius: 14, color: "#fca5a5", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>Download .js</motion.button>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// ─── Main App ─────────────────────────────────────────────────────────────────
+export default function App() {
+  const [rows, setRows] = useState<TrackerRow[]>(() => createRows());
+  const [loaded, setLoaded] = useState(false);
+  const [userName, setUserName] = useState<string | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [activeRow, setActiveRow] = useState<number | null>(null);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [darkMode, setDarkMode] = useState(() => (localStorage.getItem("75_hard_theme") || "dark") === "dark");
+  const [milestone, setMilestone] = useState<number | null>(null);
+  const [missedDayIndex, setMissedDayIndex] = useState<number | null>(null);
+  const [showGallery, setShowGallery] = useState(false);
+  const [showBeforeAfter, setShowBeforeAfter] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showDailyCard, setShowDailyCard] = useState(false);
+  const [showCertificate, setShowCertificate] = useState(false);
+  const [showWidget, setShowWidget] = useState(false);
+  const [garminDrawer, setGarminDrawer] = useState<{ date: string; dateLabel: string } | null>(null);
+  const [sleepPopup, setSleepPopup] = useState<{ sleep: SleepData; dateLabel: string } | null>(null);
+  const [photoSourceTarget, setPhotoSourceTarget] = useState<number | null>(null);
+  const [viewingPhotoIndex, setViewingPhotoIndex] = useState<number | null>(null);
+
+  const photoInputRefs = useRef<Record<number, HTMLInputElement | null>>({});
+  const galleryInputRefs = useRef<Record<number, HTMLInputElement | null>>({});
+  const todayRowRef = useRef<HTMLDivElement | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const prevCompletedRef = useRef(0);
+  const openedMilestonesRef = useRef<Set<number>>(new Set());
+
+  // Load saved data
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length === TOTAL_DAYS) setRows(parsed);
+      }
+      const savedUser = localStorage.getItem(USER_KEY);
+      if (savedUser) setUserName(savedUser);
+      else setShowOnboarding(true);
+    } catch { setShowOnboarding(true); }
+    finally { setLoaded(true); }
+  }, []);
+
+  // Save data
+  useEffect(() => {
+    if (!loaded) return;
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(rows)); } catch {}
+  }, [rows, loaded]);
+
+  // Dark mode
+  useEffect(() => {
+    localStorage.setItem("75_hard_theme", darkMode ? "dark" : "light");
+  }, [darkMode]);
+
+  // Scroll to today
+  useEffect(() => {
+    if (!loaded || !todayRowRef.current) return;
+    const t = setTimeout(() => todayRowRef.current?.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" }), 450);
+    return () => clearTimeout(t);
+  }, [loaded]);
+
+  const todayIndex = useMemo(() => {
+    const now = new Date();
+    const start = new Date(`${getStartDate()}T00:00:00`);
+    const diff = Math.floor((new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime() - new Date(start.getFullYear(), start.getMonth(), start.getDate()).getTime()) / 86400000);
+    return diff >= 0 && diff < TOTAL_DAYS ? diff : -1;
+  }, []);
+
+  // Garmin auto-sync
+  useEffect(() => {
+    if (!loaded || todayIndex < 0) return;
+    let synced: string[] = [];
+    try { synced = JSON.parse(localStorage.getItem(GARMIN_SYNC_KEY) || "[]"); } catch {}
+    const toSync = rows.slice(0, todayIndex + 1).filter(r => !synced.includes(r.date));
+    if (toSync.length === 0) return;
+    const syncDay = async (row: TrackerRow) => {
+      try {
+        const [dr, ar] = await Promise.allSettled([
+          fetch(`/api/garmin-data?date=${row.date}`).then(r => r.json()),
+          fetch(`/api/garmin-activities?date=${row.date}`).then(r => r.json()),
+        ]);
+        const data = dr.status === "fulfilled" ? dr.value : null;
+        const acts = ar.status === "fulfilled" ? (ar.value?.activities || []) : [];
+        const patch: Partial<TrackerRow> = {};
+        if (data?.steps && !row.steps) patch.steps = String(data.steps);
+        if (data?.activeCalories && !row.calories) patch.calories = String(Math.round(data.activeCalories));
+        if (data?.sleep) patch.sleepData = data.sleep;
+        if (acts.length >= 1 && !row.workout1) patch.workout1 = true;
+        if (acts.some((a: any) => a.isOutdoor) && !row.workout2) patch.workout2 = true;
+        if (Object.keys(patch).length > 0) {
+          const idx = rows.findIndex(r => r.date === row.date);
+          if (idx >= 0) setRows(prev => { const next = [...prev]; next[idx] = { ...next[idx], ...patch }; return next; });
+        }
+        synced.push(row.date);
+        localStorage.setItem(GARMIN_SYNC_KEY, JSON.stringify(synced));
+      } catch {}
+    };
+    toSync.forEach((row, i) => setTimeout(() => syncDay(row), i * 800));
+  }, [loaded, todayIndex]);
+
+  // Missed day
+  useEffect(() => {
+    if (!loaded || todayIndex <= 0) return;
+    const yesterday = rows[todayIndex - 1];
+    if (yesterday && !isRowComplete(yesterday) && !rowHasData(yesterday)) {
+      if (!localStorage.getItem(`75_hard_missed_${todayIndex - 1}`)) setMissedDayIndex(todayIndex - 1);
+    }
+  }, [loaded, todayIndex, rows]);
+
+  const completedDays = useMemo(() => rows.filter(isRowComplete).length, [rows]);
+  const totalChecks = useMemo(() => rows.reduce((s, r) => s + habitColumns.reduce((ss, h) => ss + (r[h.key] ? 1 : 0), 0), 0), [rows]);
+  const progressPercent = Math.round((totalChecks / (TOTAL_DAYS * habitColumns.length)) * 100);
+  const latestWeight = useMemo(() => [...rows].reverse().find(r => r.weight.trim())?.weight || "—", [rows]);
+  const firstWeightNum = useMemo(() => { const r = rows.find(r => r.weight.trim()); return r ? parseFloat(r.weight) : null; }, [rows]);
+  const lastWeightNum = useMemo(() => { const r = [...rows].reverse().find(r => r.weight.trim()); return r ? parseFloat(r.weight) : null; }, [rows]);
+  const weightDelta = useMemo(() => {
+    if (firstWeightNum === null || lastWeightNum === null || firstWeightNum === lastWeightNum) return null;
+    const diff = lastWeightNum - firstWeightNum;
+    return { diff: diff.toFixed(1), pct: ((diff / firstWeightNum) * 100).toFixed(1), lost: diff < 0 };
+  }, [firstWeightNum, lastWeightNum]);
+  const averageCalories = useMemo(() => { const v = rows.map(r => Number(r.calories)).filter(n => n > 0 && isFinite(n)); return v.length ? Math.round(v.reduce((a,b) => a+b) / v.length).toLocaleString() : "—"; }, [rows]);
+  const averageSteps = useMemo(() => { const v = rows.map(r => Number(r.steps)).filter(n => n > 0 && isFinite(n)); return v.length ? Math.round(v.reduce((a,b) => a+b) / v.length).toLocaleString() : "—"; }, [rows]);
+  const timelineBars = Array.from({ length: TOTAL_DAYS }, (_, i) => i < completedDays);
+  const weekGroups = Array.from({ length: Math.ceil(TOTAL_DAYS / 7) }, (_, i) => ({ weekNumber: i + 1, rows: rows.slice(i*7, i*7+7), startIndex: i*7 }));
+
+  // Milestone detection
+  useEffect(() => {
+    weekGroups.forEach(g => {
+      if (g.rows.every(isRowComplete) && !openedMilestonesRef.current.has(g.weekNumber)) {
+        openedMilestonesRef.current.add(g.weekNumber);
+        setTimeout(() => setMilestone(g.weekNumber), 400);
+      }
+    });
+  }, [rows]);
+
+  // Confetti on day complete
+  useEffect(() => {
+    if (!loaded) return;
+    if (prevCompletedRef.current === 0 && completedDays > 0) { prevCompletedRef.current = completedDays; return; }
+    if (completedDays > prevCompletedRef.current) {
+      setShowConfetti(true);
+      try {
+        const AC = window.AudioContext || (window as any).webkitAudioContext;
+        if (AC) {
+          if (!audioContextRef.current) audioContextRef.current = new AC();
+          const ctx = audioContextRef.current;
+          if (ctx.state === "suspended") ctx.resume();
+          [523,659,784,1047].forEach((freq, i) => {
+            const osc = ctx.createOscillator(); const gain = ctx.createGain();
+            osc.type = "sine"; osc.frequency.value = freq;
+            gain.gain.setValueAtTime(0.0001, ctx.currentTime + i*0.12);
+            gain.gain.exponentialRampToValueAtTime(0.06, ctx.currentTime + i*0.12 + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + i*0.12 + 0.18);
+            osc.connect(gain); gain.connect(ctx.destination);
+            osc.start(ctx.currentTime + i*0.12); osc.stop(ctx.currentTime + i*0.12 + 0.2);
+          });
+        }
+      } catch {}
+    }
+    prevCompletedRef.current = completedDays;
+  }, [completedDays, loaded]);
+
+  const updateRow = useCallback((index: number, patch: Partial<TrackerRow>) => {
+    setRows(prev => { const next = [...prev]; next[index] = { ...next[index], ...patch }; return next; });
+  }, []);
+
+  const triggerFeedback = useCallback((type: "check" | "uncheck" | "lock" = "check") => {
+    try {
+      if (navigator.vibrate) navigator.vibrate(type === "check" ? [18,10,8] : type === "lock" ? [12,20,12] : [8]);
+      const AC = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AC) return;
+      if (!audioContextRef.current) audioContextRef.current = new AC();
+      const ctx = audioContextRef.current;
+      if (ctx.state === "suspended") ctx.resume();
+      const osc = ctx.createOscillator(); const gain = ctx.createGain();
+      osc.type = "triangle";
+      if (type === "check") {
+        osc.frequency.setValueAtTime(900, ctx.currentTime); osc.frequency.exponentialRampToValueAtTime(1250, ctx.currentTime+0.04);
+        gain.gain.setValueAtTime(0.0001, ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.03, ctx.currentTime+0.01); gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+0.085);
+      } else {
+        osc.frequency.setValueAtTime(500, ctx.currentTime); osc.frequency.exponentialRampToValueAtTime(350, ctx.currentTime+0.06);
+        gain.gain.setValueAtTime(0.0001, ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.02, ctx.currentTime+0.01); gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+0.09);
+      }
+      osc.connect(gain); gain.connect(ctx.destination); osc.start(); osc.stop(ctx.currentTime+0.1);
+    } catch {}
+  }, []);
+
+  const handleHabitToggle = useCallback((idx: number, key: HabitKey) => {
+    if (rows[idx].locked) return;
+    setActiveRow(idx);
+    const newVal = !rows[idx][key];
+    triggerFeedback(newVal ? "check" : "uncheck");
+    updateRow(idx, { [key]: newVal } as Partial<TrackerRow>);
+  }, [rows, triggerFeedback, updateRow]);
+
+  const handlePhotoUpload = useCallback(async (idx: number, file?: File | null) => {
+    if (rows[idx].locked || !file) return;
+    try {
+      const compressed = await compressImage(file);
+      setActiveRow(idx);
+      updateRow(idx, { photoUrl: compressed, photo: true });
+      triggerFeedback();
+    } catch { alert("Photo upload failed."); }
+  }, [rows, triggerFeedback, updateRow]);
+
+  const toggleRowLock = useCallback((idx: number) => {
+    if (!rowHasData(rows[idx])) return;
+    triggerFeedback("lock");
+    updateRow(idx, { locked: !rows[idx].locked });
+  }, [rows, triggerFeedback, updateRow]);
+
+  const handlePhotoSourceSelect = useCallback((source: "camera" | "gallery") => {
+    const idx = photoSourceTarget; setPhotoSourceTarget(null);
+    if (idx === null) return;
+    setTimeout(() => { source === "camera" ? photoInputRefs.current[idx]?.click() : galleryInputRefs.current[idx]?.click(); }, 200);
+  }, [photoSourceTarget]);
+
+  return (
+    <div className={`app-shell${darkMode ? "" : " light-mode"}`}>
+      <div className="background-noise" />
+      <div className="background-glow" />
+
+      <AnimatePresence>
+        {showOnboarding && (
+          <OnboardingScreen onComplete={(name, startDate) => {
+            setUserName(name);
+            localStorage.setItem(USER_KEY, name);
+            localStorage.setItem(START_DATE_KEY, startDate);
+            setRows(createRows(startDate));
+            setShowOnboarding(false);
+          }} />
+        )}
+      </AnimatePresence>
+
+      {showConfetti && <Confetti onDone={() => setShowConfetti(false)} />}
+
+      <AnimatePresence>{milestone !== null && <MilestoneScreen weekNumber={milestone} onClose={() => setMilestone(null)} />}</AnimatePresence>
+
+      <AnimatePresence>
+        {missedDayIndex !== null && (
+          <MissedDayBanner
+            missedDay={rows[missedDayIndex]?.dateLabel || ""}
+            onDismiss={() => { localStorage.setItem(`75_hard_missed_${missedDayIndex}`, "1"); setMissedDayIndex(null); }}
+            onMarkComplete={() => {
+              const patch: Partial<TrackerRow> = {};
+              habitColumns.forEach(h => { if (h.key !== "photo") (patch as any)[h.key] = true; });
+              updateRow(missedDayIndex!, patch);
+              setMissedDayIndex(null);
+            }}
+          />
+        )}
+      </AnimatePresence>
+
+      {photoSourceTarget !== null && <PhotoSourceModal onSelect={handlePhotoSourceSelect} onClose={() => setPhotoSourceTarget(null)} />}
+      {viewingPhotoIndex !== null && rows[viewingPhotoIndex]?.photoUrl && (
+        <PhotoViewerModal photo={rows[viewingPhotoIndex].photoUrl} rowLabel={rows[viewingPhotoIndex].countdown}
+          onClose={() => setViewingPhotoIndex(null)}
+          onReplace={() => { const idx = viewingPhotoIndex; setViewingPhotoIndex(null); setTimeout(() => setPhotoSourceTarget(idx), 150); }}
+        />
+      )}
+
+      <AnimatePresence>{showGallery && <PhotoGalleryModal rows={rows} onClose={() => setShowGallery(false)} />}</AnimatePresence>
+      <AnimatePresence>{showBeforeAfter && <BeforeAfterModal rows={rows} onClose={() => setShowBeforeAfter(false)} />}</AnimatePresence>
+      <AnimatePresence>{showNotifications && <NotificationModal onClose={() => setShowNotifications(false)} />}</AnimatePresence>
+      <AnimatePresence>{showDailyCard && <DailyChallengeCardModal todayIndex={todayIndex} userName={userName} rows={rows} onClose={() => setShowDailyCard(false)} />}</AnimatePresence>
+      <AnimatePresence>{showCertificate && <CertificateModal rows={rows} userName={userName} onClose={() => setShowCertificate(false)} />}</AnimatePresence>
+      <AnimatePresence>{showWidget && <WidgetExportModal rows={rows} todayIndex={todayIndex} userName={userName} onClose={() => setShowWidget(false)} />}</AnimatePresence>
+      <AnimatePresence>{garminDrawer && (
+        <GarminWorkoutDrawer date={garminDrawer.date} dateLabel={garminDrawer.dateLabel}
+          onClose={() => setGarminDrawer(null)}
+          onSync={(calories, w1, w2) => {
+            const idx = rows.findIndex(r => r.date === garminDrawer.date);
+            if (idx < 0) return;
+            const patch: Partial<TrackerRow> = {};
+            if (calories) patch.calories = calories;
+            if (w1) patch.workout1 = true;
+            if (w2) patch.workout2 = true;
+            updateRow(idx, patch);
+          }}
+        />
+      )}</AnimatePresence>
+      <AnimatePresence>{sleepPopup && <SleepPopup sleep={sleepPopup.sleep} dateLabel={sleepPopup.dateLabel} onClose={() => setSleepPopup(null)} />}</AnimatePresence>
+
+      <div className="page">
+        <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} className="hero-card">
+          <div className="hero-header">
+            <div className="pill"><Flame className="mini-icon" /> Discipline • Consistency • Power</div>
+            {userName ? (
+              <>
+                <h1 className="hero-title" style={{ marginBottom: 0 }}>{userName.toUpperCase()}'S</h1>
+                <h1 className="hero-title" style={{ marginTop: 4, color: "#b91c1c" }}>75 HARD CHALLENGE</h1>
+              </>
+            ) : <h1 className="hero-title">75 HARD CHALLENGE</h1>}
+          </div>
+
+          <div className="hero-body">
+            <div className="timeline-card">
+              <div className="timeline-row">
+                <div>
+                  <div className="mini-label">Challenge Timeline</div>
+                  <div className="timeline-day">Day {Math.min(Math.max(completedDays+1,1), TOTAL_DAYS)} / {TOTAL_DAYS}</div>
+                </div>
+                <div className="timeline-bars">
+                  {timelineBars.map((filled, i) => (
+                    <div key={i} className={filled ? "timeline-bar filled" : "timeline-bar"} />
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="summary-cards">
+              <SummaryCard title="Overall Progress" value={`${progressPercent}%`} subtext="Based on all 450 habit ticks" icon={Flame} />
+              <SummaryCard title="Latest Weight" value={latestWeight} subtext="Most recent entry" icon={Scale}
+                extra={<>
+                  <WeightSparkline rows={rows} />
+                  {weightDelta && <div style={{ marginTop: 6, fontSize: 12, fontWeight: 700, color: weightDelta.lost ? "#4ade80" : "#f87171" }}>
+                    {weightDelta.lost ? "▼" : "▲"} {Math.abs(Number(weightDelta.diff))} kg ({Math.abs(Number(weightDelta.pct))}% {weightDelta.lost ? "lost" : "gained"})
+                  </div>}
+                </>}
+              />
+              <SummaryCard title="Avg Cal / Steps" value={`${averageCalories} / ${averageSteps}`} subtext="Daily averages" icon={Target} />
+            </div>
+
+            <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
+              {[
+                { icon: Images, label: "Gallery", action: () => setShowGallery(true) },
+                { icon: Layers, label: "Before/After", action: () => setShowBeforeAfter(true) },
+                { icon: Bell, label: "Reminder", action: () => setShowNotifications(true) },
+                { icon: Share2, label: "Day Card", action: () => setShowDailyCard(true) },
+                { icon: Trophy, label: "Certificate", action: () => setShowCertificate(true) },
+                { icon: Target, label: "Widget", action: () => setShowWidget(true) },
+              ].map(({ icon: Icon, label, action }) => (
+                <motion.button key={label} whileTap={{ scale: 0.95 }} onClick={action}
+                  style={{ flex: "1 1 calc(33% - 6px)", minWidth: 80, background: "rgba(127,29,29,0.18)", border: "1px solid rgba(127,29,29,0.55)", borderRadius: 14, padding: "12px 8px", display: "flex", flexDirection: "column", alignItems: "center", gap: 5, cursor: "pointer" }}>
+                  <Icon style={{ width: 18, height: 18, color: "#fca5a5" }} />
+                  <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(252,165,165,0.75)" }}>{label}</span>
+                </motion.button>
+              ))}
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 10, padding: "10px 14px", background: "rgba(127,29,29,0.1)", borderRadius: 12, border: "1px solid rgba(127,29,29,0.3)" }}>
+              <span style={{ fontSize: 12, color: "rgba(252,165,165,0.6)", fontWeight: 600 }}>{darkMode ? "🌙 Dark Mode" : "☀️ Light Mode"}</span>
+              <button onClick={() => setDarkMode(!darkMode)} style={{ width: 44, height: 24, borderRadius: 12, background: darkMode ? "#dc2626" : "rgba(255,255,255,0.3)", border: "none", cursor: "pointer", position: "relative", transition: "background 0.25s" }}>
+                <div style={{ position: "absolute", top: 3, left: darkMode ? 22 : 3, width: 18, height: 18, borderRadius: "50%", background: "#fff", transition: "left 0.25s" }} />
+              </button>
+            </div>
+          </div>
+        </motion.div>
+
+        <div className="mobile-tip">Swipe sideways to use the full sheet</div>
+
+        <div className="sheet-wrap">
+          <div className="sheet-inner">
+            <div className="sheet-banner">Discipline • Consistency • Power</div>
+            <div className="sheet-grid header">
+              <div className="sheet-cell head date-col">Date</div>
+              <div className="sheet-cell head week-col">Week</div>
+              <div className="sheet-cell head count-col">Countdown</div>
+              {habitColumns.map(item => { const Icon = item.icon; return <div key={item.key} className="sheet-cell head icon-col head-icon-cell" title={item.label}><Icon className="head-icon" /></div>; })}
+              <div className="sheet-cell head metric-col">Weight</div>
+              <div className="sheet-cell head calories-col">Calories</div>
+              <div className="sheet-cell head metric-col">Steps</div>
+              <div className="sheet-cell head metric-col">Sleep</div>
+            </div>
+
+            {weekGroups.map((group, groupIndex) => (
+              <div key={group.weekNumber} className="sheet-grid">
+                {group.rows.map((row, rowIndex) => {
+                  const absIdx = group.startIndex + rowIndex;
+                  const isToday = absIdx === todayIndex;
+                  const isFuture = todayIndex >= 0 && absIdx > todayIndex;
+                  const zebra = groupIndex % 2 === 0 ? "zebra-a" : "zebra-b";
+                  const rowDone = isRowComplete(row);
+                  const rowLocked = row.locked || isFuture;
+                  const rowTone = isFuture ? "future-row" : activeRow === absIdx ? "active-row" : isToday ? "today-row" : rowDone ? "complete-row" : zebra;
+                  const showLock = rowHasData(row) && !isFuture;
+
+                  return (
+                    <React.Fragment key={row.id}>
+                      <DateCell row={row} isToday={isToday} rowTone={rowTone} todayRef={isToday ? todayRowRef : undefined} />
+
+                      {rowIndex === 0 && (
+                        <div className="merged-week" style={{ gridRow: `span ${group.rows.length}` }}>
+                          <div className="vertical-week">Week {group.weekNumber}</div>
+                        </div>
+                      )}
+
+                      <div className={`sheet-cell body count-col count-cell ${rowTone}`}>
+                        {showLock && (
+                          <button type="button" onClick={() => toggleRowLock(absIdx)} className={row.locked ? "lock-btn locked" : "lock-btn"}>
+                            {row.locked ? <Lock className="lock-icon" /> : <LockOpen className="lock-icon" />}
+                          </button>
+                        )}
+                        <div className="count-text">{row.countdown}</div>
+                        <AnimatePresence>
+                          {rowDone && (
+                            <motion.div initial={{ opacity: 0, scale: 0.92 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="badge-row">DAY COMPLETE</motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+
+                      {habitColumns.map(item => (
+                        <div key={item.key} className={`sheet-cell body icon-col ${rowTone}`}>
+                          {item.key === "photo" ? (
+                            <>
+                              <input ref={el => { photoInputRefs.current[absIdx] = el; }} type="file" accept="image/*" capture="environment" className="hidden-input" onChange={e => { handlePhotoUpload(absIdx, e.target.files?.[0]); e.target.value = ""; }} />
+                              <input ref={el => { galleryInputRefs.current[absIdx] = el; }} type="file" accept="image/*" className="hidden-input" onChange={e => { handlePhotoUpload(absIdx, e.target.files?.[0]); e.target.value = ""; }} />
+                              <button type="button" onClick={() => { if (rowLocked) return; row.photoUrl ? setViewingPhotoIndex(absIdx) : setPhotoSourceTarget(absIdx); }} disabled={rowLocked} className={`photo-btn ${row.photo ? "has-photo" : ""} ${rowLocked ? "disabled" : ""}`}>
+                                {row.photoUrl ? <img src={row.photoUrl} alt="" className="photo-thumb" /> : <ImagePlus className="photo-placeholder-icon" />}
+                              </button>
+                            </>
+                          ) : (item.key === "workout1" || item.key === "workout2") ? (
+                            <button type="button" onClick={() => { if (rowLocked) return; setGarminDrawer({ date: row.date, dateLabel: row.dateLabel }); }} disabled={rowLocked} className={`habit-btn ${row[item.key] ? "checked" : ""} ${rowLocked ? "disabled" : ""}`}>
+                              {row[item.key] ? <motion.span initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: [0.5, 1.18, 1], opacity: 1 }} transition={{ duration: 0.28 }}>✓</motion.span> : null}
+                            </button>
+                          ) : (
+                            <button type="button" onClick={() => handleHabitToggle(absIdx, item.key)} disabled={rowLocked} className={`habit-btn ${row[item.key] ? "checked" : ""} ${rowLocked ? "disabled" : ""}`}>
+                              {row[item.key] ? <motion.span initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: [0.5, 1.18, 1], opacity: 1 }} transition={{ duration: 0.28 }}>✓</motion.span> : null}
+                            </button>
+                          )}
+                        </div>
+                      ))}
+
+                      <div className={`sheet-cell body metric-col metric-pad ${rowTone}`}>
+                        <Input disabled={rowLocked} readOnly={rowLocked} onFocus={() => setActiveRow(absIdx)} onBlur={() => setActiveRow(c => c === absIdx ? null : c)} value={row.weight} onChange={e => updateRow(absIdx, { weight: e.target.value })} placeholder="——" inputMode="decimal" className={rowLocked ? "disabled" : ""} />
+                      </div>
+                      <div className={`sheet-cell body calories-col metric-pad ${rowTone}`}>
+                        <Input disabled={rowLocked} readOnly={rowLocked} onFocus={() => setActiveRow(absIdx)} onBlur={() => setActiveRow(c => c === absIdx ? null : c)} value={row.calories} onChange={e => updateRow(absIdx, { calories: e.target.value })} placeholder="——" inputMode="numeric" className={rowLocked ? "disabled" : ""} />
+                      </div>
+                      <div className={`sheet-cell body metric-col metric-pad ${rowTone}`}>
+                        <Input disabled={rowLocked} readOnly={rowLocked} onFocus={() => setActiveRow(absIdx)} onBlur={() => setActiveRow(c => c === absIdx ? null : c)} value={row.steps} onChange={e => updateRow(absIdx, { steps: e.target.value })} placeholder="——" inputMode="numeric" className={rowLocked ? "disabled" : ""} />
+                      </div>
+                      <div className={`sheet-cell body metric-col ${rowTone}`} style={{ cursor: row.sleepData ? "pointer" : "default" }}
+                        onClick={() => row.sleepData && setSleepPopup({ sleep: row.sleepData, dateLabel: row.dateLabel })}>
+                        {row.sleepData ? (
+                          <div style={{ textAlign: "center" }}>
+                            <div style={{ fontSize: 14, fontWeight: 800, color: getSleepScoreColor(row.sleepData.score) }}>{row.sleepData.score ?? "—"}</div>
+                            <div style={{ fontSize: 9, color: "rgba(252,165,165,0.45)", marginTop: 2 }}>{formatSleepDuration(row.sleepData.durationSeconds)}</div>
+                          </div>
+                        ) : <span style={{ fontSize: 11, color: "rgba(252,165,165,0.2)" }}>——</span>}
+                      </div>
+                    </React.Fragment>
+                  );
+                })}
+              </div>
+            ))}
+            <div className="sheet-footer">Stay Relentless</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
