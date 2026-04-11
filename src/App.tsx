@@ -160,9 +160,16 @@ function formatSleepDuration(seconds: number): string {
   const m = Math.floor((seconds % 3600) / 60);
   return `${h}h ${m}m`;
 }
-function formatTime(ts: string | null): string {
+function formatTime(ts: string | number | null): string {
   if (!ts) return "—";
-  return new Date(ts).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true });
+  // Garmin's Local timestamps already have the correct local time baked in
+  // Use UTC display to avoid double-applying timezone offset
+  const d = new Date(Number(ts));
+  const h = d.getUTCHours();
+  const m = d.getUTCMinutes();
+  const ampm = h < 12 ? "AM" : "PM";
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${String(h12).padStart(2,"0")}:${String(m).padStart(2,"0")} ${ampm}`;
 }
 function getSleepScoreColor(score: number | null): string {
   if (!score) return "rgba(252,165,165,0.4)";
