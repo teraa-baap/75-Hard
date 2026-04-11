@@ -162,15 +162,21 @@ function formatSleepDuration(seconds: number): string {
 }
 function formatTime(ts: string | number | null): string {
   if (!ts) return "—";
-  const num = typeof ts === "string" ? parseInt(ts) : ts;
-  if (isNaN(num) || num < 1000000000000) return "—"; // sanity check for valid ms timestamp
-  const d = new Date(num);
-  // Garmin Local timestamps have IST baked in — read as UTC to avoid double offset
-  const h = d.getUTCHours();
-  const m = d.getUTCMinutes();
-  const ampm = h < 12 ? "AM" : "PM";
-  const h12 = h % 12 === 0 ? 12 : h % 12;
-  return `${String(h12).padStart(2,"0")}:${String(m).padStart(2,"0")} ${ampm}`;
+  let d: Date;
+  if (typeof ts === "number") {
+    // Raw ms timestamp with local time baked in — read as UTC
+    d = new Date(ts);
+    const h = d.getUTCHours();
+    const m = d.getUTCMinutes();
+    const ampm = h < 12 ? "AM" : "PM";
+    const h12 = h % 12 === 0 ? 12 : h % 12;
+    return `${String(h12).padStart(2,"0")}:${String(m).padStart(2,"0")} ${ampm}`;
+  } else {
+    // ISO string — parse normally and show in local time
+    d = new Date(ts);
+    if (isNaN(d.getTime())) return "—";
+    return d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true });
+  }
 }
 function getSleepScoreColor(score: number | null): string {
   if (!score) return "rgba(252,165,165,0.4)";
