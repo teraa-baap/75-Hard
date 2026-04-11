@@ -1457,7 +1457,7 @@ export default function App() {
                     onClick={isWorkout ? () => setGarminDrawer({ date: rows[Math.max(todayIndex, 0)]?.date || rows[0].date, dateLabel: rows[Math.max(todayIndex, 0)]?.dateLabel || rows[0].dateLabel }) : undefined}
                     style={isWorkout ? { cursor: "pointer" } : undefined}>
                     <Icon className="head-icon" />
-                    {isWorkout && <div style={{ fontSize: 6, letterSpacing: "0.08em", color: "rgba(252,165,165,0.5)", marginTop: 2 }}>TAP</div>}
+                    {isWorkout && <div style={{ fontSize: 6, letterSpacing: "0.08em", color: "rgba(252,165,165,0.5)", marginTop: 2 }}></div>}
                   </div>
                 );
               })}
