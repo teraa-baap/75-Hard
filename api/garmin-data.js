@@ -1,4 +1,5 @@
-import { GarminConnect } from "garmin-connect";
+import pkg from "garmin-connect";
+const { GarminConnect } = pkg;
 
 let cachedClient = null;
 let cacheExpiry = 0;
