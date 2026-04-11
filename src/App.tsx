@@ -71,8 +71,8 @@ type CalorieData = {
 type SleepData = {
   score: number | null;
   durationSeconds: number;
-  startTime: string | null;
-  endTime: string | null;
+  startTime: string | number | null;
+  endTime: string | number | null;
   deepSeconds: number;
   lightSeconds: number;
   remSeconds: number;
@@ -162,9 +162,10 @@ function formatSleepDuration(seconds: number): string {
 }
 function formatTime(ts: string | number | null): string {
   if (!ts) return "—";
-  // Garmin's Local timestamps already have the correct local time baked in
-  // Use UTC display to avoid double-applying timezone offset
-  const d = new Date(Number(ts));
+  const num = typeof ts === "string" ? parseInt(ts) : ts;
+  if (isNaN(num) || num < 1000000000000) return "—"; // sanity check for valid ms timestamp
+  const d = new Date(num);
+  // Garmin Local timestamps have IST baked in — read as UTC to avoid double offset
   const h = d.getUTCHours();
   const m = d.getUTCMinutes();
   const ampm = h < 12 ? "AM" : "PM";
