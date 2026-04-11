@@ -246,24 +246,28 @@ function SleepPopup({ sleep, dateLabel, onClose }: { sleep: SleepData; dateLabel
 }
 
 // ─── Garmin Workout Drawer ────────────────────────────────────────────────────
-function GarminWorkoutDrawer({ date, dateLabel, onClose, onSync }: {
-  date: string; dateLabel: string; onClose: () => void;
-  onSync: (calories: string, w1: boolean, w2: boolean) => void;
+function GarminWorkoutDrawer({ initialDate, rows, onClose, onSync }: {
+  initialDate: string; rows: TrackerRow[]; onClose: () => void;
+  onSync: (date: string, calories: string, w1: boolean, w2: boolean) => void;
 }) {
+  const [selectedDate, setSelectedDate] = useState(initialDate);
+  const selectedRow = rows.find(r => r.date === selectedDate);
   const [activities, setActivities] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch(`/api/garmin-activities?date=${date}`)
+    setLoading(true); setError(null); setActivities([]);
+    fetch(`/api/garmin-activities?date=${selectedDate}`)
       .then(r => r.json())
       .then(d => setActivities(d.activities || []))
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
-  }, [date]);
+  }, [selectedDate]);
 
   const totalCalories = activities.reduce((s, a) => s + (a.calories || 0), 0);
   const hasOutdoor = activities.some(a => a.isOutdoor);
+  const pastRows = rows.filter(r => r.date <= initialDate);
 
   return (
     <motion.div initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }}
@@ -273,12 +277,20 @@ function GarminWorkoutDrawer({ date, dateLabel, onClose, onSync }: {
         <button onClick={onClose} style={{ width: 38, height: 38, borderRadius: 12, background: "rgba(127,29,29,0.25)", border: "1px solid rgba(127,29,29,0.72)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fca5a5" }}>
           <ArrowLeft style={{ width: 18, height: 18 }} />
         </button>
-        <div style={{ textAlign: "center" }}>
-          <p style={{ margin: 0, fontSize: 11, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(252,165,165,0.6)" }}>Garmin Activities</p>
-          <p style={{ margin: "2px 0 0", fontSize: 14, fontWeight: 700, color: "#fff" }}>{dateLabel}</p>
-        </div>
+        <p style={{ margin: 0, fontSize: 13, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#ffe8e8" }}>Workouts</p>
         <div style={{ width: 38 }} />
       </div>
+
+      {/* Date selector */}
+      <div style={{ padding: "12px 16px", borderBottom: "1px solid rgba(127,29,29,0.3)", display: "flex", gap: 8, overflowX: "auto" }}>
+        {pastRows.map(r => (
+          <button key={r.date} onClick={() => setSelectedDate(r.date)}
+            style={{ flexShrink: 0, padding: "6px 12px", borderRadius: 20, border: selectedDate === r.date ? "1px solid #dc2626" : "1px solid rgba(127,29,29,0.4)", background: selectedDate === r.date ? "rgba(220,38,38,0.2)" : "transparent", color: selectedDate === r.date ? "#fff" : "rgba(252,165,165,0.5)", fontSize: 11, fontWeight: selectedDate === r.date ? 700 : 400, cursor: "pointer" }}>
+            {r.dateLabel}
+          </button>
+        ))}
+      </div>
+
       <div style={{ flex: 1, overflowY: "auto", padding: "16px 16px 120px" }}>
         {loading && (
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: 200, gap: 16 }}>
@@ -287,15 +299,11 @@ function GarminWorkoutDrawer({ date, dateLabel, onClose, onSync }: {
             <p style={{ color: "rgba(252,165,165,0.5)", fontSize: 13 }}>Fetching from Garmin...</p>
           </div>
         )}
-        {error && (
-          <div style={{ background: "rgba(220,38,38,0.1)", border: "1px solid rgba(220,38,38,0.3)", borderRadius: 14, padding: 16 }}>
-            <p style={{ margin: 0, color: "#f87171", fontSize: 13 }}>{error}</p>
-          </div>
-        )}
+        {error && <div style={{ background: "rgba(220,38,38,0.1)", border: "1px solid rgba(220,38,38,0.3)", borderRadius: 14, padding: 16 }}><p style={{ margin: 0, color: "#f87171", fontSize: 13 }}>{error}</p></div>}
         {!loading && !error && activities.length === 0 && (
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: 200, gap: 12 }}>
             <span style={{ fontSize: 48 }}>🏋️</span>
-            <p style={{ color: "rgba(252,165,165,0.5)", fontSize: 14, textAlign: "center" }}>No activities found for this day</p>
+            <p style={{ color: "rgba(252,165,165,0.5)", fontSize: 14, textAlign: "center" }}>No activities found for {selectedRow?.dateLabel || selectedDate}</p>
           </div>
         )}
         {!loading && activities.map((a, i) => (
@@ -307,15 +315,11 @@ function GarminWorkoutDrawer({ date, dateLabel, onClose, onSync }: {
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.name || a.type}</p>
-                <p style={{ margin: "3px 0 0", fontSize: 11, color: "rgba(252,165,165,0.55)", letterSpacing: "0.06em" }}>
+                <p style={{ margin: "3px 0 0", fontSize: 11, color: "rgba(252,165,165,0.55)" }}>
                   {a.type} · {a.startTime ? new Date(a.startTime).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) : ""}
                 </p>
               </div>
-              {a.isOutdoor && (
-                <div style={{ background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.3)", borderRadius: 8, padding: "3px 8px" }}>
-                  <p style={{ margin: 0, fontSize: 9, fontWeight: 700, color: "#4ade80", letterSpacing: "0.1em" }}>OUTDOOR</p>
-                </div>
-              )}
+              {a.isOutdoor && <div style={{ background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.3)", borderRadius: 8, padding: "3px 8px" }}><p style={{ margin: 0, fontSize: 9, fontWeight: 700, color: "#4ade80" }}>OUTDOOR</p></div>}
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8 }}>
               {[
@@ -327,7 +331,7 @@ function GarminWorkoutDrawer({ date, dateLabel, onClose, onSync }: {
                 { label: "Elevation", value: a.elevationGain > 0 ? `${Math.round(a.elevationGain)} m` : "—" },
                 { label: "Training Effect", value: a.trainingEffect ? a.trainingEffect.toFixed(1) : "—" },
                 { label: "VO2 Max", value: a.vo2max ? a.vo2max.toFixed(1) : "—" },
-              ].map((stat) => (
+              ].map(stat => (
                 <div key={stat.label} style={{ background: "rgba(0,0,0,0.4)", borderRadius: 10, padding: "10px 8px", textAlign: "center" }}>
                   <p style={{ margin: 0, fontSize: 9, color: "rgba(252,165,165,0.45)", letterSpacing: "0.1em", textTransform: "uppercase" }}>{stat.label}</p>
                   <p style={{ margin: "4px 0 0", fontSize: 13, fontWeight: 700, color: "#fff" }}>{stat.value}</p>
@@ -337,16 +341,14 @@ function GarminWorkoutDrawer({ date, dateLabel, onClose, onSync }: {
           </motion.div>
         ))}
       </div>
+
       {!loading && activities.length > 0 && (
         <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, padding: 16, background: "linear-gradient(0deg,#000 60%,transparent)", borderTop: "1px solid rgba(127,29,29,0.3)" }}>
           <motion.button whileTap={{ scale: 0.97 }}
-            onClick={() => { onSync(totalCalories > 0 ? String(totalCalories) : "", activities.length >= 1, hasOutdoor); onClose(); }}
+            onClick={() => { onSync(selectedDate, totalCalories > 0 ? String(totalCalories) : "", activities.length >= 1, hasOutdoor); onClose(); }}
             style={{ width: "100%", padding: 16, background: "linear-gradient(135deg,#7f1d1d,#dc2626)", border: "1px solid rgba(248,113,113,0.35)", borderRadius: 16, color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
-            <RefreshCw style={{ width: 18, height: 18 }} /> Sync This Day
+            <RefreshCw style={{ width: 18, height: 18 }} /> Sync {selectedRow?.dateLabel || selectedDate}
           </motion.button>
-          <p style={{ margin: "8px 0 0", textAlign: "center", fontSize: 12, color: "rgba(252,165,165,0.5)" }}>
-            {totalCalories > 0 ? `${totalCalories} cal · ` : ""}{activities.length} workout{activities.length !== 1 ? "s" : ""}
-          </p>
         </div>
       )}
     </motion.div>
@@ -941,6 +943,76 @@ w.presentSmall();`;
   );
 }
 
+// ─── Metric Popup (Calories / Steps) ─────────────────────────────────────────
+function MetricPopup({ type, row, onClose, onSave }: {
+  type: "calories" | "steps"; row: TrackerRow; onClose: () => void;
+  onSave: (value: string) => void;
+}) {
+  const [manual, setManual] = useState(type === "calories" ? row.calories : row.steps);
+  const isCalories = type === "calories";
+  const garminValue = isCalories ? row.calories : row.steps;
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.92)", display: "flex", flexDirection: "column" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 18px", borderBottom: "1px solid rgba(127,29,29,0.5)" }}>
+        <button onClick={onClose} style={{ width: 38, height: 38, borderRadius: 12, background: "rgba(127,29,29,0.25)", border: "1px solid rgba(127,29,29,0.72)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fca5a5" }}>
+          <ArrowLeft style={{ width: 18, height: 18 }} />
+        </button>
+        <div style={{ textAlign: "center" }}>
+          <p style={{ margin: 0, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(252,165,165,0.5)" }}>{isCalories ? "Calories" : "Steps"}</p>
+          <p style={{ margin: "2px 0 0", fontSize: 14, fontWeight: 700, color: "#fff" }}>{row.dateLabel}</p>
+        </div>
+        <div style={{ width: 38 }} />
+      </div>
+
+      <div style={{ flex: 1, overflowY: "auto", padding: "24px 18px" }}>
+        {/* Current value from Garmin */}
+        <div style={{ textAlign: "center", marginBottom: 32 }}>
+          <p style={{ margin: "0 0 8px", fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(252,165,165,0.45)" }}>
+            {garminValue ? "Synced from Garmin" : "No Garmin data"}
+          </p>
+          <p style={{ margin: 0, fontSize: 52, fontWeight: 900, color: "#fff" }}>
+            {garminValue ? Number(garminValue).toLocaleString() : "——"}
+          </p>
+          <p style={{ margin: "4px 0 0", fontSize: 14, color: "rgba(252,165,165,0.5)" }}>
+            {isCalories ? "total calories burned" : "total steps"}
+          </p>
+        </div>
+
+        {isCalories && (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 24 }}>
+            {[
+              { label: "Total Burned", value: garminValue ? `${Number(garminValue).toLocaleString()} kcal` : "—" },
+              { label: "Auto-synced", value: garminValue ? "✓ Yes" : "✗ No" },
+            ].map(stat => (
+              <div key={stat.label} style={{ background: "linear-gradient(135deg,#0a0000,#1a0404)", border: "1px solid rgba(127,29,29,0.4)", borderRadius: 14, padding: "14px 16px" }}>
+                <p style={{ margin: 0, fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: "rgba(252,165,165,0.45)" }}>{stat.label}</p>
+                <p style={{ margin: "6px 0 0", fontSize: 18, fontWeight: 700, color: "#fff" }}>{stat.value}</p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Manual override */}
+        <div style={{ background: "rgba(127,29,29,0.1)", border: "1px solid rgba(127,29,29,0.3)", borderRadius: 16, padding: 20 }}>
+          <p style={{ margin: "0 0 12px", fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(252,165,165,0.5)" }}>Manual Override</p>
+          <input
+            type="number" inputMode="numeric" value={manual}
+            onChange={e => setManual(e.target.value)}
+            placeholder={isCalories ? "Enter calories" : "Enter steps"}
+            style={{ width: "100%", padding: "14px 16px", background: "rgba(0,0,0,0.5)", border: "1px solid rgba(127,29,29,0.5)", borderRadius: 12, color: "#fff", fontSize: 18, outline: "none", textAlign: "center", marginBottom: 12 }}
+          />
+          <motion.button whileTap={{ scale: 0.97 }} onClick={() => { onSave(manual); onClose(); }}
+            style={{ width: "100%", padding: 14, background: "linear-gradient(135deg,#7f1d1d,#dc2626)", border: "none", borderRadius: 14, color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer" }}>
+            Save
+          </motion.button>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
 // ─── Main App ─────────────────────────────────────────────────────────────────
 export default function App() {
   const [rows, setRows] = useState<TrackerRow[]>(() => createRows());
@@ -958,7 +1030,10 @@ export default function App() {
   const [showDailyCard, setShowDailyCard] = useState(false);
   const [showCertificate, setShowCertificate] = useState(false);
   const [showWidget, setShowWidget] = useState(false);
+  const [garminSyncing, setGarminSyncing] = useState(false);
+  const [garminSyncStatus, setGarminSyncStatus] = useState<string | null>(null);
   const [garminDrawer, setGarminDrawer] = useState<{ date: string; dateLabel: string } | null>(null);
+  const [metricPopup, setMetricPopup] = useState<{ type: "calories" | "steps"; row: TrackerRow; absIdx: number } | null>(null);
   const [sleepPopup, setSleepPopup] = useState<{ sleep: SleepData; dateLabel: string } | null>(null);
   const [photoSourceTarget, setPhotoSourceTarget] = useState<number | null>(null);
   const [viewingPhotoIndex, setViewingPhotoIndex] = useState<number | null>(null);
@@ -1010,37 +1085,51 @@ export default function App() {
     return diff >= 0 && diff < TOTAL_DAYS ? diff : -1;
   }, []);
 
-  // Garmin auto-sync
-  useEffect(() => {
-    if (!loaded || todayIndex < 0) return;
-    let synced: string[] = [];
-    try { synced = JSON.parse(localStorage.getItem(GARMIN_SYNC_KEY) || "[]"); } catch {}
-    const toSync = rows.slice(0, todayIndex + 1).filter(r => !synced.includes(r.date));
-    if (toSync.length === 0) return;
-    const syncDay = async (row: TrackerRow) => {
-      try {
-        const [dr, ar] = await Promise.allSettled([
-          fetch(`/api/garmin-data?date=${row.date}`).then(r => r.json()),
-          fetch(`/api/garmin-activities?date=${row.date}`).then(r => r.json()),
-        ]);
-        const data = dr.status === "fulfilled" ? dr.value : null;
-        const acts = ar.status === "fulfilled" ? (ar.value?.activities || []) : [];
-        const patch: Partial<TrackerRow> = {};
-        if (data?.steps && !row.steps) patch.steps = String(data.steps);
-        if (data?.activeCalories && !row.calories) patch.calories = String(Math.round(data.activeCalories));
-        if (data?.sleep) patch.sleepData = data.sleep;
-        if (acts.length >= 1 && !row.workout1) patch.workout1 = true;
-        if (acts.some((a: any) => a.isOutdoor) && !row.workout2) patch.workout2 = true;
-        if (Object.keys(patch).length > 0) {
-          const idx = rows.findIndex(r => r.date === row.date);
-          if (idx >= 0) setRows(prev => { const next = [...prev]; next[idx] = { ...next[idx], ...patch }; return next; });
-        }
-        synced.push(row.date);
-        localStorage.setItem(GARMIN_SYNC_KEY, JSON.stringify(synced));
-      } catch {}
-    };
-    toSync.forEach((row, i) => setTimeout(() => syncDay(row), i * 800));
-  }, [loaded, todayIndex]);
+  const syncGarminDay = async (row: TrackerRow, synced: string[]) => {
+    try {
+      const [dr, ar] = await Promise.allSettled([
+        fetch(`/api/garmin-data?date=${row.date}`).then(r => r.json()),
+        fetch(`/api/garmin-activities?date=${row.date}`).then(r => r.json()),
+      ]);
+      const data = dr.status === "fulfilled" ? dr.value : null;
+      const acts = ar.status === "fulfilled" ? (ar.value?.activities || []) : [];
+      if (data?.error) throw new Error(data.error);
+      const patch: Partial<TrackerRow> = {};
+      if (data?.steps) patch.steps = String(data.steps);
+      if (data?.activeCalories) patch.calories = String(Math.round(data.activeCalories));
+      if (data?.sleep) patch.sleepData = data.sleep;
+      if (acts.length >= 1) patch.workout1 = true;
+      if (acts.some((a: any) => a.isOutdoor)) patch.workout2 = true;
+      if (Object.keys(patch).length > 0) {
+        const idx = rows.findIndex(r => r.date === row.date);
+        if (idx >= 0) setRows(prev => { const next = [...prev]; next[idx] = { ...next[idx], ...patch }; return next; });
+      }
+      synced.push(row.date);
+      localStorage.setItem(GARMIN_SYNC_KEY, JSON.stringify(synced));
+      return null;
+    } catch (e: any) {
+      return e.message || "Unknown error";
+    }
+  };
+
+  const forceGarminSync = async () => {
+    if (garminSyncing) return;
+    setGarminSyncing(true);
+    setGarminSyncStatus("Syncing from Garmin...");
+    // Clear sync cache to force re-fetch
+    localStorage.removeItem(GARMIN_SYNC_KEY);
+    const toSync = rows.slice(0, todayIndex + 1);
+    let errors = 0;
+    const synced: string[] = [];
+    for (let i = 0; i < toSync.length; i++) {
+      const err = await syncGarminDay(toSync[i], synced);
+      if (err) errors++;
+      setGarminSyncStatus(`Syncing day ${i+1}/${toSync.length}...`);
+    }
+    setGarminSyncing(false);
+    setGarminSyncStatus(errors === 0 ? "✓ Synced!" : `Done (${errors} days failed — check Garmin credentials)`);
+    setTimeout(() => setGarminSyncStatus(null), 4000);
+  };
 
   // Missed day
   useEffect(() => {
@@ -1210,10 +1299,10 @@ export default function App() {
       <AnimatePresence>{showCertificate && <CertificateModal rows={rows} userName={userName} onClose={() => setShowCertificate(false)} />}</AnimatePresence>
       <AnimatePresence>{showWidget && <WidgetExportModal rows={rows} todayIndex={todayIndex} userName={userName} onClose={() => setShowWidget(false)} />}</AnimatePresence>
       <AnimatePresence>{garminDrawer && (
-        <GarminWorkoutDrawer date={garminDrawer.date} dateLabel={garminDrawer.dateLabel}
+        <GarminWorkoutDrawer initialDate={garminDrawer.date} rows={rows}
           onClose={() => setGarminDrawer(null)}
-          onSync={(calories, w1, w2) => {
-            const idx = rows.findIndex(r => r.date === garminDrawer.date);
+          onSync={(date, calories, w1, w2) => {
+            const idx = rows.findIndex(r => r.date === date);
             if (idx < 0) return;
             const patch: Partial<TrackerRow> = {};
             if (calories) patch.calories = calories;
@@ -1224,6 +1313,14 @@ export default function App() {
         />
       )}</AnimatePresence>
       <AnimatePresence>{sleepPopup && <SleepPopup sleep={sleepPopup.sleep} dateLabel={sleepPopup.dateLabel} onClose={() => setSleepPopup(null)} />}</AnimatePresence>
+      <AnimatePresence>{metricPopup && (
+        <MetricPopup type={metricPopup.type} row={metricPopup.row} onClose={() => setMetricPopup(null)}
+          onSave={value => {
+            if (metricPopup.type === "calories") updateRow(metricPopup.absIdx, { calories: value });
+            else updateRow(metricPopup.absIdx, { steps: value });
+          }}
+        />
+      )}</AnimatePresence>
 
       <div className="page">
         <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} className="hero-card">
@@ -1288,6 +1385,16 @@ export default function App() {
                 <div style={{ position: "absolute", top: 3, left: darkMode ? 22 : 3, width: 18, height: 18, borderRadius: "50%", background: "#fff", transition: "left 0.25s" }} />
               </button>
             </div>
+
+            <motion.button whileTap={{ scale: 0.97 }} onClick={forceGarminSync} disabled={garminSyncing}
+              style={{ width: "100%", marginTop: 10, padding: "12px 16px", background: garminSyncing ? "rgba(127,29,29,0.15)" : "linear-gradient(135deg,rgba(127,29,29,0.3),rgba(185,28,28,0.4))", border: "1px solid rgba(127,29,29,0.5)", borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, cursor: garminSyncing ? "default" : "pointer" }}>
+              <motion.div animate={garminSyncing ? { rotate: 360 } : {}} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}>
+                <RefreshCw style={{ width: 15, height: 15, color: "#fca5a5" }} />
+              </motion.div>
+              <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(252,165,165,0.8)", letterSpacing: "0.06em" }}>
+                {garminSyncStatus || "🔄 Sync from Garmin"}
+              </span>
+            </motion.button>
           </div>
         </motion.div>
 
@@ -1300,7 +1407,20 @@ export default function App() {
               <div className="sheet-cell head date-col">Date</div>
               <div className="sheet-cell head week-col">Week</div>
               <div className="sheet-cell head count-col">Countdown</div>
-              {habitColumns.map(item => { const Icon = item.icon; return <div key={item.key} className="sheet-cell head icon-col head-icon-cell" title={item.label}><Icon className="head-icon" /></div>; })}
+              {habitColumns.map(item => {
+                const Icon = item.icon;
+                const isWorkout = item.key === "workout1" || item.key === "workout2";
+                return (
+                  <div key={item.key}
+                    className={`sheet-cell head icon-col head-icon-cell${isWorkout ? " workout-header-clickable" : ""}`}
+                    title={item.label}
+                    onClick={isWorkout ? () => setGarminDrawer({ date: rows[Math.max(todayIndex, 0)]?.date || rows[0].date, dateLabel: rows[Math.max(todayIndex, 0)]?.dateLabel || rows[0].dateLabel }) : undefined}
+                    style={isWorkout ? { cursor: "pointer" } : undefined}>
+                    <Icon className="head-icon" />
+                    {isWorkout && <div style={{ fontSize: 6, letterSpacing: "0.08em", color: "rgba(252,165,165,0.5)", marginTop: 2 }}>TAP</div>}
+                  </div>
+                );
+              })}
               <div className="sheet-cell head metric-col">Weight</div>
               <div className="sheet-cell head calories-col">Calories</div>
               <div className="sheet-cell head metric-col">Steps</div>
@@ -1353,10 +1473,6 @@ export default function App() {
                                 {row.photoUrl ? <img src={row.photoUrl} alt="" className="photo-thumb" /> : <ImagePlus className="photo-placeholder-icon" />}
                               </button>
                             </>
-                          ) : (item.key === "workout1" || item.key === "workout2") ? (
-                            <button type="button" onClick={() => { if (rowLocked) return; setGarminDrawer({ date: row.date, dateLabel: row.dateLabel }); }} disabled={rowLocked} className={`habit-btn ${row[item.key] ? "checked" : ""} ${rowLocked ? "disabled" : ""}`}>
-                              {row[item.key] ? <motion.span initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: [0.5, 1.18, 1], opacity: 1 }} transition={{ duration: 0.28 }}>✓</motion.span> : null}
-                            </button>
                           ) : (
                             <button type="button" onClick={() => handleHabitToggle(absIdx, item.key)} disabled={rowLocked} className={`habit-btn ${row[item.key] ? "checked" : ""} ${rowLocked ? "disabled" : ""}`}>
                               {row[item.key] ? <motion.span initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: [0.5, 1.18, 1], opacity: 1 }} transition={{ duration: 0.28 }}>✓</motion.span> : null}
@@ -1368,12 +1484,34 @@ export default function App() {
                       <div className={`sheet-cell body metric-col metric-pad ${rowTone}`}>
                         <Input disabled={rowLocked} readOnly={rowLocked} onFocus={() => setActiveRow(absIdx)} onBlur={() => setActiveRow(c => c === absIdx ? null : c)} value={row.weight} onChange={e => updateRow(absIdx, { weight: e.target.value })} placeholder="——" inputMode="decimal" className={rowLocked ? "disabled" : ""} />
                       </div>
-                      <div className={`sheet-cell body calories-col metric-pad ${rowTone}`}>
-                        <Input disabled={rowLocked} readOnly={rowLocked} onFocus={() => setActiveRow(absIdx)} onBlur={() => setActiveRow(c => c === absIdx ? null : c)} value={row.calories} onChange={e => updateRow(absIdx, { calories: e.target.value })} placeholder="——" inputMode="numeric" className={rowLocked ? "disabled" : ""} />
+
+                      {/* Calories — display only, tap to open detail popup */}
+                      <div className={`sheet-cell body calories-col ${rowTone}`} style={{ cursor: "pointer" }}
+                        onClick={() => setMetricPopup({ type: "calories", row, absIdx })}>
+                        <div style={{ textAlign: "center" }}>
+                          {row.calories ? (
+                            <>
+                              <div style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>{Number(row.calories).toLocaleString()}</div>
+                              <div style={{ fontSize: 8, color: "rgba(252,165,165,0.4)", letterSpacing: "0.06em", marginTop: 1 }}>kcal</div>
+                            </>
+                          ) : <span style={{ fontSize: 11, color: "rgba(252,165,165,0.2)" }}>——</span>}
+                        </div>
                       </div>
-                      <div className={`sheet-cell body metric-col metric-pad ${rowTone}`}>
-                        <Input disabled={rowLocked} readOnly={rowLocked} onFocus={() => setActiveRow(absIdx)} onBlur={() => setActiveRow(c => c === absIdx ? null : c)} value={row.steps} onChange={e => updateRow(absIdx, { steps: e.target.value })} placeholder="——" inputMode="numeric" className={rowLocked ? "disabled" : ""} />
+
+                      {/* Steps — display only, tap to open detail popup */}
+                      <div className={`sheet-cell body metric-col ${rowTone}`} style={{ cursor: "pointer" }}
+                        onClick={() => setMetricPopup({ type: "steps", row, absIdx })}>
+                        <div style={{ textAlign: "center" }}>
+                          {row.steps ? (
+                            <>
+                              <div style={{ fontSize: 12, fontWeight: 700, color: "#fff" }}>{Number(row.steps).toLocaleString()}</div>
+                              <div style={{ fontSize: 8, color: "rgba(252,165,165,0.4)", letterSpacing: "0.06em", marginTop: 1 }}>steps</div>
+                            </>
+                          ) : <span style={{ fontSize: 11, color: "rgba(252,165,165,0.2)" }}>——</span>}
+                        </div>
                       </div>
+
+                      {/* Sleep — tap to open sleep detail */}
                       <div className={`sheet-cell body metric-col ${rowTone}`} style={{ cursor: row.sleepData ? "pointer" : "default" }}
                         onClick={() => row.sleepData && setSleepPopup({ sleep: row.sleepData, dateLabel: row.dateLabel })}>
                         {row.sleepData ? (
