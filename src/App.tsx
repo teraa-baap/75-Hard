@@ -162,7 +162,7 @@ function formatSleepDuration(seconds: number): string {
 }
 function formatTime(ts: string | null): string {
   if (!ts) return "—";
-  return new Date(ts).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
+  return new Date(ts).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true });
 }
 function getSleepScoreColor(score: number | null): string {
   if (!score) return "rgba(252,165,165,0.4)";
