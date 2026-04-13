@@ -1309,6 +1309,8 @@ export default function App() {
     });
   }, [loaded, todayIndex]);
 
+  const completedDays = useMemo(() => rows.filter(isRowComplete).length, [rows]);
+
   // Auto-show certificate when all 75 days complete
   useEffect(() => {
     if (!loaded) return;
@@ -1317,6 +1319,8 @@ export default function App() {
       setTimeout(() => setShowCertificate(true), 1000);
     }
   }, [completedDays, loaded]);
+
+  // Missed day
   useEffect(() => {
     if (!loaded || todayIndex <= 0) return;
     const yesterday = rows[todayIndex - 1];
@@ -1324,8 +1328,6 @@ export default function App() {
       if (!localStorage.getItem(`75_hard_missed_${todayIndex - 1}`)) setMissedDayIndex(todayIndex - 1);
     }
   }, [loaded, todayIndex, rows]);
-
-  const completedDays = useMemo(() => rows.filter(isRowComplete).length, [rows]);
   const totalChecks = useMemo(() => rows.reduce((s, r) => s + habitColumns.reduce((ss, h) => ss + (r[h.key] ? 1 : 0), 0), 0), [rows]);
   const progressPercent = Math.round((totalChecks / (TOTAL_DAYS * habitColumns.length)) * 100);
   const latestWeight = useMemo(() => [...rows].reverse().find(r => r.weight.trim())?.weight || "—", [rows]);
