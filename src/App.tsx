@@ -1191,7 +1191,7 @@ export default function App() {
   const [showGallery, setShowGallery] = useState(false);
   const [showBeforeAfter, setShowBeforeAfter] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [showDailyCard, setShowDailyCard] = useState(false);
+  const [showDailyCard, setShowDailyCard] = useState<number | null>(null);
   const [showCertificate, setShowCertificate] = useState(false);
   const [showWidget, setShowWidget] = useState(false);
   const [garminDrawer, setGarminDrawer] = useState<{ date: string; dateLabel: string } | null>(null);
@@ -1478,7 +1478,7 @@ export default function App() {
       <AnimatePresence>{showGallery && <PhotoGalleryModal rows={rows} onClose={() => setShowGallery(false)} />}</AnimatePresence>
       <AnimatePresence>{showBeforeAfter && <BeforeAfterModal rows={rows} onClose={() => setShowBeforeAfter(false)} />}</AnimatePresence>
       <AnimatePresence>{showNotifications && <NotificationModal onClose={() => setShowNotifications(false)} />}</AnimatePresence>
-      <AnimatePresence>{showDailyCard && <DailyChallengeCardModal todayIndex={todayIndex} userName={userName} rows={rows} onClose={() => setShowDailyCard(false)} />}</AnimatePresence>
+      <AnimatePresence>{showDailyCard !== null && <DailyChallengeCardModal todayIndex={showDailyCard} userName={userName} rows={rows} onClose={() => setShowDailyCard(null)} />}</AnimatePresence>
       <AnimatePresence>{showCertificate && <CertificateModal rows={rows} userName={userName} onClose={() => setShowCertificate(false)} />}</AnimatePresence>
       <AnimatePresence>{showWidget && <WidgetExportModal rows={rows} todayIndex={todayIndex} userName={userName} onClose={() => setShowWidget(false)} />}</AnimatePresence>
       <AnimatePresence>{garminDrawer && (
@@ -1538,13 +1538,6 @@ export default function App() {
                   <motion.div whileTap={{ rotate: 360 }} transition={{ duration: 0.5, ease: "easeInOut" }}>
                     <RefreshCw style={{ width: 16, height: 16, color: "#fca5a5" }} />
                   </motion.div>
-                </motion.button>
-                <motion.button
-                  className="hero-icon-btn"
-                  whileTap={{ scale: 0.88, rotate: 5 }}
-                  onClick={() => setShowDailyCard(true)}
-                  style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(127,29,29,0.25)", border: "1px solid rgba(127,29,29,0.5)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-                  <Share2 style={{ width: 16, height: 16, color: "#fca5a5" }} />
                 </motion.button>
               </div>
             </div>
@@ -1658,9 +1651,11 @@ export default function App() {
                         </div>
                       )}
 
-                      <div className={`sheet-cell body count-col count-cell ${rowTone}`}>
+                      <div className={`sheet-cell body count-col count-cell ${rowTone}`}
+                        onClick={() => setShowDailyCard(absIdx)}
+                        style={{ cursor: "pointer" }}>
                         {showLock && (
-                          <button type="button" onClick={() => toggleRowLock(absIdx)} className={row.locked ? "lock-btn locked" : "lock-btn"}>
+                          <button type="button" onClick={e => { e.stopPropagation(); toggleRowLock(absIdx); }} className={row.locked ? "lock-btn locked" : "lock-btn"}>
                             {row.locked ? <Lock className="lock-icon" /> : <LockOpen className="lock-icon" />}
                           </button>
                         )}
