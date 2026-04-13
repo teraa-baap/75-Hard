@@ -1194,8 +1194,6 @@ export default function App() {
   const [showDailyCard, setShowDailyCard] = useState(false);
   const [showCertificate, setShowCertificate] = useState(false);
   const [showWidget, setShowWidget] = useState(false);
-  const [garminSyncing, setGarminSyncing] = useState(false);
-  const [garminSyncStatus, setGarminSyncStatus] = useState<string | null>(null);
   const [garminDrawer, setGarminDrawer] = useState<{ date: string; dateLabel: string } | null>(null);
   const [metricPopup, setMetricPopup] = useState<{ type: "calories" | "steps"; row: TrackerRow; absIdx: number } | null>(null);
   const [sleepPopup, setSleepPopup] = useState<{ sleep: SleepData; dateLabel: string } | null>(null);
@@ -1249,7 +1247,7 @@ export default function App() {
     return diff >= 0 && diff < TOTAL_DAYS ? diff : -1;
   }, []);
 
-  const syncGarminDay = async (row: TrackerRow, synced: string[]) => {
+  const syncGarminDay = async (row: TrackerRow, synced: string[], isToday = false) => {
     try {
       const [dr, ar] = await Promise.allSettled([
         fetch(`/api/garmin-data?date=${row.date}`).then(r => r.json()),
@@ -1276,34 +1274,49 @@ export default function App() {
         const idx = rows.findIndex(r => r.date === row.date);
         if (idx >= 0) setRows(prev => { const next = [...prev]; next[idx] = { ...next[idx], ...patch }; return next; });
       }
-      synced.push(row.date);
-      localStorage.setItem(GARMIN_SYNC_KEY, JSON.stringify(synced));
+      if (!isToday) {
+        synced.push(row.date);
+        localStorage.setItem(GARMIN_SYNC_KEY, JSON.stringify(synced));
+      }
       return null;
     } catch (e: any) {
       return e.message || "Unknown error";
     }
   };
 
-  const forceGarminSync = async () => {
-    if (garminSyncing) return;
-    setGarminSyncing(true);
-    setGarminSyncStatus("Syncing from Garmin...");
-    // Clear sync cache to force re-fetch
-    localStorage.removeItem(GARMIN_SYNC_KEY);
-    const toSync = rows.slice(0, todayIndex + 1);
-    let errors = 0;
-    const synced: string[] = [];
-    for (let i = 0; i < toSync.length; i++) {
-      const err = await syncGarminDay(toSync[i], synced);
-      if (err) errors++;
-      setGarminSyncStatus(`Syncing day ${i+1}/${toSync.length}...`);
-    }
-    setGarminSyncing(false);
-    setGarminSyncStatus(errors === 0 ? "✓ Synced!" : `Done (${errors} days failed — check Garmin credentials)`);
-    setTimeout(() => setGarminSyncStatus(null), 4000);
-  };
+  // Auto-sync on app load:
+  // - Today + last 2 days: always re-sync (Garmin finalizes data up to 48h later)
+  // - Older days: sync once and cache
+  useEffect(() => {
+    if (!loaded || todayIndex < 0) return;
+    let synced: string[] = [];
+    try { synced = JSON.parse(localStorage.getItem(GARMIN_SYNC_KEY) || "[]"); } catch {}
 
-  // Missed day
+    const ALWAYS_RESYNC_DAYS = 3; // today + 2 previous days
+    const alwaysResyncIndices = Array.from({ length: ALWAYS_RESYNC_DAYS }, (_, i) => todayIndex - i).filter(i => i >= 0);
+    const alwaysResyncDates = alwaysResyncIndices.map(i => rows[i]?.date).filter(Boolean);
+
+    // Remove last 3 days from cache so they always re-sync
+    const filteredSynced = synced.filter(d => !alwaysResyncDates.includes(d));
+    localStorage.setItem(GARMIN_SYNC_KEY, JSON.stringify(filteredSynced));
+
+    const toSync = rows.slice(0, todayIndex + 1).filter(r => !filteredSynced.includes(r.date));
+
+    // Sync all pending rows with stagger (recent days first)
+    [...toSync].reverse().forEach((row, i) => {
+      const isRecent = alwaysResyncDates.includes(row.date);
+      setTimeout(() => syncGarminDay(row, filteredSynced, isRecent), i * 800);
+    });
+  }, [loaded, todayIndex]);
+
+  // Auto-show certificate when all 75 days complete
+  useEffect(() => {
+    if (!loaded) return;
+    if (completedDays === TOTAL_DAYS && !localStorage.getItem("75_hard_cert_shown")) {
+      localStorage.setItem("75_hard_cert_shown", "1");
+      setTimeout(() => setShowCertificate(true), 1000);
+    }
+  }, [completedDays, loaded]);
   useEffect(() => {
     if (!loaded || todayIndex <= 0) return;
     const yesterday = rows[todayIndex - 1];
@@ -1497,7 +1510,13 @@ export default function App() {
       <div className="page">
         <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} className="hero-card">
           <div className="hero-header">
-            <div className="pill"><Flame className="mini-icon" /> Discipline • Consistency • Power</div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+              <div className="pill"><Flame className="mini-icon" /> Discipline • Consistency • Power</div>
+              <motion.button whileTap={{ scale: 0.9 }} onClick={() => setShowDailyCard(true)}
+                style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(127,29,29,0.25)", border: "1px solid rgba(127,29,29,0.5)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                <Share2 style={{ width: 16, height: 16, color: "#fca5a5" }} />
+              </motion.button>
+            </div>
             {userName ? (
               <>
                 <h1 className="hero-title" style={{ marginBottom: 0 }}>{userName.toUpperCase()}'S</h1>
@@ -1534,39 +1553,40 @@ export default function App() {
               <SummaryCard title="Avg Cal / Steps" value={`${averageCalories} / ${averageSteps}`} subtext="Daily averages" icon={Target} />
             </div>
 
-            <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
-              {[
-                { icon: Images, label: "Gallery", action: () => setShowGallery(true) },
-                { icon: Layers, label: "Before/After", action: () => setShowBeforeAfter(true) },
-                { icon: Bell, label: "Reminder", action: () => setShowNotifications(true) },
-                { icon: Share2, label: "Day Card", action: () => setShowDailyCard(true) },
-                { icon: Trophy, label: "Certificate", action: () => setShowCertificate(true) },
-                { icon: Target, label: "Widget", action: () => setShowWidget(true) },
-              ].map(({ icon: Icon, label, action }) => (
-                <motion.button key={label} whileTap={{ scale: 0.95 }} onClick={action}
-                  style={{ flex: "1 1 calc(33% - 6px)", minWidth: 80, background: "rgba(127,29,29,0.18)", border: "1px solid rgba(127,29,29,0.55)", borderRadius: 14, padding: "12px 8px", display: "flex", flexDirection: "column", alignItems: "center", gap: 5, cursor: "pointer" }}>
-                  <Icon style={{ width: 18, height: 18, color: "#fca5a5" }} />
-                  <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(252,165,165,0.75)" }}>{label}</span>
-                </motion.button>
-              ))}
+            <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
+              <motion.button whileTap={{ scale: 0.95 }} onClick={() => setShowGallery(true)}
+                style={{ flex: 1, background: "rgba(127,29,29,0.18)", border: "1px solid rgba(127,29,29,0.55)", borderRadius: 14, padding: "14px 8px", display: "flex", flexDirection: "column", alignItems: "center", gap: 6, cursor: "pointer" }}>
+                <Images style={{ width: 20, height: 20, color: "#fca5a5" }} />
+                <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(252,165,165,0.75)" }}>Gallery</span>
+              </motion.button>
+              <motion.button whileTap={{ scale: 0.95 }} onClick={() => setShowBeforeAfter(true)}
+                style={{ flex: 1, background: "rgba(127,29,29,0.18)", border: "1px solid rgba(127,29,29,0.55)", borderRadius: 14, padding: "14px 8px", display: "flex", flexDirection: "column", alignItems: "center", gap: 6, cursor: "pointer" }}>
+                <Layers style={{ width: 20, height: 20, color: "#fca5a5" }} />
+                <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(252,165,165,0.75)" }}>Before / After</span>
+              </motion.button>
+              <motion.button whileTap={{ scale: 0.95 }} onClick={() => setShowNotifications(true)}
+                style={{ flex: 1, background: "rgba(127,29,29,0.18)", border: "1px solid rgba(127,29,29,0.55)", borderRadius: 14, padding: "14px 8px", display: "flex", flexDirection: "column", alignItems: "center", gap: 6, cursor: "pointer" }}>
+                <Bell style={{ width: 20, height: 20, color: "#fca5a5" }} />
+                <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(252,165,165,0.75)" }}>Reminder</span>
+              </motion.button>
             </div>
 
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 10, padding: "10px 14px", background: "rgba(127,29,29,0.1)", borderRadius: 12, border: "1px solid rgba(127,29,29,0.3)" }}>
               <span style={{ fontSize: 12, color: "rgba(252,165,165,0.6)", fontWeight: 600 }}>{darkMode ? "🌙 Dark Mode" : "☀️ Light Mode"}</span>
-              <button onClick={() => setDarkMode(!darkMode)} style={{ width: 44, height: 24, borderRadius: 12, background: darkMode ? "#dc2626" : "rgba(255,255,255,0.3)", border: "none", cursor: "pointer", position: "relative", transition: "background 0.25s" }}>
-                <div style={{ position: "absolute", top: 3, left: darkMode ? 22 : 3, width: 18, height: 18, borderRadius: "50%", background: "#fff", transition: "left 0.25s" }} />
-              </button>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                {/* Hidden manual sync — triple tap the toggle to trigger */}
+                <button onClick={() => {
+                  localStorage.removeItem(GARMIN_SYNC_KEY);
+                  window.location.reload();
+                }} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 4, opacity: 0.01 }}>
+                  <RefreshCw style={{ width: 14, height: 14, color: "#fca5a5" }} />
+                </button>
+                <button onClick={() => setDarkMode(!darkMode)} style={{ width: 44, height: 24, borderRadius: 12, background: darkMode ? "#dc2626" : "rgba(255,255,255,0.3)", border: "none", cursor: "pointer", position: "relative", transition: "background 0.25s" }}>
+                  <div style={{ position: "absolute", top: 3, left: darkMode ? 22 : 3, width: 18, height: 18, borderRadius: "50%", background: "#fff", transition: "left 0.25s" }} />
+                </button>
+              </div>
             </div>
 
-            <motion.button whileTap={{ scale: 0.97 }} onClick={forceGarminSync} disabled={garminSyncing}
-              style={{ width: "100%", marginTop: 10, padding: "12px 16px", background: garminSyncing ? "rgba(127,29,29,0.15)" : "linear-gradient(135deg,rgba(127,29,29,0.3),rgba(185,28,28,0.4))", border: "1px solid rgba(127,29,29,0.5)", borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, cursor: garminSyncing ? "default" : "pointer" }}>
-              <motion.div animate={garminSyncing ? { rotate: 360 } : {}} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}>
-                <RefreshCw style={{ width: 15, height: 15, color: "#fca5a5" }} />
-              </motion.div>
-              <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(252,165,165,0.8)", letterSpacing: "0.06em" }}>
-                {garminSyncStatus || "🔄 Sync from Garmin"}
-              </span>
-            </motion.button>
           </div>
         </motion.div>
 
