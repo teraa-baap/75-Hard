@@ -4,7 +4,7 @@ import {
   Camera, Dumbbell, Utensils, TreeDeciduous, BookOpen, Droplets,
   Flame, Scale, Target, ImagePlus, Lock, LockOpen, X, Images,
   RefreshCw, ArrowLeft, Trophy, ChevronLeft, ChevronRight,
-  User, Bell, Layers, Share2, Calendar,
+  User, Bell, Layers, Share2, Calendar, Moon, Sun,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -1233,12 +1233,6 @@ export default function App() {
     localStorage.setItem("75_hard_theme", darkMode ? "dark" : "light");
   }, [darkMode]);
 
-  // Scroll to today
-  useEffect(() => {
-    if (!loaded || !todayRowRef.current) return;
-    const t = setTimeout(() => todayRowRef.current?.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" }), 450);
-    return () => clearTimeout(t);
-  }, [loaded]);
 
   const todayIndex = useMemo(() => {
     const now = new Date();
@@ -1343,15 +1337,17 @@ export default function App() {
   const timelineBars = Array.from({ length: TOTAL_DAYS }, (_, i) => i < completedDays);
   const weekGroups = Array.from({ length: Math.ceil(TOTAL_DAYS / 7) }, (_, i) => ({ weekNumber: i + 1, rows: rows.slice(i*7, i*7+7), startIndex: i*7 }));
 
-  // Milestone detection
+  // Milestone detection — only show once per week, persisted across refreshes
   useEffect(() => {
+    if (!loaded) return;
     weekGroups.forEach(g => {
-      if (g.rows.every(isRowComplete) && !openedMilestonesRef.current.has(g.weekNumber)) {
-        openedMilestonesRef.current.add(g.weekNumber);
+      const key = `75_hard_milestone_${g.weekNumber}`;
+      if (g.rows.every(isRowComplete) && !localStorage.getItem(key)) {
+        localStorage.setItem(key, "1");
         setTimeout(() => setMilestone(g.weekNumber), 400);
       }
     });
-  }, [rows]);
+  }, [rows, loaded]);
 
   // Confetti on day complete
   useEffect(() => {
@@ -1526,8 +1522,11 @@ export default function App() {
                       animate={{ rotate: 0, scale: 1, opacity: 1 }}
                       exit={{ rotate: 90, scale: 0.3, opacity: 0 }}
                       transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                      style={{ fontSize: 17, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      {darkMode ? "🌙" : "☀️"}
+                      style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      {darkMode
+                        ? <Moon style={{ width: 16, height: 16, color: "#fca5a5" }} />
+                        : <Sun style={{ width: 16, height: 16, color: "#b91c1c" }} />
+                      }
                     </motion.span>
                   </AnimatePresence>
                 </motion.button>
@@ -1651,7 +1650,7 @@ export default function App() {
 
                   return (
                     <React.Fragment key={row.id}>
-                      <DateCell row={row} isToday={isToday} rowTone={rowTone} todayRef={isToday ? todayRowRef : undefined} />
+                      <DateCell row={row} isToday={isToday} rowTone={rowTone} />
 
                       {rowIndex === 0 && (
                         <div className="merged-week" style={{ gridRow: `span ${group.rows.length}` }}>
