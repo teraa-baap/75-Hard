@@ -1514,10 +1514,40 @@ export default function App() {
           <div className="hero-header">
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
               <div className="pill"><Flame className="mini-icon" /> Discipline • Consistency • Power</div>
-              <motion.button whileTap={{ scale: 0.9 }} onClick={() => setShowDailyCard(true)}
-                style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(127,29,29,0.25)", border: "1px solid rgba(127,29,29,0.5)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-                <Share2 style={{ width: 16, height: 16, color: "#fca5a5" }} />
-              </motion.button>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <motion.button
+                  className="hero-icon-btn"
+                  whileTap={{ scale: 0.88, rotate: -15 }}
+                  onClick={() => setDarkMode(!darkMode)}
+                  style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(127,29,29,0.25)", border: "1px solid rgba(127,29,29,0.5)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", overflow: "hidden" }}>
+                  <AnimatePresence mode="wait">
+                    <motion.span key={darkMode ? "moon" : "sun"}
+                      initial={{ rotate: -90, scale: 0.3, opacity: 0 }}
+                      animate={{ rotate: 0, scale: 1, opacity: 1 }}
+                      exit={{ rotate: 90, scale: 0.3, opacity: 0 }}
+                      transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                      style={{ fontSize: 17, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      {darkMode ? "🌙" : "☀️"}
+                    </motion.span>
+                  </AnimatePresence>
+                </motion.button>
+                <motion.button
+                  className="hero-icon-btn"
+                  whileTap={{ scale: 0.88 }}
+                  onClick={() => { localStorage.removeItem(GARMIN_SYNC_KEY); window.location.reload(); }}
+                  style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(127,29,29,0.25)", border: "1px solid rgba(127,29,29,0.5)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                  <motion.div whileTap={{ rotate: 360 }} transition={{ duration: 0.5, ease: "easeInOut" }}>
+                    <RefreshCw style={{ width: 16, height: 16, color: "#fca5a5" }} />
+                  </motion.div>
+                </motion.button>
+                <motion.button
+                  className="hero-icon-btn"
+                  whileTap={{ scale: 0.88, rotate: 5 }}
+                  onClick={() => setShowDailyCard(true)}
+                  style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(127,29,29,0.25)", border: "1px solid rgba(127,29,29,0.5)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                  <Share2 style={{ width: 16, height: 16, color: "#fca5a5" }} />
+                </motion.button>
+              </div>
             </div>
             {userName ? (
               <>
@@ -1556,37 +1586,22 @@ export default function App() {
             </div>
 
             <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
-              <motion.button whileTap={{ scale: 0.95 }} onClick={() => setShowGallery(true)}
-                style={{ flex: 1, background: "rgba(127,29,29,0.18)", border: "1px solid rgba(127,29,29,0.55)", borderRadius: 14, padding: "14px 8px", display: "flex", flexDirection: "column", alignItems: "center", gap: 6, cursor: "pointer" }}>
-                <Images style={{ width: 20, height: 20, color: "#fca5a5" }} />
-                <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(252,165,165,0.75)" }}>Gallery</span>
-              </motion.button>
-              <motion.button whileTap={{ scale: 0.95 }} onClick={() => setShowBeforeAfter(true)}
-                style={{ flex: 1, background: "rgba(127,29,29,0.18)", border: "1px solid rgba(127,29,29,0.55)", borderRadius: 14, padding: "14px 8px", display: "flex", flexDirection: "column", alignItems: "center", gap: 6, cursor: "pointer" }}>
-                <Layers style={{ width: 20, height: 20, color: "#fca5a5" }} />
-                <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(252,165,165,0.75)" }}>Before / After</span>
-              </motion.button>
-              <motion.button whileTap={{ scale: 0.95 }} onClick={() => setShowNotifications(true)}
-                style={{ flex: 1, background: "rgba(127,29,29,0.18)", border: "1px solid rgba(127,29,29,0.55)", borderRadius: 14, padding: "14px 8px", display: "flex", flexDirection: "column", alignItems: "center", gap: 6, cursor: "pointer" }}>
-                <Bell style={{ width: 20, height: 20, color: "#fca5a5" }} />
-                <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(252,165,165,0.75)" }}>Reminder</span>
-              </motion.button>
-            </div>
-
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 10, padding: "10px 14px", background: "rgba(127,29,29,0.1)", borderRadius: 12, border: "1px solid rgba(127,29,29,0.3)" }}>
-              <span style={{ fontSize: 12, color: "rgba(252,165,165,0.6)", fontWeight: 600 }}>{darkMode ? "🌙 Dark Mode" : "☀️ Light Mode"}</span>
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                {/* Hidden manual sync — triple tap the toggle to trigger */}
-                <button onClick={() => {
-                  localStorage.removeItem(GARMIN_SYNC_KEY);
-                  window.location.reload();
-                }} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 4, opacity: 0.01 }}>
-                  <RefreshCw style={{ width: 14, height: 14, color: "#fca5a5" }} />
-                </button>
-                <button onClick={() => setDarkMode(!darkMode)} style={{ width: 44, height: 24, borderRadius: 12, background: darkMode ? "#dc2626" : "rgba(255,255,255,0.3)", border: "none", cursor: "pointer", position: "relative", transition: "background 0.25s" }}>
-                  <div style={{ position: "absolute", top: 3, left: darkMode ? 22 : 3, width: 18, height: 18, borderRadius: "50%", background: "#fff", transition: "left 0.25s" }} />
-                </button>
-              </div>
+              {[
+                { icon: Images, label: "Gallery", action: () => setShowGallery(true) },
+                { icon: Layers, label: "Before / After", action: () => setShowBeforeAfter(true) },
+                { icon: Bell, label: "Reminder", action: () => setShowNotifications(true) },
+              ].map(({ icon: Icon, label, action }, i) => (
+                <motion.button key={label}
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 + i * 0.08, type: "spring", stiffness: 260, damping: 22 }}
+                  whileTap={{ scale: 0.93 }}
+                  onClick={action}
+                  style={{ flex: 1, background: "rgba(127,29,29,0.18)", border: "1px solid rgba(127,29,29,0.55)", borderRadius: 14, padding: "14px 8px", display: "flex", flexDirection: "column", alignItems: "center", gap: 6, cursor: "pointer" }}>
+                  <Icon style={{ width: 20, height: 20, color: "#fca5a5" }} />
+                  <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(252,165,165,0.75)" }}>{label}</span>
+                </motion.button>
+              ))}
             </div>
 
           </div>
@@ -1632,6 +1647,7 @@ export default function App() {
                   const rowLocked = row.locked || isFuture;
                   const rowTone = isFuture ? "future-row" : activeRow === absIdx ? "active-row" : isToday ? "today-row" : rowDone ? "complete-row" : zebra;
                   const showLock = rowHasData(row) && !isFuture;
+                  const rowDelay = Math.min(absIdx * 0.025, 0.6);
 
                   return (
                     <React.Fragment key={row.id}>
