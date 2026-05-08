@@ -1216,8 +1216,16 @@ export default function App() {
         const parsed = JSON.parse(saved);
 if (Array.isArray(parsed) && parsed.length === TOTAL_DAYS) {
   const withPhotos = parsed.map((row: TrackerRow, i: number) => {
-    const photo = localStorage.getItem(`${PHOTO_KEY_PREFIX}${i}`);
-    if (photo) return { ...row, photoUrl: photo, photo: true };
+    const separatePhoto = localStorage.getItem(`${PHOTO_KEY_PREFIX}${i}`);
+    const blobPhoto = (row as any).photoUrl as string || "";
+    const photo = separatePhoto || blobPhoto;
+    if (photo) {
+      // Always write photo to its own key (handles old blob-format migration)
+      if (!separatePhoto) {
+        try { localStorage.setItem(`${PHOTO_KEY_PREFIX}${i}`, photo); } catch {}
+      }
+      return { ...row, photoUrl: photo, photo: true };
+    }
     return row;
   });
   setRows(withPhotos);
@@ -1230,28 +1238,31 @@ if (Array.isArray(parsed) && parsed.length === TOTAL_DAYS) {
     finally { setLoaded(true); }
   }, []);
 
-// Save data — only after rows have been hydrated from localStorage
-  const hasHydratedRef = useRef(false);
+// Save data — photos stored separately per-day to avoid localStorage quota issues.
+  // NEVER removeItem photo keys here — photo keys are source of truth, only cleared on explicit delete.
+  // We gate saving behind rowsHydrated (set after load completes) so we never
+  // write the initial empty createRows() state over real data.
+  const rowsHydratedRef = useRef(false);
   useEffect(() => {
     if (!loaded) return;
-    if (!hasHydratedRef.current) {
-      // First time loaded flips true: rows may still be the initial empty state
-      // Wait for next rows change (which will be the hydrated data) before saving
-      hasHydratedRef.current = true;
+    if (!rowsHydratedRef.current) {
+      // Mark hydrated but do NOT save yet — rows state may still be the initial
+      // empty createRows() if setRows(withPhotos) + setLoaded(true) batched together
+      // and the effect fired before the rows state updated. We save on the NEXT change.
+      rowsHydratedRef.current = true;
       return;
     }
     try {
-  const rowsWithoutPhotos = rows.map((row, i) => {
-    if (row.photoUrl) {
-      try { localStorage.setItem(`${PHOTO_KEY_PREFIX}${i}`, row.photoUrl); }
-      catch (e) { console.warn(`Photo save failed for day ${i}:`, e); }
-    } else {
-      localStorage.removeItem(`${PHOTO_KEY_PREFIX}${i}`);
-    }
-    return { ...row, photoUrl: "" };
-  });
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(rowsWithoutPhotos));
-} catch (e) { console.warn("Save failed:", e); }
+      const rowsWithoutPhotos = rows.map((row, i) => {
+        if (row.photoUrl) {
+          try { localStorage.setItem(`${PHOTO_KEY_PREFIX}${i}`, row.photoUrl); }
+          catch (e) { console.warn(`Photo save failed for day ${i}:`, e); }
+        }
+        // NO removeItem — never delete photo keys from save effect
+        return { ...row, photoUrl: "" };
+      });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(rowsWithoutPhotos));
+    } catch (e) { console.warn("Save failed:", e); }
   }, [rows, loaded]);
 
   // Dark mode
