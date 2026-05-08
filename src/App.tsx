@@ -123,6 +123,42 @@ function rowHasData(row: TrackerRow) {
 function isRowComplete(row: TrackerRow) {
   return habitColumns.every((h) => row[h.key]);
 }
+// One-time migration key: when this changes, all stored photos get recompressed
+const PHOTO_MIGRATION_KEY = "75_hard_photo_migration_v2";
+
+// Recompress all existing photos in localStorage to the new smaller size.
+// Runs once per migration version. Uses canvas to re-encode existing base64 images.
+function migrateCompressPhotos(): void {
+  if (localStorage.getItem(PHOTO_MIGRATION_KEY)) return; // already done
+  const photoKeys = Object.keys(localStorage).filter(k => k.startsWith(PHOTO_KEY_PREFIX));
+  if (photoKeys.length === 0) { localStorage.setItem(PHOTO_MIGRATION_KEY, "1"); return; }
+
+  let done = 0;
+  photoKeys.forEach(key => {
+    const existing = localStorage.getItem(key);
+    if (!existing || existing.length <= MAX_PHOTO_BYTES) { done++; if (done === photoKeys.length) localStorage.setItem(PHOTO_MIGRATION_KEY, "1"); return; }
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, 800 / Math.max(img.width, img.height));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(img.naturalWidth * scale);
+      canvas.height = Math.round(img.naturalHeight * scale);
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      let result = canvas.toDataURL("image/jpeg", 0.72);
+      if (result.length > MAX_PHOTO_BYTES) {
+        let q = 0.60;
+        while (q >= 0.30 && result.length > MAX_PHOTO_BYTES) { result = canvas.toDataURL("image/jpeg", q); q -= 0.10; }
+      }
+      try { localStorage.setItem(key, result); console.log(`[75H] Migrated ${key}: ${Math.round(existing.length/1024)}KB → ${Math.round(result.length/1024)}KB`); } catch {}
+      done++;
+      if (done === photoKeys.length) localStorage.setItem(PHOTO_MIGRATION_KEY, "1");
+    };
+    img.src = existing;
+  });
+}
+
 // Target ~80KB per photo so 75 photos fit comfortably in the 5MB localStorage limit.
 // We compress in two passes: first to maxSize/quality, then if still too large we
 // reduce quality further until under MAX_PHOTO_BYTES.
@@ -1263,6 +1299,7 @@ export default function App() {
 
   // Load saved data
   useEffect(() => {
+    migrateCompressPhotos(); // recompress old large photos on first run after update
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
