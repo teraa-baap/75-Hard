@@ -17,6 +17,7 @@ const USER_KEY = "75_hard_user_v1";
 const START_DATE_KEY = "75_hard_start_date_v1";
 const NOTIF_KEY = "75_hard_notif_v1";
 const GARMIN_SYNC_KEY = "75_hard_garmin_synced_days";
+const PHOTO_KEY_PREFIX = "75_hard_photo_";
 
 const DAILY_QUOTES = [
   "Pain is temporary. Quitting lasts forever.",
@@ -1213,7 +1214,14 @@ export default function App() {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length === TOTAL_DAYS) setRows(parsed);
+if (Array.isArray(parsed) && parsed.length === TOTAL_DAYS) {
+  const withPhotos = parsed.map((row: TrackerRow, i: number) => {
+    const photo = localStorage.getItem(`${PHOTO_KEY_PREFIX}${i}`);
+    if (photo) return { ...row, photoUrl: photo, photo: true };
+    return row;
+  });
+  setRows(withPhotos);
+}
       }
       const savedUser = localStorage.getItem(USER_KEY);
       if (savedUser) setUserName(savedUser);
@@ -1232,7 +1240,18 @@ export default function App() {
       hasHydratedRef.current = true;
       return;
     }
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(rows)); } catch {}
+    try {
+  const rowsWithoutPhotos = rows.map((row, i) => {
+    if (row.photoUrl) {
+      try { localStorage.setItem(`${PHOTO_KEY_PREFIX}${i}`, row.photoUrl); }
+      catch (e) { console.warn(`Photo save failed for day ${i}:`, e); }
+    } else {
+      localStorage.removeItem(`${PHOTO_KEY_PREFIX}${i}`);
+    }
+    return { ...row, photoUrl: "" };
+  });
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(rowsWithoutPhotos));
+} catch (e) { console.warn("Save failed:", e); }
   }, [rows, loaded]);
 
   // Dark mode
@@ -1419,7 +1438,8 @@ if (data?.steps && data.steps > 0) patch.steps = String(data.steps);
   const handlePhotoUpload = useCallback(async (idx: number, file?: File | null) => {
     if (rows[idx].locked || !file) return;
     try {
-      const compressed = await compressImage(file);
+      const compressed = await compressImage(file); try { localStorage.setItem(`${PHOTO_KEY_PREFIX}${idx}`, compressed); }
+catch (e) { console.warn("Immediate photo save failed:", e); }
       setActiveRow(idx);
       updateRow(idx, { photoUrl: compressed, photo: true });
       triggerFeedback();
