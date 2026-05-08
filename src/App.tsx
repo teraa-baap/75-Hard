@@ -1220,7 +1220,7 @@ if (Array.isArray(parsed) && parsed.length === TOTAL_DAYS) {
     const blobPhoto = (row as any).photoUrl as string || "";
     const photo = separatePhoto || blobPhoto;
     if (photo) {
-      // Always write photo to its own key (handles old blob-format migration)
+      console.log(`[75H] LOAD: found photo for day ${i} (${Math.round(photo.length/1024)}KB) source=${separatePhoto ? 'key' : 'blob'}`);
       if (!separatePhoto) {
         try { localStorage.setItem(`${PHOTO_KEY_PREFIX}${i}`, photo); } catch {}
       }
@@ -1228,6 +1228,8 @@ if (Array.isArray(parsed) && parsed.length === TOTAL_DAYS) {
     }
     return row;
   });
+  const photoCount = withPhotos.filter(r => r.photoUrl).length;
+  console.log(`[75H] LOAD: hydrating rows with ${photoCount} photos`);
   setRows(withPhotos);
 }
       }
@@ -1246,23 +1248,28 @@ if (Array.isArray(parsed) && parsed.length === TOTAL_DAYS) {
   useEffect(() => {
     if (!loaded) return;
     if (!rowsHydratedRef.current) {
-      // Mark hydrated but do NOT save yet — rows state may still be the initial
-      // empty createRows() if setRows(withPhotos) + setLoaded(true) batched together
-      // and the effect fired before the rows state updated. We save on the NEXT change.
       rowsHydratedRef.current = true;
+      const photosInMemory = rows.filter(r => r.photoUrl).length;
+      console.log(`[75H] LOAD SKIP: rows has ${photosInMemory} photos in memory, skipping first save`);
       return;
     }
+    const photosInMemory = rows.filter(r => r.photoUrl).length;
+    console.log(`[75H] SAVE: rows has ${photosInMemory} photos in memory`);
     try {
       const rowsWithoutPhotos = rows.map((row, i) => {
         if (row.photoUrl) {
-          try { localStorage.setItem(`${PHOTO_KEY_PREFIX}${i}`, row.photoUrl); }
-          catch (e) { console.warn(`Photo save failed for day ${i}:`, e); }
+          try {
+            localStorage.setItem(`${PHOTO_KEY_PREFIX}${i}`, row.photoUrl);
+            console.log(`[75H] SAVE: wrote photo key ${i} (${Math.round(row.photoUrl.length/1024)}KB)`);
+          } catch (e) {
+            console.error(`[75H] SAVE FAILED for photo ${i}:`, e);
+            alert(`Photo save failed for day ${i+1}: storage full. Please clear some photos.`);
+          }
         }
-        // NO removeItem — never delete photo keys from save effect
         return { ...row, photoUrl: "" };
       });
       localStorage.setItem(STORAGE_KEY, JSON.stringify(rowsWithoutPhotos));
-    } catch (e) { console.warn("Save failed:", e); }
+    } catch (e) { console.warn("[75H] Main blob save failed:", e); }
   }, [rows, loaded]);
 
   // Dark mode
