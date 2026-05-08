@@ -1222,9 +1222,16 @@ export default function App() {
     finally { setLoaded(true); }
   }, []);
 
-  // Save data
+// Save data — only after rows have been hydrated from localStorage
+  const hasHydratedRef = useRef(false);
   useEffect(() => {
     if (!loaded) return;
+    if (!hasHydratedRef.current) {
+      // First time loaded flips true: rows may still be the initial empty state
+      // Wait for next rows change (which will be the hydrated data) before saving
+      hasHydratedRef.current = true;
+      return;
+    }
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(rows)); } catch {}
   }, [rows, loaded]);
 
@@ -1251,8 +1258,8 @@ export default function App() {
       const acts = ar.status === "fulfilled" ? (ar.value?.activities || []) : [];
       if (data?.error) throw new Error(data.error);
       const patch: Partial<TrackerRow> = {};
-      if (data?.steps) patch.steps = String(data.steps);
-      if (data?.totalCalories) patch.calories = String(Math.round(data.totalCalories));
+if (data?.steps && data.steps > 0) patch.steps = String(data.steps);
+      if (data?.totalCalories && data.totalCalories > 0) patch.calories = String(Math.round(data.totalCalories));
       if (data?.sleep) patch.sleepData = data.sleep;
       if (data?.totalCalories || data?.activityCalories?.length) {
         patch.calorieData = {
