@@ -123,7 +123,12 @@ function rowHasData(row: TrackerRow) {
 function isRowComplete(row: TrackerRow) {
   return habitColumns.every((h) => row[h.key]);
 }
-function compressImage(file: File, maxSize = 1200, quality = 0.82): Promise<string> {
+// Target ~80KB per photo so 75 photos fit comfortably in the 5MB localStorage limit.
+// We compress in two passes: first to maxSize/quality, then if still too large we
+// reduce quality further until under MAX_PHOTO_BYTES.
+const MAX_PHOTO_BYTES = 90 * 1024; // 90KB base64 target (~67KB actual image)
+
+function compressImage(file: File, maxSize = 800, quality = 0.72): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
@@ -136,7 +141,20 @@ function compressImage(file: File, maxSize = 1200, quality = 0.82): Promise<stri
         const ctx = canvas.getContext("2d");
         if (!ctx) { reject(new Error("Canvas error")); return; }
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        resolve(canvas.toDataURL("image/jpeg", quality));
+
+        // First pass
+        let result = canvas.toDataURL("image/jpeg", quality);
+
+        // If still too large, reduce quality progressively until it fits
+        if (result.length > MAX_PHOTO_BYTES) {
+          let q = 0.60;
+          while (q >= 0.30 && result.length > MAX_PHOTO_BYTES) {
+            result = canvas.toDataURL("image/jpeg", q);
+            q -= 0.10;
+          }
+        }
+
+        resolve(result);
       };
       img.onerror = () => reject(new Error("Image load failed"));
       img.src = String(reader.result);
@@ -144,6 +162,38 @@ function compressImage(file: File, maxSize = 1200, quality = 0.82): Promise<stri
     reader.onerror = () => reject(new Error("File read failed"));
     reader.readAsDataURL(file);
   });
+}
+
+// Save a photo to its own localStorage key. If storage is full, clear space by
+// compressing existing photos further before giving up.
+function savePhotoToStorage(key: string, data: string): boolean {
+  try {
+    localStorage.setItem(key, data);
+    return true;
+  } catch {
+    // Storage full — try to free space by removing the oldest non-recent photo keys
+    // (keys are named 75_hard_photo_{dayIndex}, lower index = older)
+    const photoKeys = Object.keys(localStorage)
+      .filter(k => k.startsWith(PHOTO_KEY_PREFIX))
+      .sort((a, b) => {
+        const ai = parseInt(a.replace(PHOTO_KEY_PREFIX, ""));
+        const bi = parseInt(b.replace(PHOTO_KEY_PREFIX, ""));
+        return ai - bi; // ascending = oldest first
+      });
+
+    // Remove oldest photos one by one until it fits
+    for (const oldKey of photoKeys) {
+      if (oldKey === key) continue; // don't remove the one we're trying to save
+      localStorage.removeItem(oldKey);
+      console.warn(`[75H] Storage full — evicted ${oldKey} to make room`);
+      try {
+        localStorage.setItem(key, data);
+        return true;
+      } catch { continue; }
+    }
+    console.error("[75H] Could not save photo even after eviction");
+    return false;
+  }
 }
 function formatDuration(seconds: number): string {
   const h = Math.floor(seconds / 3600);
