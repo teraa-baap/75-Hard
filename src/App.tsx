@@ -1182,6 +1182,9 @@ function MetricPopup({ type, row, onClose, onSave }: {
 export default function App() {
   const [rows, setRows] = useState<TrackerRow[]>(() => createRows());
   const [loaded, setLoaded] = useState(false);
+  const [debugTaps, setDebugTaps] = useState(0);
+  const [showDebug, setShowDebug] = useState(false);
+  const debugTapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [activeRow, setActiveRow] = useState<number | null>(null);
@@ -1588,7 +1591,15 @@ catch (e) { console.warn("Immediate photo save failed:", e); }
             </div>
             {userName ? (
               <>
-                <h1 className="hero-title" style={{ marginBottom: 0 }}>{userName.toUpperCase()}'S</h1>
+                <h1 className="hero-title" style={{ marginBottom: 0 }} onClick={() => {
+                  setDebugTaps(t => {
+                    const next = t + 1;
+                    if (debugTapTimer.current) clearTimeout(debugTapTimer.current);
+                    debugTapTimer.current = setTimeout(() => setDebugTaps(0), 2000);
+                    if (next >= 7) { setShowDebug(true); setDebugTaps(0); }
+                    return next;
+                  });
+                }}>{userName.toUpperCase()}'S</h1>
                 <h1 className="hero-title" style={{ marginTop: 4, color: "#b91c1c" }}>75 HARD CHALLENGE</h1>
               </>
             ) : <h1 className="hero-title">75 HARD CHALLENGE</h1>}
@@ -1779,6 +1790,46 @@ catch (e) { console.warn("Immediate photo save failed:", e); }
           </div>
         </div>
       </div>
+
+      {/* Debug Panel — tap name 7x to open */}
+      {showDebug && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.95)", zIndex: 9999, overflow: "auto", padding: 20, fontFamily: "monospace" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+            <span style={{ color: "#fca5a5", fontWeight: 700, fontSize: 16 }}>🔍 Storage Debug</span>
+            <button onClick={() => setShowDebug(false)} style={{ background: "none", border: "1px solid #fca5a5", color: "#fca5a5", borderRadius: 8, padding: "4px 12px", cursor: "pointer" }}>Close</button>
+          </div>
+          {(() => {
+            const keys = Object.keys(localStorage);
+            const photoKeys = keys.filter(k => k.startsWith(PHOTO_KEY_PREFIX)).sort();
+            const mainBlob = localStorage.getItem(STORAGE_KEY);
+            const blobSize = mainBlob ? mainBlob.length : 0;
+            const totalPhotoSize = photoKeys.reduce((sum, k) => sum + (localStorage.getItem(k)?.length || 0), 0);
+            const allSize = keys.reduce((sum, k) => sum + k.length + (localStorage.getItem(k)?.length || 0), 0);
+            const rowsWithPhotosInMemory = rows.filter(r => r.photoUrl).length;
+            return (
+              <div style={{ color: "#fff", fontSize: 13, lineHeight: 1.8 }}>
+                <div style={{ color: "#fbbf24", marginBottom: 8 }}>📊 Sizes</div>
+                <div>Main blob: {Math.round(blobSize/1024)}KB</div>
+                <div>Photo keys: {photoKeys.length} keys ({Math.round(totalPhotoSize/1024)}KB)</div>
+                <div>Total localStorage: ~{Math.round(allSize/1024)}KB / ~5000KB limit</div>
+                <div>Photos in memory (rows state): {rowsWithPhotosInMemory}</div>
+                <div style={{ color: "#fbbf24", margin: "12px 0 8px" }}>📸 Photo Keys</div>
+                {photoKeys.length === 0 && <div style={{ color: "#f87171" }}>⚠️ NO PHOTO KEYS FOUND</div>}
+                {photoKeys.map(k => {
+                  const val = localStorage.getItem(k);
+                  const dayIdx = parseInt(k.replace(PHOTO_KEY_PREFIX, ""));
+                  const inMemory = rows[dayIdx]?.photoUrl ? "✅ in memory" : "❌ NOT in memory";
+                  return <div key={k} style={{ color: val ? "#86efac" : "#f87171" }}>{k}: {val ? Math.round(val.length/1024)+"KB" : "MISSING"} — {inMemory}</div>;
+                })}
+                <div style={{ color: "#fbbf24", margin: "12px 0 8px" }}>🔑 All Keys</div>
+                {keys.filter(k => !k.startsWith(PHOTO_KEY_PREFIX)).map(k => (
+                  <div key={k} style={{ color: "#94a3b8", fontSize: 11 }}>{k}: {Math.round((localStorage.getItem(k)?.length||0)/1024)}KB</div>
+                ))}
+              </div>
+            );
+          })()}
+        </div>
+      )}
     </div>
   );
 }
