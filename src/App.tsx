@@ -123,40 +123,57 @@ function rowHasData(row: TrackerRow) {
 function isRowComplete(row: TrackerRow) {
   return habitColumns.every((h) => row[h.key]);
 }
-// One-time migration key: when this changes, all stored photos get recompressed
-const PHOTO_MIGRATION_KEY = "75_hard_photo_migration_v2";
+// One-time migration key: bump this string to force a re-migration
+const PHOTO_MIGRATION_KEY = "75_hard_photo_migration_v3";
 
-// Recompress all existing photos in localStorage to the new smaller size.
-// Runs once per migration version. Uses canvas to re-encode existing base64 images.
-function migrateCompressPhotos(): void {
-  if (localStorage.getItem(PHOTO_MIGRATION_KEY)) return; // already done
-  const photoKeys = Object.keys(localStorage).filter(k => k.startsWith(PHOTO_KEY_PREFIX));
-  if (photoKeys.length === 0) { localStorage.setItem(PHOTO_MIGRATION_KEY, "1"); return; }
-
-  let done = 0;
-  photoKeys.forEach(key => {
-    const existing = localStorage.getItem(key);
-    if (!existing || existing.length <= MAX_PHOTO_BYTES) { done++; if (done === photoKeys.length) localStorage.setItem(PHOTO_MIGRATION_KEY, "1"); return; }
+// Recompress a single base64 image string to target size. Returns a Promise<string>.
+function recompressBase64(data: string): Promise<string> {
+  return new Promise(resolve => {
     const img = new Image();
     img.onload = () => {
-      const scale = Math.min(1, 800 / Math.max(img.width, img.height));
+      const scale = Math.min(1, 800 / Math.max(img.naturalWidth, img.naturalHeight));
       const canvas = document.createElement("canvas");
       canvas.width = Math.round(img.naturalWidth * scale);
       canvas.height = Math.round(img.naturalHeight * scale);
       const ctx = canvas.getContext("2d");
-      if (!ctx) return;
+      if (!ctx) { resolve(data); return; }
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
       let result = canvas.toDataURL("image/jpeg", 0.72);
       if (result.length > MAX_PHOTO_BYTES) {
-        let q = 0.60;
-        while (q >= 0.30 && result.length > MAX_PHOTO_BYTES) { result = canvas.toDataURL("image/jpeg", q); q -= 0.10; }
+        let q = 0.55;
+        while (q >= 0.25 && result.length > MAX_PHOTO_BYTES) {
+          result = canvas.toDataURL("image/jpeg", q);
+          q -= 0.10;
+        }
       }
-      try { localStorage.setItem(key, result); console.log(`[75H] Migrated ${key}: ${Math.round(existing.length/1024)}KB → ${Math.round(result.length/1024)}KB`); } catch {}
-      done++;
-      if (done === photoKeys.length) localStorage.setItem(PHOTO_MIGRATION_KEY, "1");
+      resolve(result);
     };
-    img.src = existing;
+    img.onerror = () => resolve(data);
+    img.src = data;
   });
+}
+
+// Recompress all existing oversized photos. Returns a promise so callers can await it.
+// This MUST complete before we allow new photo uploads.
+async function migrateCompressPhotos(): Promise<void> {
+  if (localStorage.getItem(PHOTO_MIGRATION_KEY)) return;
+  const photoKeys = Object.keys(localStorage)
+    .filter(k => k.startsWith(PHOTO_KEY_PREFIX))
+    .sort((a, b) => parseInt(a.replace(PHOTO_KEY_PREFIX,"")) - parseInt(b.replace(PHOTO_KEY_PREFIX,"")));
+
+  for (const key of photoKeys) {
+    const existing = localStorage.getItem(key);
+    if (!existing || existing.length <= MAX_PHOTO_BYTES) continue;
+    const compressed = await recompressBase64(existing);
+    try {
+      localStorage.setItem(key, compressed);
+      console.log(`[75H] Migrated ${key}: ${Math.round(existing.length/1024)}KB → ${Math.round(compressed.length/1024)}KB`);
+    } catch (e) {
+      console.warn(`[75H] Could not save migrated ${key}:`, e);
+    }
+  }
+  localStorage.setItem(PHOTO_MIGRATION_KEY, "1");
+  console.log("[75H] Photo migration complete");
 }
 
 // Target ~80KB per photo so 75 photos fit comfortably in the 5MB localStorage limit.
@@ -1297,11 +1314,12 @@ export default function App() {
   const prevCompletedRef = useRef(0);
   const openedMilestonesRef = useRef<Set<number>>(new Set());
 
-  // Load saved data
+  // Load saved data — migration runs first (awaited) so storage is free before upload is possible
   useEffect(() => {
-    migrateCompressPhotos(); // recompress old large photos on first run after update
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
+    (async () => {
+      await migrateCompressPhotos(); // shrink old large photos before anything else
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
 if (Array.isArray(parsed) && parsed.length === TOTAL_DAYS) {
@@ -1326,8 +1344,9 @@ if (Array.isArray(parsed) && parsed.length === TOTAL_DAYS) {
       const savedUser = localStorage.getItem(USER_KEY);
       if (savedUser) setUserName(savedUser);
       else setShowOnboarding(true);
-    } catch { setShowOnboarding(true); }
-    finally { setLoaded(true); }
+      } catch { setShowOnboarding(true); }
+      finally { setLoaded(true); }
+    })();
   }, []);
 
 // Save data — photos stored separately per-day to avoid localStorage quota issues.
